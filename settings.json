@@ -1,0 +1,19 @@
+{
+  "clock24h": true,
+  "idleTimeoutSeconds": 60,
+  "inputNames": {
+    "TV": "TV AUDIO",
+    "NET": "TIDAL",
+    "8K": "PHONO",
+    "PHONO": "PHONO",
+    "CD": "CD",
+    "HEOS Music": "HEOS",
+    "BD": "BLU-RAY",
+    "DVD": "DVD",
+    "GAME": "GAME",
+    "SATCBL": "SAT/CBL",
+    "AUX1": "AUX 1",
+    "AUX2": "AUX 2",
+    "TUNER": "TUNER"
+  }
+}

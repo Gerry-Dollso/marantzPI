@@ -1,0 +1,7 @@
+{
+  "marantzHost": "192.168.1.100",
+  "marantzPort": 1255,
+  "playerId": "YOUR_HEOS_PLAYER_ID",
+  "listenHost": "127.0.0.1",
+  "listenPort": 3000
+}

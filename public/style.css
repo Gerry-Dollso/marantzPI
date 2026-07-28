@@ -1,0 +1,387 @@
+:root {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: #f3f4f2;
+  background: #070909;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 800px;
+  height: 480px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #070909;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+button {
+  font: inherit;
+}
+
+.display {
+  width: 800px;
+  height: 480px;
+  display: grid;
+  grid-template-columns: 340px 460px;
+  background:
+    radial-gradient(
+      circle at 92% 5%,
+      rgba(179, 139, 72, 0.13),
+      transparent 32%
+    ),
+    linear-gradient(140deg, #050606 0%, #111515 100%);
+}
+
+.artwork-area {
+  width: 340px;
+  height: 480px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.artwork-frame {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  overflow: hidden;
+  background: #111414;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+#artwork {
+  position: absolute;
+  inset: 0;
+  width: 300px;
+  height: 300px;
+  display: none;
+  object-fit: cover;
+}
+
+.artwork-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #b8a171;
+  font-size: 29px;
+  font-weight: 300;
+  letter-spacing: 0.22em;
+  background:
+    radial-gradient(circle at 35% 30%, #1b2020, #0e1111 70%);
+}
+
+.information {
+  width: 460px;
+  height: 480px;
+  padding: 22px 24px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+header {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heading {
+  color: #b9a16e;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.connection {
+  color: #7b8683;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.connection.connected {
+  color: #91ad9e;
+}
+
+.connection.error {
+  color: #cc7d74;
+}
+
+.metadata {
+  height: 136px;
+  padding-top: 15px;
+  overflow: hidden;
+}
+
+.metadata h1,
+.metadata h2,
+.metadata p {
+  max-width: 420px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.metadata h1 {
+  color: #ffffff;
+  font-size: 29px;
+  font-weight: 650;
+  line-height: 1.14;
+}
+
+.metadata h2 {
+  margin-top: 9px;
+  color: #c8cdca;
+  font-size: 20px;
+  font-weight: 450;
+  line-height: 1.15;
+}
+
+.metadata p {
+  margin-top: 8px;
+  color: #838b88;
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.progress-section {
+  height: 43px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  background: #303535;
+}
+
+.progress-bar {
+  width: 0;
+  height: 100%;
+  background: #b79b66;
+  transition: width 0.6s linear;
+}
+
+.times {
+  margin-top: 7px;
+  display: flex;
+  justify-content: space-between;
+  color: #78817e;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.transport,
+.receiver-controls,
+.inputs {
+  display: grid;
+  gap: 10px;
+}
+
+.transport {
+  height: 76px;
+  grid-template-columns: 1fr 1.18fr 1fr;
+  align-items: center;
+}
+
+.transport button,
+.receiver-controls button,
+.inputs button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: #e9ebe9;
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.transport button {
+  height: 54px;
+  font-size: 19px;
+}
+
+.transport .play-pause {
+  height: 64px;
+  color: #111;
+  background: #d4c18e;
+  border-color: #d4c18e;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.receiver-controls {
+  height: 57px;
+  grid-template-columns: 1fr 1.65fr 1fr;
+  align-items: center;
+}
+
+.receiver-controls button {
+  height: 43px;
+  font-size: 21px;
+}
+
+.receiver-controls #muteButton {
+  color: #c7cbc8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.inputs {
+  height: 58px;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+}
+
+.inputs button {
+  height: 40px;
+  color: #b5bbb8;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+button:active,
+button.pressed {
+  transform: scale(0.96);
+  filter: brightness(1.35);
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+/* ===== marantzPI v2.1 idle display ===== */
+
+body {
+  position: relative;
+}
+
+.display,
+.idle-screen {
+  position: absolute;
+  inset: 0;
+  transition:
+    opacity 0.8s ease,
+    visibility 0.8s ease;
+}
+
+.display {
+  opacity: 1;
+  visibility: visible;
+}
+
+.idle-screen {
+  width: 800px;
+  height: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(181, 151, 91, 0.12),
+      transparent 38%
+    ),
+    linear-gradient(145deg, #050707 0%, #111515 100%);
+}
+
+body.show-idle .display {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.show-idle .idle-screen {
+  opacity: 1;
+  visibility: visible;
+}
+
+.idle-brand {
+  position: absolute;
+  top: 28px;
+  color: #b9a16e;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.38em;
+  padding-left: 0.38em;
+}
+
+.idle-clock {
+  color: #f5f5f1;
+  font-size: 112px;
+  font-weight: 250;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.idle-date {
+  margin-top: 20px;
+  color: #939b97;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.idle-divider {
+  width: 82px;
+  height: 1px;
+  margin: 30px 0 23px;
+  background: #a98f5d;
+  opacity: 0.75;
+}
+
+.idle-input {
+  color: #d9dad6;
+  font-size: 28px;
+  font-weight: 450;
+  letter-spacing: 0.12em;
+}
+
+.idle-status {
+  min-width: 310px;
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  color: #7f8985;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+}
+
+#idleVolume {
+  color: #bca675;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kiosk display: hide the mouse pointer while retaining touch controls. */
+html,
+body,
+button {
+  cursor: none;
+}
