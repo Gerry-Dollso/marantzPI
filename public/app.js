@@ -144,11 +144,11 @@ function updateIdleDisplay(data) {
       ? formatVolume(receiver.volume)
       : '';
 
-  const metadataExpired =
-    !hasTrackInfo &&
-    (lastTrackInfoAt === 0 || Date.now() - lastTrackInfoAt >= idleDelayMs);
+  const isTvInput = inputCode === 'TV';
 
-  const showIdle = receiver.power !== 'on' || metadataExpired;
+  const showIdle =
+    receiver.power !== 'on' ||
+    isTvInput;
 
   document.body.classList.toggle('show-idle', showIdle);
   idleScreen.setAttribute('aria-hidden', String(!showIdle));
@@ -157,22 +157,53 @@ function updateIdleDisplay(data) {
 
 function render(data) {
   latest = data;
+  SourceController.syncFromReceiver(data.receiver);
 
-  song.textContent = data.song || 'Now playing';
-  artist.textContent = data.artist || '';
-  album.textContent = data.album || '';
+  const receiver = data.receiver || {};
+  const inputCode = String(receiver.inputCode || '').toUpperCase();
+  const inputName = receiver.input || 'MARANTZ';
 
-  showArtwork(data.imageUrl);
+  const hasUsefulStreamingMetadata =
+    inputCode === 'NET' &&
+    data.hasTrackInfo === true &&
+    Boolean(
+      String(data.artist || '').trim() ||
+      String(data.imageUrl || '').trim() ||
+      Number(data.duration) > 0
+    );
 
-  const playing = data.state === 'play';
+  if (hasUsefulStreamingMetadata) {
+    song.textContent = data.song || inputName;
+    artist.textContent = data.artist || '';
+    album.textContent = data.album || '';
 
-  playPause.dataset.action = playing ? 'pause' : 'play';
-  playPause.textContent = playing ? 'Ⅱ' : '▶';
+    showArtwork(data.imageUrl);
 
-  localTickPosition = Number(data.current) || 0;
-  localTickStarted = Date.now();
+    const playing = data.state === 'play';
+    playPause.dataset.action = playing ? 'pause' : 'play';
+    playPause.textContent = playing ? 'Ⅱ' : '▶';
 
-  updateProgress(localTickPosition, Number(data.duration) || 0);
+    localTickPosition = Number(data.current) || 0;
+    localTickStarted = Date.now();
+
+    updateProgress(
+      localTickPosition,
+      Number(data.duration) || 0
+    );
+  } else {
+    song.textContent = inputName;
+    artist.textContent = '';
+    album.textContent = '';
+
+    showArtwork('');
+
+    playPause.dataset.action = 'play';
+    playPause.textContent = '▶';
+
+    localTickPosition = 0;
+    localTickStarted = Date.now();
+    updateProgress(0, 0);
+  }
 
   connection.textContent = 'CONNECTED';
   connection.className = 'connection connected';
@@ -196,6 +227,24 @@ async function refresh() {
   }
 }
 
+async function requestControl(action) {
+  const response = await fetch(
+    `/api/control/${encodeURIComponent(action)}`,
+    {
+      method: 'POST',
+      cache: 'no-store'
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Command failed');
+  }
+
+  return result;
+}
+
 async function sendAction(button) {
   const action = button.dataset.action;
   if (!action) return;
@@ -204,26 +253,10 @@ async function sendAction(button) {
   button.classList.add('pressed');
 
   try {
-    const response = await fetch(
-      `/api/control/${encodeURIComponent(action)}`,
-      {
-        method: 'POST',
-        cache: 'no-store'
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Command failed');
-    }
+    const result = await requestControl(action);
 
     if (action === 'mute' && typeof result.muted === 'boolean') {
       muteButton.textContent = result.muted ? 'UNMUTE' : 'MUTE';
-    }
-
-    if (['phono', 'cd', 'heos'].includes(action)) {
-      connection.textContent = `${action.toUpperCase()} SELECTED`;
     }
 
     setTimeout(refresh, 350);
@@ -238,36 +271,103 @@ async function sendAction(button) {
   }
 }
 
+const SourceController = {
+  order: ['phono', 'cd', 'heos'],
 
-const sourceActions = ['phono', 'cd', 'heos'];
+  inputCodes: {
+    '8K': 'phono',
+    CD: 'cd',
+    NET: 'heos'
+  },
 
-function currentSourceIndex() {
-  const inputCode = String(
-    latest?.receiver?.inputCode || ''
-  ).toUpperCase();
+  current: 'phono',
+  changing: false,
 
-  if (inputCode === '8K') return 0;
-  if (inputCode === 'CD') return 1;
-  if (inputCode === 'NET') return 2;
+  syncFromReceiver(receiver) {
+    const inputCode = String(
+      receiver?.inputCode || ''
+    ).toUpperCase();
 
-  return 0;
-}
+    const source = this.inputCodes[inputCode];
 
-function selectRelativeSource(direction) {
-  const currentIndex = currentSourceIndex();
-  const nextIndex =
-    (currentIndex + direction + sourceActions.length) %
-    sourceActions.length;
+    if (source) {
+      this.current = source;
+    }
+  },
 
-  const action = sourceActions[nextIndex];
-  const button = document.querySelector(
-    `button[data-action="${action}"]`
-  );
+  indexOfCurrent() {
+    const index = this.order.indexOf(this.current);
+    return index >= 0 ? index : 0;
+  },
 
-  if (button && !button.disabled) {
-    sendAction(button);
+  relative(direction) {
+    const currentIndex = this.indexOfCurrent();
+
+    const nextIndex =
+      (currentIndex + direction + this.order.length) %
+      this.order.length;
+
+    return this.change(this.order[nextIndex]);
+  },
+
+  next() {
+    return this.relative(1);
+  },
+
+  previous() {
+    return this.relative(-1);
+  },
+
+  async change(source) {
+    if (!this.order.includes(source) || this.changing) {
+      return;
+    }
+
+    if (source === this.current) {
+      connection.textContent =
+        `${source.toUpperCase()} SELECTED`;
+      return;
+    }
+
+    this.changing = true;
+    document.body.classList.add('source-changing');
+
+    const button = document.querySelector(
+      `button[data-action="${source}"]`
+    );
+
+    if (button) {
+      button.disabled = true;
+      button.classList.add('pressed');
+    }
+
+    try {
+      connection.textContent =
+        `SELECTING ${source.toUpperCase()}`;
+
+      await requestControl(source);
+
+      this.current = source;
+      connection.textContent =
+        `${source.toUpperCase()} SELECTED`;
+
+      setTimeout(refresh, 350);
+    } catch (error) {
+      connection.textContent = 'CONTROL ERROR';
+      connection.className = 'connection error';
+    } finally {
+      setTimeout(() => {
+        this.changing = false;
+        document.body.classList.remove('source-changing');
+
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('pressed');
+        }
+      }, 300);
+    }
   }
-}
+};
 
 let idleTouchStartX = 0;
 let idleTouchStartY = 0;
@@ -299,18 +399,31 @@ idleScreen.addEventListener(
       return;
     }
 
-    selectRelativeSource(differenceX < 0 ? 1 : -1);
+    if (differenceX < 0) {
+      SourceController.next();
+    } else {
+      SourceController.previous();
+    }
   },
   { passive: true }
 );
 
 idleSourceIcon.addEventListener('click', () => {
-  selectRelativeSource(1);
+  SourceController.next();
 });
 
 document.addEventListener('click', event => {
   const button = event.target.closest('button[data-action]');
-  if (button) sendAction(button);
+  if (!button) return;
+
+  const action = button.dataset.action;
+
+  if (SourceController.order.includes(action)) {
+    SourceController.change(action);
+    return;
+  }
+
+  sendAction(button);
 });
 
 setInterval(() => {
