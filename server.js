@@ -283,7 +283,8 @@ async function receiverControl(action) {
     'volume-down': 'MVDOWN',
     phono: 'SI8K',
     cd: 'SICD',
-    heos: 'SINET'
+    heos: 'SINET',
+    aux: 'SIAUX1'
   };
 
   if (action === 'mute') {

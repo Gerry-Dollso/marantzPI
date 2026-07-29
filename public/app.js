@@ -272,12 +272,13 @@ async function sendAction(button) {
 }
 
 const SourceController = {
-  order: ['phono', 'cd', 'heos'],
+  order: ['phono', 'cd', 'heos', 'aux'],
 
   inputCodes: {
     '8K': 'phono',
     CD: 'cd',
-    NET: 'heos'
+    NET: 'heos',
+    AUX1: 'aux'
   },
 
   current: 'phono',
