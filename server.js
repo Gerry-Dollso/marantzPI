@@ -228,7 +228,7 @@ async function getStatus() {
   const song = String(media.song || '').trim();
   const artist = String(media.artist || '').trim();
   const album = String(media.album || media.station || '').trim();
-  const hasTrackInfo = Boolean(song || artist || album);
+  const hasTrackInfo = receiver.power === 'on' && receiver.inputCode === 'NET' && Boolean(song || artist || album);
 
   return {
     connected:
@@ -281,9 +281,9 @@ async function receiverControl(action) {
   const commands = {
     'volume-up': 'MVUP',
     'volume-down': 'MVDOWN',
-    phono: 'SIPHONO',
+    phono: 'SI8K',
     cd: 'SICD',
-    heos: 'SIHEOS Music'
+    heos: 'SINET'
   };
 
   if (action === 'mute') {

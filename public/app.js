@@ -16,6 +16,7 @@ const nowPlayingScreen = document.getElementById('nowPlayingScreen');
 const idleClock = document.getElementById('idleClock');
 const idleDate = document.getElementById('idleDate');
 const idleInput = document.getElementById('idleInput');
+const idleSourceIcon = document.getElementById('idleSourceIcon');
 const idlePower = document.getElementById('idlePower');
 const idleVolume = document.getElementById('idleVolume');
 
@@ -118,6 +119,18 @@ function updateIdleDisplay(data) {
     receiver.power === 'on'
       ? receiver.input || 'MARANTZ'
       : 'MARANTZ';
+
+  const inputCode = String(receiver.inputCode || '').toUpperCase();
+
+  idleSourceIcon.className = 'idle-source-icon';
+
+  if (inputCode === '8K') {
+    idleSourceIcon.classList.add('show-record');
+  } else if (inputCode === 'CD') {
+    idleSourceIcon.classList.add('show-cd');
+  } else if (inputCode === 'NET') {
+    idleSourceIcon.classList.add('show-heos');
+  }
 
   idlePower.textContent =
     receiver.power === 'on'
@@ -225,6 +238,76 @@ async function sendAction(button) {
   }
 }
 
+
+const sourceActions = ['phono', 'cd', 'heos'];
+
+function currentSourceIndex() {
+  const inputCode = String(
+    latest?.receiver?.inputCode || ''
+  ).toUpperCase();
+
+  if (inputCode === '8K') return 0;
+  if (inputCode === 'CD') return 1;
+  if (inputCode === 'NET') return 2;
+
+  return 0;
+}
+
+function selectRelativeSource(direction) {
+  const currentIndex = currentSourceIndex();
+  const nextIndex =
+    (currentIndex + direction + sourceActions.length) %
+    sourceActions.length;
+
+  const action = sourceActions[nextIndex];
+  const button = document.querySelector(
+    `button[data-action="${action}"]`
+  );
+
+  if (button && !button.disabled) {
+    sendAction(button);
+  }
+}
+
+let idleTouchStartX = 0;
+let idleTouchStartY = 0;
+
+idleScreen.addEventListener(
+  'touchstart',
+  event => {
+    if (event.touches.length !== 1) return;
+
+    idleTouchStartX = event.touches[0].clientX;
+    idleTouchStartY = event.touches[0].clientY;
+  },
+  { passive: true }
+);
+
+idleScreen.addEventListener(
+  'touchend',
+  event => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const differenceX = touch.clientX - idleTouchStartX;
+    const differenceY = touch.clientY - idleTouchStartY;
+
+    if (
+      Math.abs(differenceX) < 60 ||
+      Math.abs(differenceX) <= Math.abs(differenceY)
+    ) {
+      return;
+    }
+
+    selectRelativeSource(differenceX < 0 ? 1 : -1);
+  },
+  { passive: true }
+);
+
+idleSourceIcon.addEventListener('click', () => {
+  selectRelativeSource(1);
+});
+
 document.addEventListener('click', event => {
   const button = event.target.closest('button[data-action]');
   if (button) sendAction(button);
@@ -242,4 +325,4 @@ setInterval(() => {
 updateClock();
 setInterval(updateClock, 1000);
 refresh();
-setInterval(refresh, 1500);
+setInterval(refresh, 750);

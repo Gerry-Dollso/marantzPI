@@ -7,7 +7,7 @@
     content="width=800, height=480, initial-scale=1, maximum-scale=1, user-scalable=no"
   >
   <title>marantzPI</title>
-  <link rel="stylesheet" href="/style.css?v=210">
+  <link rel="stylesheet" href="/style.css?v=223">
 </head>
 
 <body>
@@ -19,11 +19,27 @@
 
     <div class="idle-divider"></div>
 
+    <div id="idleSourceIcon" class="idle-source-icon" aria-hidden="true">
+      <div class="source-icon source-icon-record"></div>
+      <div class="source-icon source-icon-cd"></div>
+      <div class="source-icon source-icon-heos">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
     <div id="idleInput" class="idle-input">TV AUDIO</div>
 
     <div class="idle-status">
       <span id="idlePower">RECEIVER ON</span>
       <span id="idleVolume">−32.0 dB</span>
+    </div>
+
+    <div class="idle-input-controls">
+      <button data-action="phono">PHONO</button>
+      <button data-action="cd">CD</button>
+      <button data-action="heos">HEOS</button>
     </div>
   </section>
 
@@ -85,6 +101,6 @@
     </section>
   </main>
 
-  <script src="/app.js?v=210"></script>
+  <script src="/app.js?v=223"></script>
 </body>
 </html>
