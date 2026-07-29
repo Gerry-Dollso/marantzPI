@@ -144,13 +144,13 @@ function updateIdleDisplay(data) {
       ? formatVolume(receiver.volume)
       : '';
 
-  const isStandby = receiver.power !== 'on';
-  const isTvIdle = receiver.power === 'on' && inputCode === 'TV';
-  const showIdle = isStandby || isTvIdle;
+  const isTvInput = inputCode === 'TV';
+
+  const showIdle =
+    receiver.power !== 'on' ||
+    isTvInput;
 
   document.body.classList.toggle('show-idle', showIdle);
-  document.body.classList.toggle('show-standby', isStandby);
-  document.body.classList.toggle('show-tv-idle', isTvIdle);
   idleScreen.setAttribute('aria-hidden', String(!showIdle));
   nowPlayingScreen.setAttribute('aria-hidden', String(showIdle));
 }
@@ -286,7 +286,7 @@ const SourceController = {
     AUX1: 'aux'
   },
 
-  current: null,
+  current: 'phono',
   changing: false,
 
   syncFromReceiver(receiver) {
@@ -296,10 +296,12 @@ const SourceController = {
 
     const source = this.inputCodes[inputCode];
 
-    this.current = source || null;
+    if (source) {
+      this.current = source;
+    }
 
     document
-      .querySelectorAll('.inputs button, .idle-input-controls button')
+      .querySelectorAll('.inputs button')
       .forEach(button => {
         button.classList.toggle(
           'active',
@@ -382,75 +384,48 @@ const SourceController = {
   }
 };
 
-// Idle swipe and source-icon controls removed.
-// TV input selection uses the visible source buttons.
+let idleTouchStartX = 0;
+let idleTouchStartY = 0;
 
+idleScreen.addEventListener(
+  'touchstart',
+  event => {
+    if (event.touches.length !== 1) return;
 
-// Touch and hold the standby screen for one second to power on.
-let standbyHoldTimer = null;
-let standbyHoldStartX = 0;
-let standbyHoldStartY = 0;
-let standbyWakeTriggered = false;
+    idleTouchStartX = event.touches[0].clientX;
+    idleTouchStartY = event.touches[0].clientY;
+  },
+  { passive: true }
+);
 
-function cancelStandbyHold() {
-  if (standbyHoldTimer) {
-    clearTimeout(standbyHoldTimer);
-    standbyHoldTimer = null;
-  }
+idleScreen.addEventListener(
+  'touchend',
+  event => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
 
-  if (!standbyWakeTriggered) {
-    document.body.classList.remove('standby-holding');
-  }
-}
+    const differenceX = touch.clientX - idleTouchStartX;
+    const differenceY = touch.clientY - idleTouchStartY;
 
-idleScreen.addEventListener('pointerdown', event => {
-  if (!document.body.classList.contains('show-standby')) return;
-  if (event.pointerType === 'mouse' && event.button !== 0) return;
-
-  standbyWakeTriggered = false;
-  standbyHoldStartX = event.clientX;
-  standbyHoldStartY = event.clientY;
-
-  document.body.classList.add('standby-holding');
-
-  standbyHoldTimer = setTimeout(async () => {
-    standbyHoldTimer = null;
-
-    if (!document.body.classList.contains('show-standby')) {
-      cancelStandbyHold();
+    if (
+      Math.abs(differenceX) < 60 ||
+      Math.abs(differenceX) <= Math.abs(differenceY)
+    ) {
       return;
     }
 
-    standbyWakeTriggered = true;
-    document.body.classList.remove('standby-holding');
-    document.body.classList.add('standby-waking');
-    idlePower.textContent = 'POWERING ON';
-
-    try {
-      await requestControl('power-on');
-      setTimeout(refresh, 500);
-    } catch (error) {
-      document.body.classList.remove('standby-waking');
-      idlePower.textContent = 'CONTROL ERROR';
-      connection.textContent = 'CONTROL ERROR';
-      connection.className = 'connection error';
+    if (differenceX < 0) {
+      SourceController.next();
+    } else {
+      SourceController.previous();
     }
-  }, 1000);
+  },
+  { passive: true }
+);
+
+idleSourceIcon.addEventListener('click', () => {
+  SourceController.next();
 });
-
-idleScreen.addEventListener('pointermove', event => {
-  if (!standbyHoldTimer) return;
-
-  const movementX = event.clientX - standbyHoldStartX;
-  const movementY = event.clientY - standbyHoldStartY;
-
-  if (Math.hypot(movementX, movementY) > 20) {
-    cancelStandbyHold();
-  }
-});
-
-idleScreen.addEventListener('pointerup', cancelStandbyHold);
-idleScreen.addEventListener('pointercancel', cancelStandbyHold);
 
 document.addEventListener('click', event => {
   const button = event.target.closest('button[data-action]');

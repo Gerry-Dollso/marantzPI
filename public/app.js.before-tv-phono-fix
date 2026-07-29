@@ -286,7 +286,7 @@ const SourceController = {
     AUX1: 'aux'
   },
 
-  current: null,
+  current: 'phono',
   changing: false,
 
   syncFromReceiver(receiver) {
@@ -296,10 +296,12 @@ const SourceController = {
 
     const source = this.inputCodes[inputCode];
 
-    this.current = source || null;
+    if (source) {
+      this.current = source;
+    }
 
     document
-      .querySelectorAll('.inputs button, .idle-input-controls button')
+      .querySelectorAll('.inputs button')
       .forEach(button => {
         button.classList.toggle(
           'active',

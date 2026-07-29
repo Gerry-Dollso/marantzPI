@@ -279,7 +279,6 @@ async function heosControl(action) {
 
 async function receiverControl(action) {
   const commands = {
-    'power-on': 'ZMON',
     'volume-up': 'MVUP',
     'volume-down': 'MVDOWN',
     phono: 'SI8K',
