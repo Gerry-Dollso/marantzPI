@@ -163,6 +163,11 @@ function render(data) {
   const inputCode = String(receiver.inputCode || '').toUpperCase();
   const inputName = receiver.input || 'MARANTZ';
 
+  document.body.classList.toggle(
+    'streaming-source',
+    inputCode === 'NET'
+  );
+
   const hasUsefulStreamingMetadata =
     inputCode === 'NET' &&
     data.hasTrackInfo === true &&

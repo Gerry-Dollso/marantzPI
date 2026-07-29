@@ -606,3 +606,16 @@ body:not(.show-idle) .idle-status {
   0%, 100% { transform: scaleY(0.55); opacity: 0.45; }
   50% { transform: scaleY(1); opacity: 1; }
 }
+
+/* Hide streaming-only controls on Phono, CD and AUX */
+body:not(.streaming-source) .progress-section,
+body:not(.streaming-source) .transport {
+  display: none;
+}
+
+body:not(.streaming-source) .metadata {
+  height: 212px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
