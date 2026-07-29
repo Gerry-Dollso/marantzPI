@@ -154,7 +154,7 @@ function inputLabel(line) {
 
 async function getReceiverStatus() {
   const results = await Promise.allSettled([
-    avr('PW?', 'PW'),
+    avr('ZM?', 'ZM'),
     avr('SI?', 'SI'),
     avr('MV?', 'MV'),
     avr('MU?', 'MU')
@@ -171,10 +171,10 @@ async function getReceiverStatus() {
   const muteLine = value(3);
 
   return {
-    power: powerLine === 'PWON' ? 'on' : 'standby',
+    power: powerLine === 'ZMON' ? 'on' : 'standby',
     input: inputLabel(inputLine),
     inputCode: inputLine.slice(2) || 'UNKNOWN',
-    volume: parseVolume(volumeLine),
+	    volume: parseVolume(volumeLine),
     muted: muteLine === 'MUON'
   };
 }
