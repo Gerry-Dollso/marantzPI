@@ -451,6 +451,154 @@ button:disabled { opacity: 0.45; }
 
 .idle-input-controls { display: none; }
 
+
+/* ===== v3 screen transitions ===== */
+
+.artwork-frame,
+.information header,
+.metadata,
+.progress-section,
+.transport,
+.receiver-controls,
+.inputs,
+.idle-brand,
+.idle-clock,
+.idle-date,
+.idle-divider,
+.idle-source-icon,
+.idle-input,
+.idle-status {
+  will-change: opacity, transform;
+}
+
+.artwork-frame {
+  transition:
+    opacity 520ms ease,
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.information header,
+.metadata,
+.progress-section,
+.transport,
+.receiver-controls,
+.inputs {
+  transition:
+    opacity 420ms ease,
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.information header {
+  transition-delay: 80ms;
+}
+
+.metadata {
+  transition-delay: 130ms;
+}
+
+.progress-section {
+  transition-delay: 180ms;
+}
+
+.transport {
+  transition-delay: 230ms;
+}
+
+.receiver-controls {
+  transition-delay: 280ms;
+}
+
+.inputs {
+  transition-delay: 330ms;
+}
+
+body.show-idle .artwork-frame {
+  opacity: 0;
+  transform: scale(0.94);
+  transition-delay: 0ms;
+}
+
+body.show-idle .information header,
+body.show-idle .metadata,
+body.show-idle .progress-section,
+body.show-idle .transport,
+body.show-idle .receiver-controls,
+body.show-idle .inputs {
+  opacity: 0;
+  transform: translateY(14px);
+  transition-delay: 0ms;
+}
+
+.idle-brand,
+.idle-clock,
+.idle-date,
+.idle-divider,
+.idle-source-icon,
+.idle-input,
+.idle-status {
+  transition:
+    opacity 400ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.idle-clock {
+  transition-delay: 40ms;
+}
+
+.idle-date {
+  transition-delay: 70ms;
+}
+
+.idle-divider {
+  transition-delay: 100ms;
+}
+
+.idle-source-icon {
+  transition-delay: 130ms;
+}
+
+.idle-input {
+  transition-delay: 160ms;
+}
+
+.idle-status {
+  transition-delay: 190ms;
+}
+
+body:not(.show-idle) .idle-brand,
+body:not(.show-idle) .idle-clock,
+body:not(.show-idle) .idle-date,
+body:not(.show-idle) .idle-divider,
+body:not(.show-idle) .idle-source-icon,
+body:not(.show-idle) .idle-input,
+body:not(.show-idle) .idle-status {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition-delay: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .display,
+  .idle-screen,
+  .artwork-frame,
+  .information header,
+  .metadata,
+  .progress-section,
+  .transport,
+  .receiver-controls,
+  .inputs,
+  .idle-brand,
+  .idle-clock,
+  .idle-date,
+  .idle-divider,
+  .idle-source-icon,
+  .idle-input,
+  .idle-status {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
 /* ===== Animations ===== */
 @keyframes source-spin { to { transform: rotate(360deg); } }
 @keyframes source-spin-reverse { to { transform: rotate(-360deg); } }
