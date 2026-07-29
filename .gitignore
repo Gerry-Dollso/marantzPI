@@ -4,3 +4,4 @@ node_modules/
 .DS_Store
 Thumbs.db
 config.json
+public/style-v2.1-backup.css
