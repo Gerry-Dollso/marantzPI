@@ -141,8 +141,7 @@ body.show-radio .display {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   display: grid;
@@ -168,7 +167,7 @@ body.show-radio .display {
   gap: 12px;
   padding: 7px 13px;
   text-align: left;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .radio-list-item .radio-station-badge,
