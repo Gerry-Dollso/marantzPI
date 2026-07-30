@@ -1,0 +1,62 @@
+/* Standby appearance only. Existing app.js remains the sole owner of state. */
+body.show-standby .idle-screen {
+  justify-content: center;
+  padding-top: 0;
+}
+
+body.show-standby .idle-brand {
+  display: block !important;
+  margin: 0;
+  padding-left: 0.27em;
+  color: #f4f3ef;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.27em;
+  text-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+}
+
+body.show-standby .idle-clock,
+body.show-standby .idle-date,
+body.show-standby .idle-source-icon,
+body.show-standby .idle-status {
+  display: none !important;
+}
+
+body.show-standby .idle-divider {
+  width: 275px;
+  height: 2px;
+  margin: 26px 0 20px;
+  background: rgba(255, 255, 255, 0.17);
+  opacity: 1;
+}
+
+body.show-standby .idle-input {
+  padding: 0;
+  color: transparent;
+  font-size: 0;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+body.show-standby .idle-input::after {
+  content: 'READY TO LISTEN';
+  display: block;
+  padding-left: 0.22em;
+  color: #bca675;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+}
+
+/* Keep the existing one-second wake-hold fill exactly as it is. */
+body.show-standby .idle-divider::after {
+  background: var(--accent-strong);
+  box-shadow: 0 0 10px rgba(212, 193, 142, 0.55);
+}
+
+body.show-standby.standby-waking .idle-brand,
+body.show-standby.standby-waking .idle-input {
+  opacity: 0.55;
+}
