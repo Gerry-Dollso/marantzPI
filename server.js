@@ -31,6 +31,8 @@ try {
 
 const publicDir = path.join(__dirname, 'public');
 
+let activeRadioFavourite = null;
+
 function heos(command, timeoutMs = 3000, waitForFinal = false) {
   return new Promise((resolve, reject) => {
     const socket = net.createConnection({
@@ -234,16 +236,35 @@ async function getStatus() {
           muted: false
         };
 
-  const song = String(media.song || '').trim();
-  const artist = String(media.artist || '').trim();
-  const album = String(media.album || media.station || '').trim();
+  let song = String(media.song || '').trim();
+  let artist = String(media.artist || '').trim();
+  let album = String(media.album || media.station || '').trim();
   const imageUrl = String(media.image_url || '').trim();
   const isNetPlayback =
     receiver.power === 'on' && receiver.inputCode === 'NET';
+  const genericUrlStream = [song, artist, album].some(
+    value => String(value).trim().toLowerCase() === 'url stream'
+  );
+
+  const rememberedUrlRadio =
+    isNetPlayback &&
+    genericUrlStream &&
+    activeRadioFavourite &&
+    Date.now() - activeRadioFavourite.selectedAt < 12 * 60 * 60 * 1000;
+
+  if (rememberedUrlRadio) {
+    song = '';
+    artist = '';
+    album = activeRadioFavourite.name;
+  }
+
   const isInternetRadio =
     isNetPlayback &&
-    (imageUrl.toLowerCase().includes('tunein.com') ||
-      (!song && !artist && Boolean(album)));
+    (
+      rememberedUrlRadio ||
+      imageUrl.toLowerCase().includes('tunein.com') ||
+      (!song && !artist && Boolean(album))
+    );
   const playbackSource = !isNetPlayback
     ? 'other'
     : isInternetRadio
@@ -334,13 +355,36 @@ async function playRadioFavourite(mid, name) {
       `&name=${encodeURIComponent(name || 'Radio')}`;
 
   await avr('SINET');
-  const response = await heos(command, 5000, true);
+
+  const netDeadline = Date.now() + 2500;
+
+  while (Date.now() < netDeadline) {
+    try {
+      const input = await avr('SI?', 'SI', 700);
+
+      if (input === 'SINET') {
+        break;
+      }
+    } catch {
+      // Keep checking briefly while the AVR changes input.
+    }
+
+    await sleep(100);
+  }
+
+  const response = await heos(command, 7000, true);
 
   if (response?.heos?.result !== 'success') {
     throw new Error(response?.heos?.message || 'Could not start station');
   }
 
-  return { ok: true, name: name || 'Radio' };
+  activeRadioFavourite = {
+    name: String(name || 'Internet Radio'),
+    mid: String(mid),
+    selectedAt: Date.now()
+  };
+
+  return { ok: true, name: activeRadioFavourite.name };
 }
 
 function sleep(milliseconds) {
