@@ -20,11 +20,12 @@ let radioFavourites = [];
 let showingAllStations = false;
 let radioLoaded = false;
 
-let touchStartY = 0;
-let touchLastY = 0;
-let touchLastTime = 0;
-let touchVelocity = 0;
-let touchDragging = false;
+let activePointerId = null;
+let pointerStartY = 0;
+let pointerLastY = 0;
+let pointerLastTime = 0;
+let pointerVelocity = 0;
+let pointerDragging = false;
 let suppressStationClickUntil = 0;
 let momentumFrame = null;
 
@@ -86,6 +87,7 @@ function makeStationButton(station, compact = false) {
   button.addEventListener('click', event => {
     if (Date.now() < suppressStationClickUntil) {
       event.preventDefault();
+      event.stopPropagation();
       return;
     }
 
@@ -200,14 +202,14 @@ function startRadioMomentum() {
   stopRadioMomentum();
 
   function step() {
-    if (Math.abs(touchVelocity) < 0.02) {
+    if (Math.abs(pointerVelocity) < 0.02) {
       momentumFrame = null;
       return;
     }
 
     const previousScrollTop = radioList.scrollTop;
-    radioList.scrollTop += touchVelocity * 16;
-    touchVelocity *= 0.92;
+    radioList.scrollTop += pointerVelocity * 16;
+    pointerVelocity *= 0.92;
 
     if (radioList.scrollTop === previousScrollTop) {
       momentumFrame = null;
@@ -220,51 +222,66 @@ function startRadioMomentum() {
   momentumFrame = requestAnimationFrame(step);
 }
 
-radioList.addEventListener('touchstart', event => {
-  if (!showingAllStations || event.touches.length !== 1) return;
+radioList.addEventListener('pointerdown', event => {
+  if (!showingAllStations || activePointerId !== null) return;
 
   stopRadioMomentum();
+  activePointerId = event.pointerId;
+  pointerStartY = event.clientY;
+  pointerLastY = event.clientY;
+  pointerLastTime = performance.now();
+  pointerVelocity = 0;
+  pointerDragging = false;
 
-  const touch = event.touches[0];
-  touchStartY = touch.clientY;
-  touchLastY = touch.clientY;
-  touchLastTime = performance.now();
-  touchVelocity = 0;
-  touchDragging = false;
-}, { passive: true });
+  radioList.setPointerCapture(event.pointerId);
+  event.preventDefault();
+});
 
-radioList.addEventListener('touchmove', event => {
-  if (!showingAllStations || event.touches.length !== 1) return;
+radioList.addEventListener('pointermove', event => {
+  if (event.pointerId !== activePointerId) return;
 
-  const touch = event.touches[0];
   const now = performance.now();
-  const deltaY = touchLastY - touch.clientY;
-  const elapsed = Math.max(1, now - touchLastTime);
+  const deltaY = pointerLastY - event.clientY;
+  const elapsed = Math.max(1, now - pointerLastTime);
 
-  if (Math.abs(touch.clientY - touchStartY) >= 8) {
-    touchDragging = true;
+  if (Math.abs(event.clientY - pointerStartY) >= 8) {
+    pointerDragging = true;
   }
 
-  if (touchDragging) {
-    event.preventDefault();
+  if (pointerDragging) {
     radioList.scrollTop += deltaY;
-    touchVelocity = deltaY / elapsed;
+    pointerVelocity = deltaY / elapsed;
   }
 
-  touchLastY = touch.clientY;
-  touchLastTime = now;
-}, { passive: false });
+  pointerLastY = event.clientY;
+  pointerLastTime = now;
+  event.preventDefault();
+});
 
-function finishRadioTouch() {
-  if (!touchDragging) return;
+function finishRadioPointer(event) {
+  if (event.pointerId !== activePointerId) return;
 
-  suppressStationClickUntil = Date.now() + 400;
-  touchDragging = false;
-  startRadioMomentum();
+  if (radioList.hasPointerCapture(event.pointerId)) {
+    radioList.releasePointerCapture(event.pointerId);
+  }
+
+  if (pointerDragging) {
+    suppressStationClickUntil = Date.now() + 500;
+    startRadioMomentum();
+  }
+
+  activePointerId = null;
+  pointerDragging = false;
 }
 
-radioList.addEventListener('touchend', finishRadioTouch, { passive: true });
-radioList.addEventListener('touchcancel', finishRadioTouch, { passive: true });
+radioList.addEventListener('pointerup', finishRadioPointer);
+radioList.addEventListener('pointercancel', finishRadioPointer);
+radioList.addEventListener('lostpointercapture', event => {
+  if (event.pointerId === activePointerId) {
+    activePointerId = null;
+    pointerDragging = false;
+  }
+});
 
 document.addEventListener(
   'click',
