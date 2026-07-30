@@ -309,7 +309,31 @@ function render(data) {
       Number(data.duration) > 0
     );
 
-  if (hasUsefulStreamingMetadata) {
+  if (data.playbackSource === 'internet-radio') {
+    const stationName =
+      String(data.album || '').trim() ||
+      String(data.song || '').trim() ||
+      'Internet Radio';
+
+    const programme =
+      String(data.song || '').trim() !== stationName
+        ? String(data.song || '').trim()
+        : '';
+
+    song.textContent = stationName;
+    artist.textContent = programme || 'LIVE RADIO';
+    album.textContent = String(data.artist || '').trim();
+
+    showArtwork(data.imageUrl);
+
+    const playing = data.state === 'play';
+    playPause.dataset.action = playing ? 'pause' : 'play';
+    playPause.textContent = playing ? 'Ⅱ' : '▶';
+
+    localTickPosition = 0;
+    localTickStarted = Date.now();
+    updateProgress(0, 0);
+  } else if (hasUsefulStreamingMetadata) {
     song.textContent = data.song || inputName;
     artist.textContent = data.artist || '';
     album.textContent = data.album || '';
