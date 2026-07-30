@@ -31,7 +31,7 @@ try {
 
 const publicDir = path.join(__dirname, 'public');
 
-function heos(command, timeoutMs = 3000) {
+function heos(command, timeoutMs = 3000, waitForFinal = false) {
   return new Promise((resolve, reject) => {
     const socket = net.createConnection({
       host: config.marantzHost,
@@ -40,12 +40,24 @@ function heos(command, timeoutMs = 3000) {
 
     let buffer = '';
     let settled = false;
+    let lastResponse = null;
 
     function finish(error, value) {
       if (settled) return;
       settled = true;
       socket.destroy();
       error ? reject(error) : resolve(value);
+    }
+
+    function handleResponse(response) {
+      lastResponse = response;
+
+      const message = String(response?.heos?.message || '');
+      const underProcess = message.includes('command under process');
+
+      if (!waitForFinal || !underProcess) {
+        finish(null, response);
+      }
     }
 
     socket.setTimeout(timeoutMs);
@@ -56,20 +68,30 @@ function heos(command, timeoutMs = 3000) {
 
     socket.on('data', chunk => {
       buffer += chunk.toString('utf8');
-      const newline = buffer.indexOf('\n');
 
-      if (newline < 0) return;
+      while (buffer.includes('\n')) {
+        const newline = buffer.indexOf('\n');
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
 
-      const line = buffer.slice(0, newline).trim();
+        if (!line) continue;
 
-      try {
-        finish(null, JSON.parse(line));
-      } catch {
-        finish(new Error('Invalid HEOS response'));
+        try {
+          handleResponse(JSON.parse(line));
+        } catch {
+          finish(new Error('Invalid HEOS response'));
+        }
       }
     });
 
-    socket.on('timeout', () => finish(new Error('HEOS request timed out')));
+    socket.on('timeout', () => {
+      if (lastResponse) {
+        finish(null, lastResponse);
+      } else {
+        finish(new Error('HEOS request timed out'));
+      }
+    });
+
     socket.on('error', finish);
   });
 }
@@ -136,13 +158,10 @@ function parseVolume(line) {
   if (!line || !line.startsWith('MV')) return null;
 
   const value = line.slice(2);
-
   if (!/^\d{2,3}$/.test(value)) return null;
 
   const receiverValue =
-    value.length === 3
-      ? Number(value) / 10
-      : Number(value);
+    value.length === 3 ? Number(value) / 10 : Number(value);
 
   return receiverValue - 80;
 }
@@ -150,10 +169,7 @@ function parseVolume(line) {
 function inputLabel(line) {
   const input = line?.slice(2) || 'UNKNOWN';
 
-  if (input === 'AUX1') {
-    return 'AUX';
-  }
-
+  if (input === 'AUX1') return 'AUX';
   return settings.inputNames?.[input] || input;
 }
 
@@ -166,9 +182,7 @@ async function getReceiverStatus() {
   ]);
 
   const value = index =>
-    results[index].status === 'fulfilled'
-      ? results[index].value
-      : '';
+    results[index].status === 'fulfilled' ? results[index].value : '';
 
   const powerLine = value(0);
   const inputLine = value(1);
@@ -187,22 +201,16 @@ async function getReceiverStatus() {
 async function getStatus() {
   const pid = encodeURIComponent(config.playerId);
 
-  const [
-    mediaResult,
-    stateResult,
-    progressResult,
-    receiverResult
-  ] = await Promise.allSettled([
-    heos(`player/get_now_playing_media?pid=${pid}`),
-    heos(`player/get_play_state?pid=${pid}`),
-    heos(`player/get_now_playing_progress?pid=${pid}`),
-    getReceiverStatus()
-  ]);
+  const [mediaResult, stateResult, progressResult, receiverResult] =
+    await Promise.allSettled([
+      heos(`player/get_now_playing_media?pid=${pid}`),
+      heos(`player/get_play_state?pid=${pid}`),
+      heos(`player/get_now_playing_progress?pid=${pid}`),
+      getReceiverStatus()
+    ]);
 
   const mediaResponse =
-    mediaResult.status === 'fulfilled'
-      ? mediaResult.value
-      : {};
+    mediaResult.status === 'fulfilled' ? mediaResult.value : {};
 
   const media =
     mediaResponse?.heos?.result === 'success'
@@ -210,14 +218,10 @@ async function getStatus() {
       : {};
 
   const state =
-    stateResult.status === 'fulfilled'
-      ? params(stateResult.value)
-      : {};
+    stateResult.status === 'fulfilled' ? params(stateResult.value) : {};
 
   const progress =
-    progressResult.status === 'fulfilled'
-      ? params(progressResult.value)
-      : {};
+    progressResult.status === 'fulfilled' ? params(progressResult.value) : {};
 
   const receiver =
     receiverResult.status === 'fulfilled'
@@ -234,7 +238,8 @@ async function getStatus() {
   const artist = String(media.artist || '').trim();
   const album = String(media.album || media.station || '').trim();
   const imageUrl = String(media.image_url || '').trim();
-  const isNetPlayback = receiver.power === 'on' && receiver.inputCode === 'NET';
+  const isNetPlayback =
+    receiver.power === 'on' && receiver.inputCode === 'NET';
   const isInternetRadio =
     isNetPlayback &&
     (imageUrl.toLowerCase().includes('tunein.com') ||
@@ -275,7 +280,6 @@ async function getStatus() {
 
 async function heosControl(action) {
   const pid = encodeURIComponent(config.playerId);
-
   const commands = {
     play: `player/set_play_state?pid=${pid}&state=play`,
     pause: `player/set_play_state?pid=${pid}&state=pause`,
@@ -283,17 +287,55 @@ async function heosControl(action) {
     previous: `player/play_previous?pid=${pid}`
   };
 
-  if (!commands[action]) {
-    throw new Error('Unknown HEOS action');
-  }
+  if (!commands[action]) throw new Error('Unknown HEOS action');
 
   const response = await heos(commands[action]);
-
   if (response?.heos?.result !== 'success') {
     throw new Error(response?.heos?.message || 'Control failed');
   }
 
   return { ok: true };
+}
+
+async function getRadioFavourites() {
+  const response = await heos(
+    'browse/browse?sid=1028&cid=1&range=0,100',
+    5000,
+    true
+  );
+
+  if (response?.heos?.result !== 'success') {
+    throw new Error(response?.heos?.message || 'Could not load favourites');
+  }
+
+  return (Array.isArray(response.payload) ? response.payload : [])
+    .filter(item => item?.playable === 'yes' && item?.mid)
+    .map((item, index) => ({
+      index,
+      name: String(item.name || 'Radio station'),
+      mid: String(item.mid),
+      imageUrl: String(item.image_url || '')
+    }));
+}
+
+async function playRadioFavourite(mid, name) {
+  if (!mid) throw new Error('Missing station ID');
+
+  const pid = encodeURIComponent(config.playerId);
+  const command =
+    `browse/play_stream?pid=${pid}` +
+    '&sid=1028&cid=1' +
+    `&mid=${encodeURIComponent(mid)}` +
+    `&name=${encodeURIComponent(name || 'Radio')}`;
+
+  await avr('SINET');
+  const response = await heos(command, 5000, true);
+
+  if (response?.heos?.result !== 'success') {
+    throw new Error(response?.heos?.message || 'Could not start station');
+  }
+
+  return { ok: true, name: name || 'Radio' };
 }
 
 function sleep(milliseconds) {
@@ -302,50 +344,34 @@ function sleep(milliseconds) {
 
 function normaliseVolume(value) {
   const numeric = Number(value);
-
-  if (!Number.isFinite(numeric)) {
-    throw new Error('Invalid receiver volume');
-  }
-
-  // Marantz volume operates in 0.5 dB steps.
+  if (!Number.isFinite(numeric)) throw new Error('Invalid receiver volume');
   return Math.min(18, Math.max(-80, Math.round(numeric * 2) / 2));
 }
 
 function marantzVolumeCommand(value) {
   const volume = normaliseVolume(value);
   const receiverValue = volume + 80;
-
   const encoded = Number.isInteger(receiverValue)
     ? String(receiverValue).padStart(2, '0')
     : String(Math.round(receiverValue * 10)).padStart(3, '0');
-
   return `MV${encoded}`;
 }
 
 async function setReceiverVolume(value) {
   const target = normaliseVolume(value);
-
   await avr(marantzVolumeCommand(target));
 
-  // Do not acknowledge the browser until the AVR reports that the
-  // requested volume has genuinely been applied.
   const deadline = Date.now() + 1600;
-
   while (Date.now() < deadline) {
     try {
       const response = await avr('MV?', 'MV', 700);
       const actual = parseVolume(response);
-
-      if (
-        actual !== null &&
-        Math.abs(actual - target) < 0.25
-      ) {
+      if (actual !== null && Math.abs(actual - target) < 0.25) {
         return actual;
       }
     } catch {
       // Retry briefly while the receiver applies the command.
     }
-
     await sleep(80);
   }
 
@@ -371,7 +397,6 @@ async function receiverControl(action, requestedVolume = null) {
 
   if (action === 'mute') {
     let muted = false;
-
     try {
       const response = await avr('MU?', 'MU');
       muted = response === 'MUON';
@@ -383,23 +408,18 @@ async function receiverControl(action, requestedVolume = null) {
     return { ok: true, muted: !muted };
   }
 
-  if (!commands[action]) {
-    throw new Error('Unknown receiver action');
-  }
-
+  if (!commands[action]) throw new Error('Unknown receiver action');
   await avr(commands[action]);
   return { ok: true };
 }
 
 function sendJson(res, statusCode, value) {
   const body = JSON.stringify(value);
-
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(body),
     'Cache-Control': 'no-store'
   });
-
   res.end(body);
 }
 
@@ -422,7 +442,6 @@ function serveFile(pathname, res) {
     }
 
     const extension = path.extname(filePath).toLowerCase();
-
     const types = {
       '.html': 'text/html; charset=utf-8',
       '.css': 'text/css; charset=utf-8',
@@ -437,7 +456,6 @@ function serveFile(pathname, res) {
       'Content-Type': types[extension] || 'application/octet-stream',
       'Cache-Control': 'no-store, no-cache, must-revalidate'
     });
-
     res.end(data);
   });
 }
@@ -448,23 +466,32 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
   try {
-    if (
-      req.method === 'GET' &&
-      url.pathname === '/api/instance-id'
-    ) {
-      return sendJson(res, 200, {
-        instanceId: serverInstanceId
-      });
+    if (req.method === 'GET' && url.pathname === '/api/instance-id') {
+      return sendJson(res, 200, { instanceId: serverInstanceId });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
     }
 
-    if (
-      req.method === 'POST' &&
-      url.pathname.startsWith('/api/control/')
-    ) {
+    if (req.method === 'GET' && url.pathname === '/api/radio/favourites') {
+      return sendJson(res, 200, {
+        favourites: await getRadioFavourites()
+      });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/radio/play') {
+      return sendJson(
+        res,
+        200,
+        await playRadioFavourite(
+          url.searchParams.get('mid'),
+          url.searchParams.get('name')
+        )
+      );
+    }
+
+    if (req.method === 'POST' && url.pathname.startsWith('/api/control/')) {
       const action = decodeURIComponent(url.pathname.split('/').pop());
 
       if (['play', 'pause', 'next', 'previous'].includes(action)) {
@@ -472,9 +499,7 @@ http.createServer(async (req, res) => {
       }
 
       const requestedVolume =
-        action === 'volume-set'
-          ? url.searchParams.get('value')
-          : null;
+        action === 'volume-set' ? url.searchParams.get('value') : null;
 
       return sendJson(
         res,
@@ -483,9 +508,7 @@ http.createServer(async (req, res) => {
       );
     }
 
-    if (req.method === 'GET') {
-      return serveFile(url.pathname, res);
-    }
+    if (req.method === 'GET') return serveFile(url.pathname, res);
 
     res.writeHead(405);
     res.end('Method not allowed');
@@ -496,12 +519,8 @@ http.createServer(async (req, res) => {
       updatedAt: Date.now()
     });
   }
-}).listen(
-  config.listenPort,
-  config.listenHost,
-  () => {
-    console.log(
-      `Marantz display: http://${config.listenHost}:${config.listenPort}`
-    );
-  }
-);
+}).listen(config.listenPort, config.listenHost, () => {
+  console.log(
+    `Marantz display: http://${config.listenHost}:${config.listenPort}`
+  );
+});
