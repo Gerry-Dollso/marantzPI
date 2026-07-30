@@ -10,32 +10,43 @@
   <link rel="stylesheet" href="/style.css?v=230">
   <link rel="stylesheet" href="/playback-source-ui.css?v=3">
   <link rel="stylesheet" href="/radio-ui.css?v=2">
+  <link rel="stylesheet" href="/dashboard-ui.css?v=1">
 </head>
 
 <body>
   <section id="idleScreen" class="idle-screen" aria-hidden="true">
-    <div class="idle-brand">MARANTZ</div>
-
-    <div id="idleClock" class="idle-clock">00:00</div>
-    <div id="idleDate" class="idle-date">MONDAY 28 JULY</div>
-
-    <div class="idle-divider"></div>
-
-    <div id="idleSourceIcon" class="idle-source-icon" aria-hidden="true">
-      <div class="source-icon source-icon-record"></div>
-      <div class="source-icon source-icon-cd"></div>
-      <div class="source-icon source-icon-heos">
-        <span></span>
-        <span></span>
-        <span></span>
+    <div class="dashboard-clock-panel">
+      <div class="idle-brand">MARANTZ</div>
+      <div id="idleClock" class="idle-clock">00:00</div>
+      <div id="idleDate" class="idle-date">MONDAY 28 JULY</div>
+      <div class="idle-divider"></div>
+      <div id="idleSourceIcon" class="idle-source-icon" aria-hidden="true">
+        <div class="source-icon source-icon-record"></div>
+        <div class="source-icon source-icon-cd"></div>
+        <div class="source-icon source-icon-heos"><span></span><span></span><span></span></div>
       </div>
+      <div id="idleInput" class="idle-input">TV AUDIO</div>
     </div>
 
-    <div id="idleInput" class="idle-input">TV AUDIO</div>
+    <div class="dashboard-main">
+      <div class="dashboard-receiver">
+        <div class="dashboard-receiver-name">SR8015</div>
+        <div class="idle-status">
+          <span id="idlePower">RECEIVER ON</span>
+          <span id="idleVolume">−32.0 dB</span>
+        </div>
+      </div>
 
-    <div class="idle-status">
-      <span id="idlePower">RECEIVER ON</span>
-      <span id="idleVolume">−32.0 dB</span>
+      <div class="dashboard-last-played">
+        <img id="dashboardLastArt" class="dashboard-last-art" alt="Last played artwork" hidden>
+        <div id="dashboardLastFallback" class="dashboard-last-fallback">MARANTZ</div>
+        <div class="dashboard-last-copy">
+          <div class="dashboard-kicker">LAST PLAYED</div>
+          <div id="dashboardLastTitle" class="dashboard-last-title">Nothing played yet</div>
+          <div id="dashboardLastSubtitle" class="dashboard-last-subtitle">Choose a source below</div>
+          <div id="dashboardLastDetail" class="dashboard-last-detail"></div>
+        </div>
+      </div>
     </div>
 
     <div class="idle-input-controls">
@@ -45,28 +56,27 @@
       <button data-radio-open>RADIO</button>
       <button data-action="aux">AUX</button>
     </div>
+
+    <div class="dashboard-ready">
+      <div>
+        <div class="dashboard-ready-brand">MARANTZ</div>
+        <div class="dashboard-ready-copy">READY TO LISTEN</div>
+      </div>
+    </div>
   </section>
 
   <main id="nowPlayingScreen" class="display">
     <section class="artwork-area">
       <div class="artwork-frame">
         <img id="artwork" alt="Album artwork">
-        <div id="artworkFallback" class="artwork-fallback">
-          <span>MARANTZ</span>
-        </div>
+        <div id="artworkFallback" class="artwork-fallback"><span>MARANTZ</span></div>
       </div>
     </section>
 
     <section class="information">
       <header>
         <div id="sourceHeading" class="heading">NOW PLAYING</div>
-        <button
-          id="connection"
-          class="connection power-button"
-          type="button"
-          aria-label="Hold to put receiver into standby"
-          title="Hold to power off AVR"
-        >POWER</button>
+        <button id="connection" class="connection power-button" type="button" aria-label="Hold to put receiver into standby" title="Hold to power off AVR">POWER</button>
       </header>
 
       <div class="metadata">
@@ -76,24 +86,13 @@
       </div>
 
       <div class="progress-section">
-        <div class="progress-track">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-
-        <div class="times">
-          <span id="currentTime">0:00</span>
-          <span id="duration">0:00</span>
-        </div>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <div class="times"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
       </div>
 
       <div class="transport">
         <button data-action="previous" aria-label="Previous track">◀◀</button>
-        <button
-          id="playPause"
-          class="play-pause"
-          data-action="pause"
-          aria-label="Play or pause"
-        >Ⅱ</button>
+        <button id="playPause" class="play-pause" data-action="pause" aria-label="Play or pause">Ⅱ</button>
         <button data-action="next" aria-label="Next track">▶▶</button>
       </div>
 
@@ -116,32 +115,22 @@
   <section id="radioScreen" class="radio-screen" aria-hidden="true">
     <header class="radio-header">
       <button id="radioBack" class="radio-back" type="button">BACK</button>
-      <div>
-        <div class="radio-kicker">HEOS FAVOURITES</div>
-        <h1>RADIO</h1>
-      </div>
+      <div><div class="radio-kicker">HEOS FAVOURITES</div><h1>RADIO</h1></div>
       <button id="radioAll" class="radio-all" type="button">ALL STATIONS</button>
     </header>
-
     <div id="radioStatus" class="radio-status">Loading favourites…</div>
     <div id="radioGrid" class="radio-grid" aria-live="polite"></div>
     <div id="radioList" class="radio-list" aria-live="polite"></div>
   </section>
 
-  <div
-    id="volumeOverlay"
-    class="volume-overlay"
-    aria-hidden="true"
-    aria-live="polite"
-  >
+  <div id="volumeOverlay" class="volume-overlay" aria-hidden="true" aria-live="polite">
     <div id="volumeOverlayValue" class="volume-overlay-value">−32.0 dB</div>
-    <div class="volume-overlay-track">
-      <div id="volumeOverlayBar" class="volume-overlay-bar"></div>
-    </div>
+    <div class="volume-overlay-track"><div id="volumeOverlayBar" class="volume-overlay-bar"></div></div>
   </div>
 
   <script src="/app.js?v=232"></script>
   <script src="/playback-source-ui.js?v=3"></script>
   <script src="/radio-ui.js?v=1"></script>
+  <script src="/dashboard-ui.js?v=1"></script>
 </body>
 </html>
