@@ -8,6 +8,7 @@
   >
   <title>marantzPI</title>
   <link rel="stylesheet" href="/style.css?v=230">
+  <link rel="stylesheet" href="/playback-source-ui.css?v=2">
 </head>
 
 <body>
@@ -39,7 +40,8 @@
     <div class="idle-input-controls">
       <button data-action="phono">PHONO</button>
       <button data-action="cd">CD</button>
-      <button data-action="heos">HEOS</button>
+      <button data-action="heos" data-net-source="tidal">TIDAL</button>
+      <button data-action="heos" data-net-source="internet-radio">RADIO</button>
       <button data-action="aux">AUX</button>
     </div>
   </section>
@@ -103,12 +105,12 @@
       <div class="inputs">
         <button data-action="phono">PHONO</button>
         <button data-action="cd">CD</button>
-        <button data-action="heos">HEOS</button>
+        <button data-action="heos" data-net-source="tidal">TIDAL</button>
+        <button data-action="heos" data-net-source="internet-radio">RADIO</button>
         <button data-action="aux">AUX</button>
       </div>
     </section>
   </main>
-
 
   <div
     id="volumeOverlay"
@@ -123,6 +125,6 @@
   </div>
 
   <script src="/app.js?v=232"></script>
-  <script src="/playback-source-ui.js?v=1"></script>
+  <script src="/playback-source-ui.js?v=2"></script>
 </body>
 </html>
