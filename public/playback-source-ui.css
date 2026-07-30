@@ -1,0 +1,19 @@
+.inputs,
+.idle-input-controls {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.inputs button,
+.idle-input-controls button {
+  min-width: 0;
+  letter-spacing: 0.08em;
+}
+
+body[data-playback-source="internet-radio"] .progress-section {
+  opacity: 0.35;
+}
+
+body[data-playback-source="internet-radio"] .transport button[data-action="previous"],
+body[data-playback-source="internet-radio"] .transport button[data-action="next"] {
+  opacity: 0.35;
+}
