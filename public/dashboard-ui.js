@@ -8,7 +8,6 @@ const dashboardLastDetail = document.getElementById('dashboardLastDetail');
 
 const LAST_PLAYED_KEY = 'marantzPI:last-played';
 let dashboardLastImage = '';
-let dashboardReceiverPowerOn = null;
 
 function cleanDashboardText(value) {
   return String(value || '').trim();
@@ -115,15 +114,6 @@ function updateDashboardReceiver(data) {
   const powerOn = receiver.power === 'on';
   const idlePowerElement = document.getElementById('idlePower');
 
-  // A genuine wake transition may keep standby-waking while the AVR still
-  // reports standby. Clear it only once the AVR has been on, or when it
-  // subsequently transitions from on back to standby.
-  if (powerOn || dashboardReceiverPowerOn === true) {
-    document.body.classList.remove('standby-holding', 'standby-waking');
-  }
-
-  dashboardReceiverPowerOn = powerOn;
-
   idlePowerElement.classList.toggle('dashboard-on', powerOn);
   idlePowerElement.classList.toggle('dashboard-standby', !powerOn);
 
@@ -146,4 +136,4 @@ async function refreshDashboard() {
 
 renderLastPlayed(readLastPlayed());
 refreshDashboard();
-setInterval(refreshDashboard, 750);
+setInterval(refreshDashboard, 3000);
