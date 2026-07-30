@@ -7,6 +7,15 @@ const radioStatus = document.getElementById('radioStatus');
 const radioBack = document.getElementById('radioBack');
 const radioAll = document.getElementById('radioAll');
 
+const stationArtwork = {
+  'BBC Radio 6 Music': '/logos/bbc-radio-6.svg',
+  KEXP: '/logos/kexp.svg',
+  'GEM Radio (New Wave)': '/logos/gem-radio.svg',
+  'DKFM - Decay (Shoegaze)': '/logos/dkfm-decay.svg',
+  'Sensimedia (Hip-Hop)': '/logos/sensimedia.svg',
+  'Hip-Hop Gods (USA)': '/logos/hip-hop-gods.svg'
+};
+
 let radioFavourites = [];
 let showingAllStations = false;
 let radioLoaded = false;
@@ -27,6 +36,31 @@ function stationInitials(name) {
     .toUpperCase();
 }
 
+function makeStationArtwork(station) {
+  const badge = document.createElement('span');
+  badge.className = 'radio-station-badge';
+
+  const artworkUrl = station.imageUrl || stationArtwork[station.name];
+
+  if (!artworkUrl) {
+    badge.textContent = stationInitials(station.name);
+    return badge;
+  }
+
+  const image = document.createElement('img');
+  image.className = 'radio-station-logo';
+  image.alt = '';
+  image.src = artworkUrl;
+  image.addEventListener('error', () => {
+    image.remove();
+    badge.textContent = stationInitials(station.name);
+  });
+
+  badge.classList.add('has-logo');
+  badge.appendChild(image);
+  return badge;
+}
+
 function makeStationButton(station, compact = false) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -34,9 +68,7 @@ function makeStationButton(station, compact = false) {
   button.dataset.mid = station.mid;
   button.dataset.name = station.name;
 
-  const badge = document.createElement('span');
-  badge.className = 'radio-station-badge';
-  badge.textContent = stationInitials(station.name);
+  const badge = makeStationArtwork(station);
 
   const label = document.createElement('span');
   label.className = 'radio-station-name';
@@ -60,7 +92,7 @@ function renderRadio() {
 
   radioStatus.hidden = true;
   radioAll.hidden = false;
-  radioAll.textContent = showingAllStations ? 'TOP STATIONS' : 'ALL STATIONS';
+  radioAll.textContent = showingAllStations ? 'TOP STATIONS' : 'MORE…';
 
   if (showingAllStations) {
     radioGrid.hidden = true;
