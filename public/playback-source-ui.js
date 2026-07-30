@@ -6,7 +6,6 @@ const sourceArtist = document.getElementById('artist');
 const sourceAlbum = document.getElementById('album');
 
 let sourceStatus = null;
-let applyingSourceUi = false;
 
 function sourceLabel(playbackSource) {
   const labels = {
@@ -30,13 +29,17 @@ function updateNetSourceButtons(playbackSource) {
     });
 }
 
-function applyPlaybackSourceUi() {
-  if (!sourceStatus || applyingSourceUi) return;
+function setText(element, value) {
+  if (element && element.textContent !== value) {
+    element.textContent = value;
+  }
+}
 
-  applyingSourceUi = true;
+function applyPlaybackSourceUi() {
+  if (!sourceStatus) return;
 
   const playbackSource = sourceStatus.playbackSource || 'other';
-  sourceHeading.textContent = sourceLabel(playbackSource);
+  setText(sourceHeading, sourceLabel(playbackSource));
   document.body.dataset.playbackSource = playbackSource;
   updateNetSourceButtons(playbackSource);
 
@@ -45,12 +48,10 @@ function applyPlaybackSourceUi() {
     const programme = String(sourceStatus.song || '').trim();
     const presenter = String(sourceStatus.artist || '').trim();
 
-    sourceSong.textContent = station || programme || 'Internet Radio';
-    sourceArtist.textContent = programme || presenter || 'LIVE RADIO';
-    sourceAlbum.textContent = programme && presenter ? presenter : '';
+    setText(sourceSong, station || programme || 'Internet Radio');
+    setText(sourceArtist, programme || presenter || 'LIVE RADIO');
+    setText(sourceAlbum, programme && presenter ? presenter : '');
   }
-
-  applyingSourceUi = false;
 }
 
 async function refreshPlaybackSourceUi() {
@@ -64,18 +65,6 @@ async function refreshPlaybackSourceUi() {
     // The main application owns connection-error handling.
   }
 }
-
-const metadataObserver = new MutationObserver(() => {
-  if (sourceStatus) {
-    applyPlaybackSourceUi();
-  }
-});
-
-metadataObserver.observe(document.querySelector('.metadata'), {
-  childList: true,
-  subtree: true,
-  characterData: true
-});
 
 refreshPlaybackSourceUi();
 setInterval(refreshPlaybackSourceUi, 1000);
