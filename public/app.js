@@ -477,7 +477,10 @@ const SourceController = {
     this.current = source || null;
 
     document
-      .querySelectorAll('.inputs button, .idle-input-controls button')
+      .querySelectorAll(
+        '.inputs button[data-action]:not([data-net-source]), ' +
+        '.idle-input-controls button[data-action]:not([data-net-source])'
+      )
       .forEach(button => {
         button.classList.toggle(
           'active',
