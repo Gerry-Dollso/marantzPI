@@ -133,15 +133,26 @@ body.show-radio .display {
 .radio-list {
   height: 354px;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 64px;
   align-content: start;
   gap: 9px 12px;
   padding: 8px 2px 18px 0;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.radio-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .radio-list-item {
@@ -151,6 +162,7 @@ body.show-radio .display {
   gap: 12px;
   padding: 7px 13px;
   text-align: left;
+  touch-action: pan-y;
 }
 
 .radio-list-item .radio-station-badge,
