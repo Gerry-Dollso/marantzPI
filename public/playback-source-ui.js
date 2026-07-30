@@ -19,6 +19,17 @@ function sourceLabel(playbackSource) {
   return labels[playbackSource] || 'NOW PLAYING';
 }
 
+function updateNetSourceButtons(playbackSource) {
+  document
+    .querySelectorAll('button[data-net-source]')
+    .forEach(button => {
+      button.classList.toggle(
+        'active',
+        button.dataset.netSource === playbackSource
+      );
+    });
+}
+
 function applyPlaybackSourceUi() {
   if (!sourceStatus || applyingSourceUi) return;
 
@@ -27,6 +38,7 @@ function applyPlaybackSourceUi() {
   const playbackSource = sourceStatus.playbackSource || 'other';
   sourceHeading.textContent = sourceLabel(playbackSource);
   document.body.dataset.playbackSource = playbackSource;
+  updateNetSourceButtons(playbackSource);
 
   if (playbackSource === 'internet-radio') {
     const station = String(sourceStatus.album || '').trim();
@@ -54,7 +66,7 @@ async function refreshPlaybackSourceUi() {
 }
 
 const metadataObserver = new MutationObserver(() => {
-  if (sourceStatus?.playbackSource === 'internet-radio') {
+  if (sourceStatus) {
     applyPlaybackSourceUi();
   }
 });
