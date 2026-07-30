@@ -179,7 +179,7 @@ async function getReceiverStatus() {
     power: powerLine === 'ZMON' ? 'on' : 'standby',
     input: inputLabel(inputLine),
     inputCode: inputLine.slice(2) || 'UNKNOWN',
-	    volume: parseVolume(volumeLine),
+    volume: parseVolume(volumeLine),
     muted: muteLine === 'MUON'
   };
 }
@@ -233,7 +233,20 @@ async function getStatus() {
   const song = String(media.song || '').trim();
   const artist = String(media.artist || '').trim();
   const album = String(media.album || media.station || '').trim();
-  const hasTrackInfo = receiver.power === 'on' && receiver.inputCode === 'NET' && Boolean(song || artist || album);
+  const imageUrl = String(media.image_url || '').trim();
+  const isNetPlayback = receiver.power === 'on' && receiver.inputCode === 'NET';
+  const isInternetRadio =
+    isNetPlayback &&
+    (imageUrl.toLowerCase().includes('tunein.com') ||
+      (!song && !artist && Boolean(album)));
+  const playbackSource = !isNetPlayback
+    ? 'other'
+    : isInternetRadio
+      ? 'internet-radio'
+      : song || artist
+        ? 'tidal'
+        : 'other-net';
+  const hasTrackInfo = isNetPlayback && Boolean(song || artist || album);
 
   return {
     connected:
@@ -242,8 +255,9 @@ async function getStatus() {
     song,
     artist,
     album,
+    playbackSource,
     hasTrackInfo,
-    imageUrl: media.image_url || '',
+    imageUrl,
     state: state.state || 'unknown',
     current: Number(progress.cur_pos || 0),
     duration: Number(progress.duration || 0),
@@ -281,7 +295,6 @@ async function heosControl(action) {
 
   return { ok: true };
 }
-
 
 function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
