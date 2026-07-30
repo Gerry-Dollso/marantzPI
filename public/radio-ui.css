@@ -92,23 +92,37 @@ body.show-radio .display {
 
 .radio-tile {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 92px 1fr;
   align-items: center;
-  gap: 15px;
-  padding: 12px 18px;
+  gap: 16px;
+  padding: 10px 16px;
   text-align: left;
 }
 
 .radio-station-badge {
-  width: 54px;
-  height: 54px;
+  width: 68px;
+  height: 68px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  overflow: hidden;
+  border-radius: 16px;
   background: rgba(255,255,255,0.10);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.radio-station-badge.has-logo {
+  width: 82px;
+  height: 68px;
+  background: rgba(255,255,255,0.96);
+}
+
+.radio-station-logo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
 }
 
 .radio-station-name {
@@ -132,16 +146,18 @@ body.show-radio .display {
 
 .radio-list-item {
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: 52px 1fr;
   align-items: center;
   gap: 12px;
   padding: 7px 13px;
   text-align: left;
 }
 
-.radio-list-item .radio-station-badge {
-  width: 40px;
-  height: 40px;
+.radio-list-item .radio-station-badge,
+.radio-list-item .radio-station-badge.has-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   font-size: 12px;
 }
 
