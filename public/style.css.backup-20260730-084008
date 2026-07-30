@@ -1,0 +1,923 @@
+:root {
+  --bg: #070909;
+  --bg-panel: #111515;
+  --bg-soft: #111414;
+  --text: #f3f4f2;
+  --text-strong: #ffffff;
+  --text-muted: #838b88;
+  --text-dim: #7b8683;
+  --accent: #b9a16e;
+  --accent-strong: #d4c18e;
+  --accent-soft: rgba(179, 139, 72, 0.13);
+  --success: #91ad9e;
+  --error: #cc7d74;
+  --border: rgba(255, 255, 255, 0.13);
+  --button-bg: rgba(255, 255, 255, 0.055);
+  --screen-width: 800px;
+  --screen-height: 480px;
+
+  font-family:
+    -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: var(--screen-width);
+  height: var(--screen-height);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: none;
+}
+
+body {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+button {
+  font: inherit;
+  cursor: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Shared screen behaviour ===== */
+
+.display,
+.idle-screen {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+.display { opacity: 1; visibility: visible; }
+.idle-screen { opacity: 0; visibility: hidden; }
+
+body.show-idle .display {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.show-idle .idle-screen {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== Now Playing layout ===== */
+
+.display {
+  width: var(--screen-width);
+  height: var(--screen-height);
+  display: grid;
+  grid-template-columns: 340px 460px;
+  background:
+    radial-gradient(circle at 92% 5%, var(--accent-soft), transparent 32%),
+    linear-gradient(140deg, #050606 0%, var(--bg-panel) 100%);
+}
+
+.artwork-area {
+  width: 340px;
+  height: var(--screen-height);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.artwork-frame {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  overflow: hidden;
+  background: var(--bg-soft);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+#artwork {
+  position: absolute;
+  inset: 0;
+  width: 300px;
+  height: 300px;
+  display: none;
+  object-fit: cover;
+}
+
+.artwork-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  font-size: 29px;
+  font-weight: 300;
+  letter-spacing: 0.22em;
+  background: radial-gradient(circle at 35% 30%, #1b2020, #0e1111 70%);
+}
+
+.information {
+  width: 460px;
+  height: var(--screen-height);
+  padding: 22px 24px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+header {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heading {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.connection {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+.connection.connected { color: var(--success); }
+.connection.error { color: var(--error); }
+
+/* ===== Metadata ===== */
+
+.metadata {
+  height: 136px;
+  padding-top: 15px;
+  overflow: hidden;
+}
+
+.metadata h1,
+.metadata h2,
+.metadata p {
+  max-width: 420px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.metadata h1 {
+  color: var(--text-strong);
+  font-size: 29px;
+  font-weight: 650;
+  line-height: 1.14;
+}
+
+.metadata h2 {
+  margin-top: 9px;
+  color: #c8cdca;
+  font-size: 20px;
+  font-weight: 450;
+  line-height: 1.15;
+}
+
+.metadata p {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+/* ===== Progress ===== */
+
+.progress-section { height: 43px; }
+
+.progress-track {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  background: #303535;
+}
+
+.progress-bar {
+  width: 0;
+  height: 100%;
+  background: #b79b66;
+  transition: width 0.6s linear;
+}
+
+.times {
+  margin-top: 7px;
+  display: flex;
+  justify-content: space-between;
+  color: #78817e;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Controls ===== */
+
+.transport,
+.receiver-controls,
+.inputs {
+  display: grid;
+  gap: 10px;
+}
+
+.transport {
+  height: 76px;
+  grid-template-columns: 1fr 1.18fr 1fr;
+  align-items: center;
+}
+
+.transport button,
+.receiver-controls button,
+.inputs button {
+  border: 1px solid var(--border);
+  color: #e9ebe9;
+  background: var(--button-bg);
+  border-radius: 8px;
+}
+
+.transport button { height: 54px; font-size: 19px; }
+
+.transport .play-pause {
+  height: 64px;
+  color: #111;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.receiver-controls {
+  height: 57px;
+  grid-template-columns: 1fr 1.65fr 1fr;
+  align-items: center;
+}
+.receiver-controls button { height: 43px; font-size: 21px; }
+
+.receiver-controls #muteButton {
+  color: #c7cbc8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.inputs {
+  height: 58px;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: end;
+}
+
+.inputs button {
+  height: 40px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: #7f8985;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  transition:
+    color .25s ease,
+    border-color .25s ease;
+}
+
+.inputs button.active {
+  color: #d4c18e;
+  border-bottom-color: #d4c18e;
+}
+
+button:active,
+button.pressed {
+  transform: scale(0.96);
+  filter: brightness(1.35);
+}
+button:disabled { opacity: 0.45; }
+
+/* ===== Idle screen ===== */
+
+.idle-screen {
+  width: var(--screen-width);
+  height: var(--screen-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 52px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(181, 151, 91, 0.12), transparent 38%),
+    linear-gradient(145deg, #050707 0%, var(--bg-panel) 100%);
+}
+
+.idle-brand {
+  position: static;
+  margin-bottom: 18px;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.38em;
+  padding-left: 0.38em;
+}
+
+.idle-clock {
+  color: #f5f5f1;
+  font-size: 96px;
+  font-weight: 250;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.idle-date {
+  margin-top: 20px;
+  color: #939b97;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.idle-divider {
+  width: 82px;
+  height: 1px;
+  margin: 24px 0 18px;
+  background: #a98f5d;
+  opacity: 0.75;
+}
+
+.idle-source-icon {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 14px;
+}
+.source-icon { position: absolute; inset: 0; display: none; }
+
+/* Vinyl record */
+.idle-source-icon.show-record .source-icon-record {
+  display: block;
+  border: 2px solid rgba(217, 218, 214, 0.9);
+  border-radius: 50%;
+  animation: source-spin 24s linear infinite;
+}
+
+.idle-source-icon.show-record .source-icon-record::before,
+.idle-source-icon.show-record .source-icon-record::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+
+.idle-source-icon.show-record .source-icon-record::before {
+  inset: 9px;
+  border: 1px solid rgba(217, 218, 214, 0.28);
+  box-shadow: 0 0 0 6px rgba(217, 218, 214, 0.05), 0 0 0 13px rgba(217, 218, 214, 0.03);
+}
+
+.idle-source-icon.show-record .source-icon-record::after {
+  width: 12px;
+  height: 12px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #a98f5d;
+  box-shadow: 0 0 0 5px rgba(169, 143, 93, 0.16);
+}
+
+/* Compact disc */
+.idle-source-icon.show-cd .source-icon-cd {
+  display: block;
+  border: 2px solid rgba(217, 218, 214, 0.82);
+  border-radius: 50%;
+  background: conic-gradient(from 20deg, rgba(217, 218, 214, 0.04), rgba(169, 143, 93, 0.22), rgba(217, 218, 214, 0.03), rgba(217, 218, 214, 0.18), rgba(217, 218, 214, 0.04));
+  animation: source-spin-reverse 18s linear infinite;
+}
+
+.idle-source-icon.show-cd .source-icon-cd::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(217, 218, 214, 0.8);
+  border-radius: 50%;
+  background: #12151a;
+}
+
+/* HEOS equaliser */
+.idle-source-icon.show-heos .source-icon-heos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 10px;
+  gap: 7px;
+}
+
+.idle-source-icon.show-heos .source-icon-heos span {
+  width: 7px;
+  border-radius: 999px;
+  background: #a98f5d;
+  animation: source-pulse 1.8s ease-in-out infinite;
+}
+.idle-source-icon.show-heos .source-icon-heos span:nth-child(1) { height: 24px; animation-delay: 0s; }
+.idle-source-icon.show-heos .source-icon-heos span:nth-child(2) { height: 42px; animation-delay: 0.18s; }
+.idle-source-icon.show-heos .source-icon-heos span:nth-child(3) { height: 30px; animation-delay: 0.36s; }
+
+.idle-input {
+  color: #d9dad6;
+  font-size: 28px;
+  font-weight: 450;
+  letter-spacing: 0.12em;
+}
+
+.idle-status {
+  min-width: 310px;
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  color: #7f8985;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+}
+
+#idleVolume {
+  color: #bca675;
+  font-variant-numeric: tabular-nums;
+}
+
+.idle-input-controls { display: none; }
+
+
+/* ===== v3 screen transitions ===== */
+
+.artwork-frame,
+.information header,
+.metadata,
+.progress-section,
+.transport,
+.receiver-controls,
+.inputs,
+.idle-brand,
+.idle-clock,
+.idle-date,
+.idle-divider,
+.idle-source-icon,
+.idle-input,
+.idle-status {
+  will-change: opacity, transform;
+}
+
+.artwork-frame {
+  transition:
+    opacity 520ms ease,
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.information header,
+.metadata,
+.progress-section,
+.transport,
+.receiver-controls,
+.inputs {
+  transition:
+    opacity 420ms ease,
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.information header {
+  transition-delay: 80ms;
+}
+
+.metadata {
+  transition-delay: 130ms;
+}
+
+.progress-section {
+  transition-delay: 180ms;
+}
+
+.transport {
+  transition-delay: 230ms;
+}
+
+.receiver-controls {
+  transition-delay: 280ms;
+}
+
+.inputs {
+  transition-delay: 330ms;
+}
+
+body.show-idle .artwork-frame {
+  opacity: 0;
+  transform: scale(0.94);
+  transition-delay: 0ms;
+}
+
+body.show-idle .information header,
+body.show-idle .metadata,
+body.show-idle .progress-section,
+body.show-idle .transport,
+body.show-idle .receiver-controls,
+body.show-idle .inputs {
+  opacity: 0;
+  transform: translateY(14px);
+  transition-delay: 0ms;
+}
+
+.idle-brand,
+.idle-clock,
+.idle-date,
+.idle-divider,
+.idle-source-icon,
+.idle-input,
+.idle-status {
+  transition:
+    opacity 400ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.idle-clock {
+  transition-delay: 40ms;
+}
+
+.idle-date {
+  transition-delay: 70ms;
+}
+
+.idle-divider {
+  transition-delay: 100ms;
+}
+
+.idle-source-icon {
+  transition-delay: 130ms;
+}
+
+.idle-input {
+  transition-delay: 160ms;
+}
+
+.idle-status {
+  transition-delay: 190ms;
+}
+
+body:not(.show-idle) .idle-brand,
+body:not(.show-idle) .idle-clock,
+body:not(.show-idle) .idle-date,
+body:not(.show-idle) .idle-divider,
+body:not(.show-idle) .idle-source-icon,
+body:not(.show-idle) .idle-input,
+body:not(.show-idle) .idle-status {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition-delay: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .display,
+  .idle-screen,
+  .artwork-frame,
+  .information header,
+  .metadata,
+  .progress-section,
+  .transport,
+  .receiver-controls,
+  .inputs,
+  .idle-brand,
+  .idle-clock,
+  .idle-date,
+  .idle-divider,
+  .idle-source-icon,
+  .idle-input,
+  .idle-status {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ===== Animations ===== */
+@keyframes source-spin { to { transform: rotate(360deg); } }
+@keyframes source-spin-reverse { to { transform: rotate(-360deg); } }
+@keyframes source-pulse {
+  0%, 100% { transform: scaleY(0.55); opacity: 0.45; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+/* Hide streaming-only controls on Phono, CD and AUX */
+body:not(.streaming-source) .progress-section,
+body:not(.streaming-source) .transport {
+  display: none;
+}
+
+body:not(.streaming-source) .metadata {
+  height: 212px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ===== Non-streaming source polish ===== */
+body:not(.streaming-source) .metadata {
+  height: 212px;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+body:not(.streaming-source) .metadata h1 {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  color: rgba(255,255,255,0.84);
+  font-size: 38px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0.025em;
+  text-align: center;
+}
+
+body:not(.streaming-source) .metadata h2,
+body:not(.streaming-source) .metadata p {
+  display: none;
+}
+
+.receiver-controls {
+  gap: 8px;
+}
+
+.receiver-controls button {
+  height: 40px;
+  border-color: rgba(255,255,255,0.14);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.045);
+  font-size: 18px;
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    filter .2s ease;
+}
+
+.receiver-controls #muteButton {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+body:not(.streaming-source) .inputs {
+  margin-top: 2px;
+}
+
+/* Temporary safety: prevent invisible idle controls receiving touches */
+.idle-input-controls {
+  pointer-events: none !important;
+}
+
+/* ===== Standby and TV idle layouts ===== */
+
+.idle-brand,
+.idle-source-icon {
+  display: none !important;
+}
+
+.idle-input-controls {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Standby */
+body.show-standby .idle-screen {
+  padding-top: 56px;
+}
+
+body.show-standby .idle-clock {
+  font-size: 112px;
+  line-height: 0.92;
+}
+
+body.show-standby .idle-date {
+  margin-top: 22px;
+}
+
+body.show-standby .idle-divider {
+  width: 96px;
+  margin: 30px 0 24px;
+}
+
+body.show-standby .idle-input {
+  color: #bca675;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 0.30em;
+  padding-left: 0.30em;
+}
+
+body.show-standby .idle-status {
+  min-width: 0;
+  margin-top: 15px;
+}
+
+body.show-standby #idlePower {
+  color: #7f8985;
+  font-size: 13px;
+  letter-spacing: 0.20em;
+  padding-left: 0.20em;
+}
+
+body.show-standby #idleVolume {
+  display: none;
+}
+
+/* TV idle */
+body.show-tv-idle .idle-screen {
+  padding-top: 38px;
+}
+
+body.show-tv-idle .idle-clock {
+  font-size: 96px;
+}
+
+body.show-tv-idle .idle-date {
+  margin-top: 18px;
+}
+
+body.show-tv-idle .idle-divider {
+  width: 90px;
+  margin: 24px 0 18px;
+}
+
+body.show-tv-idle .idle-input {
+  color: #bca675;
+  font-size: 20px;
+  letter-spacing: 0.20em;
+  padding-left: 0.20em;
+}
+
+body.show-tv-idle .idle-status {
+  margin-top: 12px;
+}
+
+body.show-tv-idle .idle-input-controls {
+  width: 560px;
+  height: 58px;
+  margin-top: auto;
+  margin-bottom: 18px;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: end;
+  pointer-events: auto !important;
+}
+
+body.show-tv-idle .idle-input-controls button {
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: #7f8985;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+body.show-tv-idle .idle-input-controls button.active {
+  color: #d4c18e;
+  border-bottom-color: #d4c18e;
+}
+
+body.show-tv-idle .idle-input-controls button:active,
+body.show-tv-idle .idle-input-controls button.pressed {
+  transform: scale(0.96);
+}
+
+
+/* ===== Standby touch-and-hold wake feedback ===== */
+
+body.show-standby .idle-screen {
+  touch-action: none;
+}
+
+body.show-standby .idle-divider {
+  position: relative;
+  overflow: hidden;
+}
+
+body.show-standby .idle-divider::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #d4c18e;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+body.show-standby.standby-holding .idle-divider::after {
+  transform: scaleX(1);
+  transition: transform 1s linear;
+}
+
+body.show-standby.standby-holding #idlePower {
+  color: #bca675;
+}
+
+body.show-standby.standby-holding #idlePower::after {
+  content: ' · HOLD';
+}
+
+body.show-standby.standby-waking .idle-clock,
+body.show-standby.standby-waking .idle-date,
+body.show-standby.standby-waking .idle-input {
+  opacity: 0.55;
+}
+
+
+/* ===== Receiver volume overlay ===== */
+.volume-overlay {
+  position: absolute;
+  left: 170px;
+  top: 50%;
+  z-index: 50;
+  width: 300px;
+  padding: 24px 26px 22px;
+  transform: translate(-50%, -50%) scale(0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(4, 6, 6, 0.82);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease,
+    transform 0.22s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.volume-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.volume-overlay-value {
+  color: var(--text-strong);
+  font-size: 42px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+
+.volume-overlay-value.muted {
+  color: var(--accent-strong);
+  font-size: 34px;
+  letter-spacing: 0.15em;
+}
+
+.volume-overlay-track {
+  width: 100%;
+  height: 3px;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.volume-overlay-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-strong);
+  transition: width 0.16s linear;
+}
+
+/* Move the overlay to the centre when the idle/TV screen is visible. */
+body.show-idle .volume-overlay {
+  left: 50%;
+}
+
+/* Never show volume feedback while the receiver is in standby. */
+body.show-standby .volume-overlay {
+  opacity: 0;
+  visibility: hidden;
+}
