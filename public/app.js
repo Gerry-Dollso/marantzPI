@@ -437,7 +437,6 @@ const SourceController = {
   inputCodes: {
     '8K': 'phono',
     CD: 'cd',
-    NET: 'heos',
     AUX1: 'aux'
   },
 

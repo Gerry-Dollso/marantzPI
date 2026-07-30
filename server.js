@@ -322,11 +322,16 @@ async function playRadioFavourite(mid, name) {
   if (!mid) throw new Error('Missing station ID');
 
   const pid = encodeURIComponent(config.playerId);
-  const command =
-    `browse/play_stream?pid=${pid}` +
-    '&sid=1028&cid=1' +
-    `&mid=${encodeURIComponent(mid)}` +
-    `&name=${encodeURIComponent(name || 'Radio')}`;
+  const isDirectUrl = /^https?:\/\//i.test(mid);
+
+  const streamUrl = mid.replace(/&/g, '%26');
+
+  const command = isDirectUrl
+    ? `browse/play_stream?pid=${pid}&url=${streamUrl}`
+    : `browse/play_stream?pid=${pid}` +
+      '&sid=1028&cid=1' +
+      `&mid=${encodeURIComponent(mid)}` +
+      `&name=${encodeURIComponent(name || 'Radio')}`;
 
   await avr('SINET');
   const response = await heos(command, 5000, true);
