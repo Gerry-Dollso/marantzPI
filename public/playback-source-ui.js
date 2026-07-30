@@ -1,9 +1,6 @@
 'use strict';
 
 const sourceHeading = document.getElementById('sourceHeading');
-const sourceSong = document.getElementById('song');
-const sourceArtist = document.getElementById('artist');
-const sourceAlbum = document.getElementById('album');
 
 let sourceStatus = null;
 
@@ -29,29 +26,13 @@ function updateNetSourceButtons(playbackSource) {
     });
 }
 
-function setText(element, value) {
-  if (element && element.textContent !== value) {
-    element.textContent = value;
-  }
-}
-
 function applyPlaybackSourceUi() {
   if (!sourceStatus) return;
 
   const playbackSource = sourceStatus.playbackSource || 'other';
-  setText(sourceHeading, sourceLabel(playbackSource));
+  sourceHeading.textContent = sourceLabel(playbackSource);
   document.body.dataset.playbackSource = playbackSource;
   updateNetSourceButtons(playbackSource);
-
-  if (playbackSource === 'internet-radio') {
-    const station = String(sourceStatus.album || '').trim();
-    const programme = String(sourceStatus.song || '').trim();
-    const presenter = String(sourceStatus.artist || '').trim();
-
-    setText(sourceSong, station || programme || 'Internet Radio');
-    setText(sourceArtist, programme || presenter || 'LIVE RADIO');
-    setText(sourceAlbum, programme && presenter ? presenter : '');
-  }
 }
 
 async function refreshPlaybackSourceUi() {
