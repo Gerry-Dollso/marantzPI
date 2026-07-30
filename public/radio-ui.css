@@ -7,6 +7,7 @@
   padding: 24px 28px 22px;
   background: #0b0b0b;
   color: #f4f4f4;
+  overflow: hidden;
 }
 
 body.show-radio .radio-screen {
@@ -16,6 +17,13 @@ body.show-radio .radio-screen {
 body.show-radio .idle-screen,
 body.show-radio .display {
   visibility: hidden;
+}
+
+.radio-grid[hidden],
+.radio-list[hidden],
+.radio-status[hidden],
+.radio-all[hidden] {
+  display: none !important;
 }
 
 .radio-header {
@@ -111,11 +119,15 @@ body.show-radio .display {
 .radio-list {
   height: 354px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 64px;
+  align-content: start;
   gap: 9px 12px;
   padding: 8px 2px 18px 0;
+  scrollbar-width: thin;
 }
 
 .radio-list-item {
