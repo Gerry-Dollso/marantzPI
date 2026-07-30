@@ -20,6 +20,14 @@ let radioFavourites = [];
 let showingAllStations = false;
 let radioLoaded = false;
 
+let touchStartY = 0;
+let touchLastY = 0;
+let touchLastTime = 0;
+let touchVelocity = 0;
+let touchDragging = false;
+let suppressStationClickUntil = 0;
+let momentumFrame = null;
+
 function setRadioOpen(open) {
   document.body.classList.toggle('show-radio', open);
   radioScreen.setAttribute('aria-hidden', String(!open));
@@ -75,7 +83,14 @@ function makeStationButton(station, compact = false) {
   label.textContent = station.name;
 
   button.append(badge, label);
-  button.addEventListener('click', () => playStation(button, station));
+  button.addEventListener('click', event => {
+    if (Date.now() < suppressStationClickUntil) {
+      event.preventDefault();
+      return;
+    }
+
+    playStation(button, station);
+  });
   return button;
 }
 
@@ -174,6 +189,83 @@ async function playStation(button, station) {
   }
 }
 
+function stopRadioMomentum() {
+  if (momentumFrame !== null) {
+    cancelAnimationFrame(momentumFrame);
+    momentumFrame = null;
+  }
+}
+
+function startRadioMomentum() {
+  stopRadioMomentum();
+
+  function step() {
+    if (Math.abs(touchVelocity) < 0.02) {
+      momentumFrame = null;
+      return;
+    }
+
+    const previousScrollTop = radioList.scrollTop;
+    radioList.scrollTop += touchVelocity * 16;
+    touchVelocity *= 0.92;
+
+    if (radioList.scrollTop === previousScrollTop) {
+      momentumFrame = null;
+      return;
+    }
+
+    momentumFrame = requestAnimationFrame(step);
+  }
+
+  momentumFrame = requestAnimationFrame(step);
+}
+
+radioList.addEventListener('touchstart', event => {
+  if (!showingAllStations || event.touches.length !== 1) return;
+
+  stopRadioMomentum();
+
+  const touch = event.touches[0];
+  touchStartY = touch.clientY;
+  touchLastY = touch.clientY;
+  touchLastTime = performance.now();
+  touchVelocity = 0;
+  touchDragging = false;
+}, { passive: true });
+
+radioList.addEventListener('touchmove', event => {
+  if (!showingAllStations || event.touches.length !== 1) return;
+
+  const touch = event.touches[0];
+  const now = performance.now();
+  const deltaY = touchLastY - touch.clientY;
+  const elapsed = Math.max(1, now - touchLastTime);
+
+  if (Math.abs(touch.clientY - touchStartY) >= 8) {
+    touchDragging = true;
+  }
+
+  if (touchDragging) {
+    event.preventDefault();
+    radioList.scrollTop += deltaY;
+    touchVelocity = deltaY / elapsed;
+  }
+
+  touchLastY = touch.clientY;
+  touchLastTime = now;
+}, { passive: false });
+
+function finishRadioTouch() {
+  if (!touchDragging) return;
+
+  suppressStationClickUntil = Date.now() + 400;
+  touchDragging = false;
+  startRadioMomentum();
+}
+
+radioList.addEventListener('touchend', finishRadioTouch, { passive: true });
+radioList.addEventListener('touchcancel', finishRadioTouch, { passive: true });
+
 document.addEventListener(
   'click',
   event => {
@@ -191,10 +283,12 @@ document.addEventListener(
 );
 
 radioBack.addEventListener('click', () => {
+  stopRadioMomentum();
   setRadioOpen(false);
 });
 
 radioAll.addEventListener('click', () => {
+  stopRadioMomentum();
   showingAllStations = !showingAllStations;
   renderRadio();
 });
