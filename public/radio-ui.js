@@ -26,7 +26,7 @@ let pointerLastY = 0;
 let pointerLastTime = 0;
 let pointerVelocity = 0;
 let pointerDragging = false;
-let suppressStationClickUntil = 0;
+let pointerStationButton = null;
 let momentumFrame = null;
 
 function setRadioOpen(open) {
@@ -84,15 +84,13 @@ function makeStationButton(station, compact = false) {
   label.textContent = station.name;
 
   button.append(badge, label);
-  button.addEventListener('click', event => {
-    if (Date.now() < suppressStationClickUntil) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
 
-    playStation(button, station);
-  });
+  // The scrolling list handles taps explicitly through pointer events.
+  // Top-station tiles can continue to use normal browser clicks.
+  if (!compact) {
+    button.addEventListener('click', () => playStation(button, station));
+  }
+
   return button;
 }
 
@@ -232,6 +230,7 @@ radioList.addEventListener('pointerdown', event => {
   pointerLastTime = performance.now();
   pointerVelocity = 0;
   pointerDragging = false;
+  pointerStationButton = event.target.closest('.radio-list-item');
 
   radioList.setPointerCapture(event.pointerId);
   event.preventDefault();
@@ -246,6 +245,7 @@ radioList.addEventListener('pointermove', event => {
 
   if (Math.abs(event.clientY - pointerStartY) >= 8) {
     pointerDragging = true;
+    pointerStationButton = null;
   }
 
   if (pointerDragging) {
@@ -261,25 +261,47 @@ radioList.addEventListener('pointermove', event => {
 function finishRadioPointer(event) {
   if (event.pointerId !== activePointerId) return;
 
+  const tappedButton = pointerDragging ? null : pointerStationButton;
+
   if (radioList.hasPointerCapture(event.pointerId)) {
     radioList.releasePointerCapture(event.pointerId);
   }
 
   if (pointerDragging) {
-    suppressStationClickUntil = Date.now() + 500;
     startRadioMomentum();
+  } else if (tappedButton && !tappedButton.disabled) {
+    const station = radioFavourites.find(item =>
+      String(item.mid) === tappedButton.dataset.mid &&
+      item.name === tappedButton.dataset.name
+    );
+
+    if (station) {
+      playStation(tappedButton, station);
+    }
   }
 
   activePointerId = null;
   pointerDragging = false;
+  pointerStationButton = null;
 }
 
 radioList.addEventListener('pointerup', finishRadioPointer);
-radioList.addEventListener('pointercancel', finishRadioPointer);
+radioList.addEventListener('pointercancel', event => {
+  if (event.pointerId !== activePointerId) return;
+
+  if (radioList.hasPointerCapture(event.pointerId)) {
+    radioList.releasePointerCapture(event.pointerId);
+  }
+
+  activePointerId = null;
+  pointerDragging = false;
+  pointerStationButton = null;
+});
 radioList.addEventListener('lostpointercapture', event => {
   if (event.pointerId === activePointerId) {
     activePointerId = null;
     pointerDragging = false;
+    pointerStationButton = null;
   }
 });
 
