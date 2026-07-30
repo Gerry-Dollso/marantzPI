@@ -19,6 +19,9 @@ const idleInput = document.getElementById('idleInput');
 const idleSourceIcon = document.getElementById('idleSourceIcon');
 const idlePower = document.getElementById('idlePower');
 const idleVolume = document.getElementById('idleVolume');
+const volumeOverlay = document.getElementById('volumeOverlay');
+const volumeOverlayValue = document.getElementById('volumeOverlayValue');
+const volumeOverlayBar = document.getElementById('volumeOverlayBar');
 
 let latest = null;
 let lastImageUrl = '';
@@ -27,6 +30,11 @@ let localTickPosition = 0;
 let lastTrackInfoAt = 0;
 let idleDelayMs = 60000;
 let clock24h = true;
+
+let previousReceiverVolume = null;
+let previousReceiverMuted = null;
+let volumeOverlayInitialised = false;
+let volumeOverlayTimer = null;
 
 function formatTime(seconds) {
   const value = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -91,7 +99,14 @@ function updateClock() {
 }
 
 function formatVolume(value) {
-  if (!Number.isFinite(Number(value))) return 'VOLUME —';
+  if (
+    value === null ||
+    value === undefined ||
+    value === '' ||
+    !Number.isFinite(Number(value))
+  ) {
+    return 'VOLUME —';
+  }
 
   const volume = Number(value);
   const displayed = Number.isInteger(volume)
@@ -99,6 +114,121 @@ function formatVolume(value) {
     : String(volume);
 
   return `${displayed} dB`;
+}
+
+
+function volumeBarPercentage(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === '' ||
+    !Number.isFinite(Number(value))
+  ) {
+    return 0;
+  }
+
+  const volume = Number(value);
+
+  // Approximate the Marantz receiver scale from minimum to maximum.
+  const minimum = -80;
+  const maximum = 18;
+  const clamped = Math.min(maximum, Math.max(minimum, volume));
+
+  return ((clamped - minimum) / (maximum - minimum)) * 100;
+}
+
+function hideVolumeOverlay() {
+  clearTimeout(volumeOverlayTimer);
+  volumeOverlayTimer = null;
+
+  volumeOverlay.classList.remove('visible');
+  volumeOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function receiverVolumeValue(receiver) {
+  const rawVolume = receiver?.volume;
+
+  if (
+    rawVolume === null ||
+    rawVolume === undefined ||
+    rawVolume === '' ||
+    !Number.isFinite(Number(rawVolume))
+  ) {
+    return null;
+  }
+
+  return Number(rawVolume);
+}
+
+function showVolumeOverlay(receiver) {
+  if (receiver.power !== 'on') {
+    hideVolumeOverlay();
+    return;
+  }
+
+  const muted = receiver.muted === true;
+  const volume = receiverVolumeValue(receiver);
+
+  // A missing status value must never be displayed as 0.0 dB.
+  if (!muted && volume === null) return;
+
+  volumeOverlayValue.textContent = muted
+    ? 'MUTED'
+    : formatVolume(volume);
+
+  volumeOverlayValue.classList.toggle('muted', muted);
+
+  if (muted) {
+    volumeOverlayBar.style.width = '0%';
+  } else if (volume !== null) {
+    volumeOverlayBar.style.width =
+      `${volumeBarPercentage(volume)}%`;
+  }
+
+  volumeOverlay.classList.add('visible');
+  volumeOverlay.setAttribute('aria-hidden', 'false');
+
+  clearTimeout(volumeOverlayTimer);
+  volumeOverlayTimer = setTimeout(hideVolumeOverlay, 1500);
+}
+
+function updateVolumeOverlay(receiver) {
+  const powerOn = receiver.power === 'on';
+  const volume = receiverVolumeValue(receiver);
+  const muted = receiver.muted === true;
+
+  if (!powerOn) {
+    hideVolumeOverlay();
+    previousReceiverVolume = volume;
+    previousReceiverMuted = muted;
+    volumeOverlayInitialised = false;
+    return;
+  }
+
+  if (!volumeOverlayInitialised) {
+    previousReceiverVolume = volume;
+    previousReceiverMuted = muted;
+    volumeOverlayInitialised = true;
+    return;
+  }
+
+  const volumeChanged =
+    volume !== null &&
+    previousReceiverVolume !== null &&
+    volume !== previousReceiverVolume;
+
+  const muteChanged = muted !== previousReceiverMuted;
+
+  if (volumeChanged || muteChanged) {
+    showVolumeOverlay(receiver);
+  }
+
+  // Preserve the last genuine receiver value when a poll is incomplete.
+  if (volume !== null) {
+    previousReceiverVolume = volume;
+  }
+
+  previousReceiverMuted = muted;
 }
 
 function updateIdleDisplay(data) {
@@ -160,6 +290,8 @@ function render(data) {
   SourceController.syncFromReceiver(data.receiver);
 
   const receiver = data.receiver || {};
+  updateVolumeOverlay(receiver);
+
   const inputCode = String(receiver.inputCode || '').toUpperCase();
   const inputName = receiver.input || 'MARANTZ';
 
@@ -210,8 +342,12 @@ function render(data) {
     updateProgress(0, 0);
   }
 
-  connection.textContent = 'CONNECTED';
-  connection.className = 'connection connected';
+  connection.classList.remove(
+    'error',
+    'powering-off',
+    'holding'
+  );
+  connection.classList.add('connected');
   updateIdleDisplay(data);
 }
 
@@ -227,8 +363,8 @@ async function refresh() {
 
     render(await response.json());
   } catch (error) {
-    connection.textContent = 'RECONNECTING';
-    connection.className = 'connection error';
+    connection.classList.remove('connected');
+    connection.classList.add('error');
   }
 }
 
@@ -250,6 +386,25 @@ async function requestControl(action) {
   return result;
 }
 
+
+async function requestVolumeSet(value) {
+  const response = await fetch(
+    `/api/control/volume-set?value=${encodeURIComponent(value)}`,
+    {
+      method: 'POST',
+      cache: 'no-store'
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Volume command failed');
+  }
+
+  return result;
+}
+
 async function sendAction(button) {
   const action = button.dataset.action;
   if (!action) return;
@@ -266,8 +421,8 @@ async function sendAction(button) {
 
     setTimeout(refresh, 350);
   } catch (error) {
-    connection.textContent = 'CONTROL ERROR';
-    connection.className = 'connection error';
+    connection.classList.remove('connected');
+    connection.classList.add('error');
   } finally {
     setTimeout(() => {
       button.disabled = false;
@@ -452,11 +607,241 @@ idleScreen.addEventListener('pointermove', event => {
 idleScreen.addEventListener('pointerup', cancelStandbyHold);
 idleScreen.addEventListener('pointercancel', cancelStandbyHold);
 
+// Tap or hold the receiver volume controls.
+//
+// Volume changes use confirmed absolute targets. The next 0.5 dB step is
+// not sent until the receiver reports that the previous one was applied.
+let volumeRepeatTimer = null;
+let volumeRepeatButton = null;
+let volumeRepeatSession = 0;
+let volumeRepeatCurrent = null;
+let volumeRequestBusy = false;
+
+function validReceiverVolume(value) {
+  return (
+    value !== null &&
+    value !== undefined &&
+    value !== '' &&
+    Number.isFinite(Number(value))
+  );
+}
+
+function stopVolumeRepeat() {
+  volumeRepeatSession += 1;
+
+  clearTimeout(volumeRepeatTimer);
+  volumeRepeatTimer = null;
+
+  if (volumeRepeatButton) {
+    volumeRepeatButton.classList.remove('pressed');
+    delete volumeRepeatButton.dataset.activePointer;
+    volumeRepeatButton = null;
+  }
+}
+
+async function sendConfirmedVolumeStep(button, session) {
+  if (volumeRequestBusy) return false;
+  if (session !== volumeRepeatSession) return false;
+  if (volumeRepeatButton !== button) return false;
+
+  if (!validReceiverVolume(volumeRepeatCurrent)) {
+    const statusVolume = latest?.receiver?.volume;
+
+    if (!validReceiverVolume(statusVolume)) {
+      return false;
+    }
+
+    volumeRepeatCurrent = Number(statusVolume);
+  }
+
+  const direction =
+    button.dataset.action === 'volume-up' ? 0.5 : -0.5;
+
+  const target = Math.min(
+    18,
+    Math.max(-80, volumeRepeatCurrent + direction)
+  );
+
+  volumeRequestBusy = true;
+
+  try {
+    const result = await requestVolumeSet(target);
+
+    if (validReceiverVolume(result.volume)) {
+      volumeRepeatCurrent = Number(result.volume);
+    } else {
+      volumeRepeatCurrent = target;
+    }
+
+    showVolumeOverlay({
+      power: 'on',
+      muted: false,
+      volume: volumeRepeatCurrent
+    });
+
+    setTimeout(refresh, 60);
+    return true;
+  } catch (error) {
+    connection.classList.remove('connected');
+    connection.classList.add('error');
+    stopVolumeRepeat();
+    return false;
+  } finally {
+    volumeRequestBusy = false;
+  }
+}
+
+function scheduleConfirmedVolumeStep(button, session, delay) {
+  clearTimeout(volumeRepeatTimer);
+
+  volumeRepeatTimer = setTimeout(async () => {
+    if (
+      session !== volumeRepeatSession ||
+      volumeRepeatButton !== button
+    ) {
+      return;
+    }
+
+    await sendConfirmedVolumeStep(button, session);
+
+    if (
+      session !== volumeRepeatSession ||
+      volumeRepeatButton !== button
+    ) {
+      return;
+    }
+
+    // The next step is scheduled only after receiver confirmation.
+    scheduleConfirmedVolumeStep(button, session, 70);
+  }, delay);
+}
+
+document.addEventListener('pointerdown', event => {
+  const button = event.target.closest(
+    'button[data-action="volume-up"], button[data-action="volume-down"]'
+  );
+
+  if (!button) return;
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+  event.preventDefault();
+  stopVolumeRepeat();
+
+  const currentVolume = latest?.receiver?.volume;
+
+  if (!validReceiverVolume(currentVolume)) {
+    connection.classList.remove('connected');
+    connection.classList.add('error');
+    return;
+  }
+
+  volumeRepeatCurrent = Number(currentVolume);
+  volumeRepeatButton = button;
+
+  const session = volumeRepeatSession;
+
+  button.classList.add('pressed');
+  button.dataset.activePointer = String(event.pointerId);
+
+  try {
+    button.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is optional.
+  }
+
+  // A tap applies one confirmed 0.5 dB step.
+  sendConfirmedVolumeStep(button, session);
+
+  // Holding repeats only after each preceding step is confirmed.
+  scheduleConfirmedVolumeStep(button, session, 425);
+}, { passive: false });
+
+document.addEventListener('pointerup', stopVolumeRepeat);
+document.addEventListener('pointercancel', stopVolumeRepeat);
+document.addEventListener('lostpointercapture', stopVolumeRepeat);
+window.addEventListener('blur', stopVolumeRepeat);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopVolumeRepeat();
+});
+
+
+// Hold the top-right power symbol for one second to place the AVR
+// into standby. A normal tap does nothing, preventing accidental shutdown.
+let powerOffHoldTimer = null;
+let powerOffStartX = 0;
+let powerOffStartY = 0;
+let powerOffTriggered = false;
+
+function cancelPowerOffHold() {
+  if (powerOffHoldTimer) {
+    clearTimeout(powerOffHoldTimer);
+    powerOffHoldTimer = null;
+  }
+
+  connection.classList.remove('holding');
+}
+
+connection.addEventListener('pointerdown', event => {
+  if (document.body.classList.contains('show-idle')) return;
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+  event.preventDefault();
+
+  powerOffTriggered = false;
+  powerOffStartX = event.clientX;
+  powerOffStartY = event.clientY;
+
+  connection.classList.add('holding');
+
+  try {
+    connection.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is optional.
+  }
+
+  powerOffHoldTimer = setTimeout(async () => {
+    powerOffHoldTimer = null;
+    powerOffTriggered = true;
+    connection.classList.remove('holding');
+    connection.classList.add('powering-off');
+
+    try {
+      await requestControl('power-off');
+      setTimeout(refresh, 500);
+    } catch (error) {
+      connection.classList.remove('powering-off');
+      connection.classList.add('error');
+    }
+  }, 1000);
+});
+
+connection.addEventListener('pointermove', event => {
+  if (!powerOffHoldTimer) return;
+
+  const movementX = event.clientX - powerOffStartX;
+  const movementY = event.clientY - powerOffStartY;
+
+  if (Math.hypot(movementX, movementY) > 18) {
+    cancelPowerOffHold();
+  }
+});
+
+connection.addEventListener('pointerup', cancelPowerOffHold);
+connection.addEventListener('pointercancel', cancelPowerOffHold);
+connection.addEventListener('lostpointercapture', cancelPowerOffHold);
+
 document.addEventListener('click', event => {
   const button = event.target.closest('button[data-action]');
   if (!button) return;
 
   const action = button.dataset.action;
+
+  // Volume commands are handled by the pointer events above.
+  if (action === 'volume-up' || action === 'volume-down') {
+    event.preventDefault();
+    return;
+  }
 
   if (SourceController.order.includes(action)) {
     SourceController.change(action);
@@ -510,3 +895,4 @@ setInterval(refresh, 750);
   checkServerInstance();
   window.setInterval(checkServerInstance, 2000);
 })();
+

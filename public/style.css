@@ -846,3 +846,343 @@ body.show-standby.standby-waking .idle-date,
 body.show-standby.standby-waking .idle-input {
   opacity: 0.55;
 }
+
+
+/* ===== Receiver volume overlay ===== */
+.volume-overlay {
+  position: absolute;
+  left: 170px;
+  top: 50%;
+  z-index: 50;
+  width: 300px;
+  padding: 24px 26px 22px;
+  transform: translate(-50%, -50%) scale(0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(4, 6, 6, 0.82);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease,
+    transform 0.22s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.volume-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.volume-overlay-value {
+  color: var(--text-strong);
+  font-size: 42px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+
+.volume-overlay-value.muted {
+  color: var(--accent-strong);
+  font-size: 34px;
+  letter-spacing: 0.15em;
+}
+
+.volume-overlay-track {
+  width: 100%;
+  height: 3px;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.volume-overlay-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-strong);
+  transition: width 0.16s linear;
+}
+
+/* Move the overlay to the centre when the idle/TV screen is visible. */
+body.show-idle .volume-overlay {
+  left: 50%;
+}
+
+/* Never show volume feedback while the receiver is in standby. */
+body.show-standby .volume-overlay {
+  opacity: 0;
+  visibility: hidden;
+}
+
+
+/* ==========================================================
+   v3.2.1 Stable refinement patch
+   Larger idle clocks and discreet AVR standby control
+   ========================================================== */
+
+/* Reset the old text-based connection indicator into a small button. */
+.connection.power-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: none;
+  opacity: 0.82;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Power symbol is drawn in CSS, so JavaScript status text cannot replace it. */
+.connection.power-button::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 16px;
+  height: 16px;
+  transform: translateX(-50%);
+  border: 2px solid #bca675;
+  border-top-color: transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.connection.power-button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 2px;
+  height: 11px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: #bca675;
+}
+
+.connection.power-button.connected {
+  opacity: 0.85;
+}
+
+.connection.power-button.error::before {
+  border-right-color: #a86262;
+  border-bottom-color: #a86262;
+  border-left-color: #a86262;
+}
+
+.connection.power-button.error::after {
+  background: #a86262;
+}
+
+.connection.power-button.holding {
+  transform: scale(0.94);
+  background: rgba(188, 166, 117, 0.10);
+  box-shadow: 0 0 0 3px rgba(188, 166, 117, 0.13);
+}
+
+.connection.power-button.holding::before {
+  animation: power-hold-progress 1s linear forwards;
+}
+
+.connection.power-button.powering-off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+@keyframes power-hold-progress {
+  from {
+    box-shadow: 0 0 0 0 rgba(212, 193, 142, 0);
+  }
+
+  to {
+    box-shadow: 0 0 0 5px rgba(212, 193, 142, 0.20);
+  }
+}
+
+/* Standby screen: larger clock and lower branding block. */
+body.show-standby .idle-screen {
+  padding-top: 42px;
+}
+
+body.show-standby .idle-clock {
+  font-size: 148px;
+  line-height: 0.84;
+  font-weight: 300;
+  letter-spacing: -0.045em;
+}
+
+body.show-standby .idle-date {
+  margin-top: 24px;
+}
+
+body.show-standby .idle-divider {
+  width: 104px;
+  margin-top: 32px;
+  margin-bottom: 27px;
+}
+
+body.show-standby .idle-input {
+  font-size: 24px;
+}
+
+body.show-standby .idle-status {
+  margin-top: 17px;
+}
+
+/* TV Audio screen: same visual proportions as standby.
+   The input-selection bar keeps its existing bottom anchoring and dimensions. */
+body.show-tv-idle .idle-screen {
+  padding-top: 30px;
+}
+
+body.show-tv-idle .idle-clock {
+  font-size: 132px;
+  line-height: 0.86;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+}
+
+body.show-tv-idle .idle-date {
+  margin-top: 21px;
+}
+
+body.show-tv-idle .idle-divider {
+  width: 100px;
+  margin-top: 27px;
+  margin-bottom: 21px;
+}
+
+body.show-tv-idle .idle-input {
+  font-size: 23px;
+  letter-spacing: 0.22em;
+  padding-left: 0.22em;
+}
+
+body.show-tv-idle .idle-status {
+  margin-top: 13px;
+}
+
+/* The corner power button belongs only to the normal input screens. */
+body.show-idle .connection.power-button {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+
+/* ===== Standby layout refinement ===== */
+
+body.show-standby .idle-screen {
+    position: relative;
+}
+
+body.show-standby .idle-clock {
+    position: absolute;
+    top: 38px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 150px;
+    line-height: 0.85;
+    margin: 0;
+}
+
+body.show-standby .idle-date {
+    position: absolute;
+    top: 198px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+}
+
+body.show-standby .idle-divider {
+    position: absolute;
+    top: 248px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 105px;
+    margin: 0;
+}
+
+body.show-standby .idle-input {
+    position: absolute;
+    top: 286px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+}
+
+body.show-standby .idle-status {
+    position: absolute;
+    top: 330px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+}
+
+
+/* Final standby spacing adjustment */
+body.show-standby .idle-divider {
+  top: 265px;
+}
+
+body.show-standby .idle-input {
+  top: 305px;
+}
+
+body.show-standby .idle-status {
+  top: 350px;
+}
+
+
+/* Final standby spacing adjustment */
+body.show-standby .idle-divider {
+  top: 265px;
+}
+
+body.show-standby .idle-input {
+  top: 305px;
+}
+
+body.show-standby .idle-status {
+  top: 350px;
+}
+
+
+/* Final standby vertical centring override */
+body.show-standby .idle-clock {
+  top: 63px;
+}
+
+body.show-standby .idle-date {
+  top: 223px;
+}
+
+body.show-standby .idle-divider {
+  top: 290px;
+}
+
+body.show-standby .idle-input {
+  top: 330px;
+}
+
+body.show-standby .idle-status {
+  top: 375px;
+}
+

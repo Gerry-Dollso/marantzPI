@@ -149,6 +149,11 @@ function parseVolume(line) {
 
 function inputLabel(line) {
   const input = line?.slice(2) || 'UNKNOWN';
+
+  if (input === 'AUX1') {
+    return 'AUX';
+  }
+
   return settings.inputNames?.[input] || input;
 }
 
@@ -277,9 +282,72 @@ async function heosControl(action) {
   return { ok: true };
 }
 
-async function receiverControl(action) {
+
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function normaliseVolume(value) {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    throw new Error('Invalid receiver volume');
+  }
+
+  // Marantz volume operates in 0.5 dB steps.
+  return Math.min(18, Math.max(-80, Math.round(numeric * 2) / 2));
+}
+
+function marantzVolumeCommand(value) {
+  const volume = normaliseVolume(value);
+  const receiverValue = volume + 80;
+
+  const encoded = Number.isInteger(receiverValue)
+    ? String(receiverValue).padStart(2, '0')
+    : String(Math.round(receiverValue * 10)).padStart(3, '0');
+
+  return `MV${encoded}`;
+}
+
+async function setReceiverVolume(value) {
+  const target = normaliseVolume(value);
+
+  await avr(marantzVolumeCommand(target));
+
+  // Do not acknowledge the browser until the AVR reports that the
+  // requested volume has genuinely been applied.
+  const deadline = Date.now() + 1600;
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await avr('MV?', 'MV', 700);
+      const actual = parseVolume(response);
+
+      if (
+        actual !== null &&
+        Math.abs(actual - target) < 0.25
+      ) {
+        return actual;
+      }
+    } catch {
+      // Retry briefly while the receiver applies the command.
+    }
+
+    await sleep(80);
+  }
+
+  throw new Error(`Receiver did not reach ${target} dB`);
+}
+
+async function receiverControl(action, requestedVolume = null) {
+  if (action === 'volume-set') {
+    const volume = await setReceiverVolume(requestedVolume);
+    return { ok: true, volume };
+  }
+
   const commands = {
     'power-on': 'ZMON',
+    'power-off': 'ZMOFF',
     'volume-up': 'MVUP',
     'volume-down': 'MVDOWN',
     phono: 'SI8K',
@@ -390,7 +458,16 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, await heosControl(action));
       }
 
-      return sendJson(res, 200, await receiverControl(action));
+      const requestedVolume =
+        action === 'volume-set'
+          ? url.searchParams.get('value')
+          : null;
+
+      return sendJson(
+        res,
+        200,
+        await receiverControl(action, requestedVolume)
+      );
     }
 
     if (req.method === 'GET') {
