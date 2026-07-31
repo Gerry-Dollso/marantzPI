@@ -1,0 +1,157 @@
+/* Dedicated low-light TV input screen. */
+.tv-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.025), transparent 42%),
+    #050505;
+  color: #f2f2f2;
+}
+
+body.show-tv-screen .tv-screen {
+  display: block;
+}
+
+.tv-power {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0;
+  cursor: pointer;
+}
+
+.tv-power::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  width: 25px;
+  height: 25px;
+  border: 4px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.tv-power::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 4px;
+  height: 22px;
+  border-radius: 4px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.tv-power.holding {
+  opacity: 0.55;
+}
+
+.tv-power.powering-off {
+  opacity: 0.35;
+}
+
+.tv-centre {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(620px, 78vw);
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.tv-brand {
+  padding-left: 0.24em;
+  color: #c9aa6b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 66px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.24em;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.tv-divider {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  margin: 35px auto 31px;
+  background: linear-gradient(
+    90deg,
+    rgba(201, 170, 107, 0.2),
+    rgba(201, 170, 107, 0.86) 50%,
+    rgba(201, 170, 107, 0.2)
+  );
+}
+
+.tv-divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(220, 187, 115, 0.16);
+  filter: blur(5px);
+  transform: translate(-50%, -50%);
+}
+
+.tv-title {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 46px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.tv-inputs {
+  position: absolute;
+  left: 42px;
+  right: 42px;
+  bottom: 43px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.tv-inputs button {
+  min-width: 0;
+  height: 62px;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 120ms ease, opacity 180ms ease;
+}
+
+.tv-inputs button.tv-pressed,
+.tv-inputs button.pressed {
+  color: #c9aa6b;
+  opacity: 0.78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-inputs button {
+    transition: none;
+  }
+}
