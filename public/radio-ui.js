@@ -7,6 +7,8 @@ const radioStatus = document.getElementById('radioStatus');
 const radioBack = document.getElementById('radioBack');
 const radioAll = document.getElementById('radioAll');
 
+const RADIO_STORAGE_KEY = 'marantzpi.activeRadioFavourite';
+
 const stationArtwork = {
   'BBC Radio 6 Music': '/logos/bbc-radio-6.svg',
   KEXP: '/logos/kexp.svg',
@@ -85,8 +87,6 @@ function makeStationButton(station, compact = false) {
 
   button.append(badge, label);
 
-  // The scrolling list handles taps explicitly through pointer events.
-  // Top-station tiles can continue to use normal browser clicks.
   if (!compact) {
     button.addEventListener('click', () => playStation(button, station));
   }
@@ -176,6 +176,16 @@ async function playStation(button, station) {
     if (!response.ok) {
       throw new Error(result.error || 'Could not start station');
     }
+
+    localStorage.setItem(
+      RADIO_STORAGE_KEY,
+      JSON.stringify({
+        name: station.name,
+        mid: station.mid,
+        imageUrl: station.imageUrl || stationArtwork[station.name] || '',
+        selectedAt: Date.now()
+      })
+    );
 
     radioStatus.textContent = `Playing ${station.name}`;
     setTimeout(() => setRadioOpen(false), 500);
