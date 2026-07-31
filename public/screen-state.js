@@ -1,12 +1,14 @@
 'use strict';
 
 // Single display-state policy for marantzPI.
-// app.js remains the only /api/status poller and the only owner of controls.
-// There is no separate no-signal or TV-idle screen:
+// app.js remains the only /api/status poller and owner of shared controls.
 //   standby -> standby screen
-//   on      -> active input screen
+//   on + TV -> dedicated low-light TV screen
+//   on + other input -> active source screen
 //   unknown -> preserve the current screen until a valid state arrives
 (() => {
+  const tvScreen = document.getElementById('tvScreen');
+
   updateIdleDisplay = function updateScreenState(data) {
     const receiver = data?.receiver || {};
     const power = String(receiver.power || 'unknown').toLowerCase();
@@ -19,6 +21,7 @@
 
     const inputCode = String(receiver.inputCode || '').toUpperCase();
     const isStandby = power === 'standby';
+    const isTv = power === 'on' && inputCode === 'TV';
 
     idleInput.textContent = isStandby
       ? 'MARANTZ'
@@ -46,6 +49,7 @@
 
     document.body.classList.toggle('show-idle', isStandby);
     document.body.classList.toggle('show-standby', isStandby);
+    document.body.classList.toggle('show-tv-screen', isTv);
     document.body.classList.remove('show-tv-idle');
 
     if (!isStandby) {
@@ -56,6 +60,13 @@
     }
 
     idleScreen.setAttribute('aria-hidden', String(!isStandby));
-    nowPlayingScreen.setAttribute('aria-hidden', String(isStandby));
+    nowPlayingScreen.setAttribute(
+      'aria-hidden',
+      String(isStandby || isTv)
+    );
+
+    if (tvScreen) {
+      tvScreen.setAttribute('aria-hidden', String(!isTv));
+    }
   };
 })();
