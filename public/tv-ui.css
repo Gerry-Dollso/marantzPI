@@ -76,7 +76,7 @@ body.show-tv-screen .tv-screen {
   display: block;
   width: max-content;
   margin: 0 auto;
-  padding-left: 0.27em;
+  padding: 0;
   color: #c9aa6b;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 46px;
