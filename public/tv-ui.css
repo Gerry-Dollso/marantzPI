@@ -20,8 +20,8 @@ body.show-tv-screen .tv-screen {
   position: absolute;
   top: 22px;
   right: 24px;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -34,10 +34,10 @@ body.show-tv-screen .tv-screen {
   content: '';
   position: absolute;
   left: 50%;
-  top: 8px;
-  width: 18px;
-  height: 18px;
-  border: 3px solid currentColor;
+  top: 7px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
   transform: translateX(-50%);
@@ -48,9 +48,9 @@ body.show-tv-screen .tv-screen {
   position: absolute;
   left: 50%;
   top: 3px;
-  width: 3px;
-  height: 17px;
-  border-radius: 3px;
+  width: 2px;
+  height: 13px;
+  border-radius: 2px;
   background: currentColor;
   transform: translateX(-50%);
 }
@@ -73,7 +73,9 @@ body.show-tv-screen .tv-screen {
 }
 
 .tv-brand {
-  margin: 0;
+  display: block;
+  width: max-content;
+  margin: 0 auto;
   padding-left: 0.27em;
   color: #c9aa6b;
   font-family: Georgia, "Times New Roman", serif;
