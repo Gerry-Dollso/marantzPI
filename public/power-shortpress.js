@@ -1,8 +1,35 @@
 'use strict';
 
-// Shorten only the existing Now Playing power-button hold.
-// This adds no polling and does not alter standby or screen-state logic.
+// Keep the idle/standby screen exclusive to genuine AVR standby.
+// app.js remains the only status poller; this only corrects its rendered state.
 (() => {
+  if (typeof updateIdleDisplay === 'function') {
+    const originalUpdateIdleDisplay = updateIdleDisplay;
+
+    window.updateIdleDisplay = data => {
+      originalUpdateIdleDisplay(data);
+
+      const receiverPower = String(
+        data?.receiver?.power || ''
+      ).toLowerCase();
+
+      if (receiverPower === 'on') {
+        document.body.classList.remove(
+          'show-idle',
+          'show-standby',
+          'show-tv-idle',
+          'standby-holding',
+          'standby-waking'
+        );
+
+        idleScreen.setAttribute('aria-hidden', 'true');
+        nowPlayingScreen.setAttribute('aria-hidden', 'false');
+      }
+    };
+  }
+
+  // Shorten only the existing Now Playing power-button hold.
+  // This adds no polling and does not alter the AVR control endpoint.
   const button = document.getElementById('connection');
   if (!button) return;
 
@@ -30,7 +57,7 @@
   button.addEventListener('pointerdown', event => {
     stopOriginalHandler(event);
 
-    if (document.body.classList.contains('show-idle')) return;
+    if (document.body.classList.contains('show-standby')) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     event.preventDefault();
