@@ -1,7 +1,7 @@
 'use strict';
 
 const sourceHeading = document.getElementById('sourceHeading');
-const RADIO_STORAGE_KEY = 'marantzpi.activeRadioFavourite';
+const PLAYBACK_RADIO_STORAGE_KEY = 'marantzpi.activeRadioFavourite';
 
 function sourceLabel(playbackSource) {
   const labels = {
@@ -21,12 +21,15 @@ function cleanHeosText(value) {
 
 function rememberedRadioFavourite() {
   try {
-    const value = JSON.parse(localStorage.getItem(RADIO_STORAGE_KEY) || 'null');
+    const value = JSON.parse(
+      localStorage.getItem(PLAYBACK_RADIO_STORAGE_KEY) || 'null'
+    );
+
     if (!value || !value.name) return null;
 
     const selectedAt = Number(value.selectedAt) || 0;
     if (Date.now() - selectedAt > 12 * 60 * 60 * 1000) {
-      localStorage.removeItem(RADIO_STORAGE_KEY);
+      localStorage.removeItem(PLAYBACK_RADIO_STORAGE_KEY);
       return null;
     }
 
