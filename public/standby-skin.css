@@ -8,7 +8,7 @@ body.show-standby .idle-brand {
   display: block !important;
   margin: 0;
   padding-left: 0.27em;
-  color: #f4f3ef;
+  color: #c9aa6b;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 46px;
   font-weight: 700;
@@ -44,7 +44,7 @@ body.show-standby .idle-input::after {
   content: 'READY TO LISTEN';
   display: block;
   padding-left: 0.22em;
-  color: #bca675;
+  color: #f4f3ef;
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.22em;
