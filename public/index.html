@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/playback-source-ui.css?v=3">
   <link rel="stylesheet" href="/radio-ui.css?v=2">
   <link rel="stylesheet" href="/standby-skin.css?v=1">
+  <link rel="stylesheet" href="/tv-ui.css?v=1">
 </head>
 
 <body>
@@ -40,6 +41,30 @@
     </div>
 
     <div class="idle-input-controls">
+      <button data-action="phono">PHONO</button>
+      <button data-action="cd">CD</button>
+      <button data-action="heos" data-net-source="tidal">TIDAL</button>
+      <button data-radio-open>RADIO</button>
+      <button data-action="aux">AUX</button>
+    </div>
+  </section>
+
+  <section id="tvScreen" class="tv-screen" aria-hidden="true">
+    <button
+      id="tvPower"
+      class="tv-power"
+      type="button"
+      aria-label="Hold to put receiver into standby"
+      title="Hold to power off AVR"
+    >POWER</button>
+
+    <div class="tv-centre">
+      <div class="tv-brand">MARANTZ</div>
+      <div class="tv-divider"></div>
+      <div class="tv-title">TV</div>
+    </div>
+
+    <div class="tv-inputs">
       <button data-action="phono">PHONO</button>
       <button data-action="cd">CD</button>
       <button data-action="heos" data-net-source="tidal">TIDAL</button>
@@ -142,7 +167,8 @@
   </div>
 
   <script src="/app.js?v=232"></script>
-  <script src="/screen-state.js?v=1"></script>
+  <script src="/screen-state.js?v=2"></script>
+  <script src="/tv-ui.js?v=1"></script>
   <script src="/playback-source-ui.js?v=3"></script>
   <script src="/radio-ui.js?v=1"></script>
 </body>
