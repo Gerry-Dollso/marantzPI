@@ -1,0 +1,27 @@
+/* Waveshare 8-inch 1280x800 wall display.
+ *
+ * The v3 interface remains authored on its original 800x480 design canvas.
+ * On the Waveshare panel we scale that canvas uniformly to 1280x768,
+ * centre it vertically, and rotate it 180 degrees because the physical
+ * display is wall-mounted with its connectors facing down.
+ *
+ * Keeping this as a display-specific layer avoids disturbing the original
+ * 800x480 installation or introducing another JavaScript render loop.
+ */
+
+@media screen and (min-width: 1200px) and (min-height: 720px) {
+  html {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  body {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.6);
+    transform-origin: 50% 50%;
+  }
+}
