@@ -7,7 +7,7 @@
     "8K": "Technics SL-1210G",
     "PHONO": "Technics SL-1210G",
     "CD": "Shanling ET3",
-    "NET": "TIDAL",
+    "NET": "TIDAL / HEOS",
     "TUNER": "RADIO",
     "TV": "LG C3",
     "AUX1": "Sony VPL-HW65ES",
@@ -15,7 +15,7 @@
   },
   "inputNames": {
     "TV": "TV",
-    "NET": "TIDAL",
+    "NET": "HEOS",
     "8K": "PHONO",
     "PHONO": "PHONO",
     "CD": "CD",
@@ -28,5 +28,16 @@
     "AUX2": "AUX",
     "TUNER": "RADIO"
   },
-  "smartSelect": {}
+  "smartSelect": {
+    "phono": 1,
+    "cd": 2,
+    "heos": 3
+  },
+  "autoSmartSelect": {
+    "8K": 1,
+    "PHONO": 1,
+    "CD": 2,
+    "NET": 3,
+    "TV": 4
+  }
 }
