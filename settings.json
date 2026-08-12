@@ -1,8 +1,20 @@
 {
   "clock24h": true,
   "idleTimeoutSeconds": 60,
+  "standbyBlankSeconds": 300,
+  "movieDimLevel": 0.12,
+  "sourceDisplayNames": {
+    "8K": "Technics SL-1210G",
+    "PHONO": "Technics SL-1210G",
+    "CD": "Shanling ET3",
+    "NET": "TIDAL",
+    "TUNER": "RADIO",
+    "TV": "LG C3",
+    "AUX1": "Sony VPL-HW65ES",
+    "AUX2": "Sony VPL-HW65ES"
+  },
   "inputNames": {
-    "TV": "TV AUDIO",
+    "TV": "TV",
     "NET": "TIDAL",
     "8K": "PHONO",
     "PHONO": "PHONO",
@@ -12,8 +24,9 @@
     "DVD": "DVD",
     "GAME": "GAME",
     "SATCBL": "SAT/CBL",
-    "AUX1": "AUX 1",
-    "AUX2": "AUX 2",
-    "TUNER": "TUNER"
-  }
+    "AUX1": "AUX",
+    "AUX2": "AUX",
+    "TUNER": "RADIO"
+  },
+  "smartSelect": {}
 }
