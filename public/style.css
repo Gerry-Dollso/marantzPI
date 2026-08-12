@@ -1186,3 +1186,8 @@ body.show-standby .idle-status {
   top: 375px;
 }
 
+
+/* Touchscreen kiosk: never display mouse pointer */
+* {
+  cursor: none !important;
+}
