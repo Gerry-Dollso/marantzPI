@@ -68,3 +68,9 @@ body.show-standby .idle-input::after {
   font-weight: 400;
   letter-spacing: 0.28em;
 }
+
+/* Standby power-on wording */
+body.show-standby.standby-holding .idle-input::after,
+body.show-standby.standby-waking .idle-input::after {
+  content: 'POWERING ON';
+}
