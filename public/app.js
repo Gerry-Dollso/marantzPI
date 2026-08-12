@@ -588,6 +588,18 @@ idleScreen.addEventListener('pointerdown', event => {
   if (!document.body.classList.contains('show-standby')) return;
   if (event.pointerType === 'mouse' && event.button !== 0) return;
 
+  // Only the central standby branding area powers on the AVR.
+  const rect = idleScreen.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const inWakeZone =
+    x >= rect.width * 0.25 &&
+    x <= rect.width * 0.75 &&
+    y >= rect.height * 0.30 &&
+    y <= rect.height * 0.70;
+
+  if (!inWakeZone) return;
+
   standbyWakeTriggered = false;
   standbyHoldStartX = event.clientX;
   standbyHoldStartY = event.clientY;
