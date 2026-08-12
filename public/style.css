@@ -1191,3 +1191,17 @@ body.show-standby .idle-status {
 * {
   cursor: none !important;
 }
+
+/* Full-screen standby blackout. Logic is owned by screen-state.js. */
+.standby-blanker {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  background: #000;
+  touch-action: none;
+}
+
+body.standby-blanked .standby-blanker {
+  display: block;
+}
