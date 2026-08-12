@@ -2,105 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=800, height=480, initial-scale=1, maximum-scale=1, user-scalable=no"
-  >
+  <meta name="viewport" content="width=800, height=480, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>marantzPI</title>
-  <link rel="stylesheet" href="/style.css?v=223">
+  <link rel="stylesheet" href="/style.css?v=300">
 </head>
-
 <body>
   <section id="idleScreen" class="idle-screen" aria-hidden="true">
-    <div class="idle-brand">MARANTZ</div>
-
+    <button id="settingsButton" class="corner-button settings-button" aria-label="Open Marantz settings">⚙</button>
+    <div id="powerTarget" class="power-target" role="button" aria-label="Hold to power on receiver">
+      <div class="idle-brand">marantz</div>
+      <div class="power-progress"><div id="powerProgressBar"></div></div>
+      <div id="standbyTagline" class="standby-tagline">BECAUSE MUSIC MATTERS</div>
+    </div>
     <div id="idleClock" class="idle-clock">00:00</div>
     <div id="idleDate" class="idle-date">MONDAY 28 JULY</div>
-
     <div class="idle-divider"></div>
-
     <div id="idleSourceIcon" class="idle-source-icon" aria-hidden="true">
       <div class="source-icon source-icon-record"></div>
       <div class="source-icon source-icon-cd"></div>
-      <div class="source-icon source-icon-heos">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
+      <div class="source-icon source-icon-heos"><span></span><span></span><span></span></div>
     </div>
-
-    <div id="idleInput" class="idle-input">TV AUDIO</div>
-
-    <div class="idle-status">
-      <span id="idlePower">RECEIVER ON</span>
-      <span id="idleVolume">−32.0 dB</span>
-    </div>
-
-    <div class="idle-input-controls">
-      <button data-action="phono">PHONO</button>
-      <button data-action="cd">CD</button>
-      <button data-action="heos">HEOS</button>
-    </div>
+    <div id="idleInput" class="idle-input">MARANTZ</div>
+    <div class="idle-status"><span id="idlePower">STANDBY</span><span id="idleVolume"></span></div>
   </section>
 
   <main id="nowPlayingScreen" class="display">
+    <button id="settingsButtonPlaying" class="corner-button settings-button" aria-label="Open Marantz settings">⚙</button>
+    <button id="powerOffButton" class="corner-button power-button" data-action="power-off" aria-label="Power off receiver">⏻</button>
     <section class="artwork-area">
       <div class="artwork-frame">
         <img id="artwork" alt="Album artwork">
-        <div id="artworkFallback" class="artwork-fallback">
-          <span>MARANTZ</span>
-        </div>
+        <div id="artworkFallback" class="artwork-fallback"><span>marantz</span></div>
       </div>
     </section>
-
     <section class="information">
-      <header>
-        <div class="heading">NOW PLAYING</div>
-        <div id="connection" class="connection">CONNECTING</div>
-      </header>
-
-      <div class="metadata">
-        <h1 id="song">Waiting for music…</h1>
-        <h2 id="artist"></h2>
-        <p id="album"></p>
-      </div>
-
-      <div class="progress-section">
-        <div class="progress-track">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-
-        <div class="times">
-          <span id="currentTime">0:00</span>
-          <span id="duration">0:00</span>
-        </div>
-      </div>
-
-      <div class="transport">
-        <button data-action="previous" aria-label="Previous track">◀◀</button>
-        <button
-          id="playPause"
-          class="play-pause"
-          data-action="pause"
-          aria-label="Play or pause"
-        >Ⅱ</button>
-        <button data-action="next" aria-label="Next track">▶▶</button>
-      </div>
-
-      <div class="receiver-controls">
-        <button data-action="volume-down" aria-label="Volume down">−</button>
-        <button id="muteButton" data-action="mute" aria-label="Mute">MUTE</button>
-        <button data-action="volume-up" aria-label="Volume up">＋</button>
-      </div>
-
-      <div class="inputs">
-        <button data-action="phono">PHONO</button>
-        <button data-action="cd">CD</button>
-        <button data-action="heos">HEOS</button>
-      </div>
+      <header><div class="heading">NOW PLAYING</div><div id="connection" class="connection">CONNECTING</div></header>
+      <div class="metadata"><h1 id="song">Waiting for music…</h1><h2 id="artist"></h2><p id="album"></p></div>
+      <div class="progress-section"><div class="progress-track"><div id="progressBar" class="progress-bar"></div></div><div class="times"><span id="currentTime">0:00</span><span id="duration">0:00</span></div></div>
+      <div class="transport"><button data-action="previous" aria-label="Previous track">◀◀</button><button id="playPause" class="play-pause" data-action="pause" aria-label="Play or pause">Ⅱ</button><button data-action="next" aria-label="Next track">▶▶</button></div>
+      <div class="receiver-controls"><button data-action="volume-down" aria-label="Volume down">−</button><button id="muteButton" data-action="mute" aria-label="Mute">MUTE</button><button data-action="volume-up" aria-label="Volume up">＋</button></div>
+      <div class="inputs"><button data-action="phono">PHONO</button><button data-action="cd">CD</button><button data-action="heos">TIDAL</button><button data-action="radio">RADIO</button><button data-action="aux">AUX</button></div>
     </section>
   </main>
-
-  <script src="/app.js?v=223"></script>
+  <div id="screenBlanker" class="screen-blanker" aria-hidden="true"></div>
+  <script src="/app.js?v=300"></script>
 </body>
 </html>
