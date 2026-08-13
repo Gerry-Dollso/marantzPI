@@ -34,6 +34,9 @@ try {
 const publicDir = path.join(__dirname, 'public');
 
 let activeRadioFavourite = null;
+let previousSmartSelectInputCode = null;
+let smartSelectCommandInFlight = false;
+
 
 const execFileAsync = promisify(execFile);
 
@@ -42,6 +45,34 @@ const PANEL_NORMAL_BRIGHTNESS = '50';
 
 let panelPowerState = 'unknown';
 let panelCommandQueue = Promise.resolve();
+
+async function handleAutomaticSmartSelect(receiver) {
+  const inputCode = String(receiver?.inputCode || "").toUpperCase();
+
+  if (!inputCode || inputCode === "UNKNOWN") return;
+
+  if (previousSmartSelectInputCode === null) {
+    previousSmartSelectInputCode = inputCode;
+    return;
+  }
+
+  const enteredTv =
+    previousSmartSelectInputCode !== "TV" && inputCode === "TV";
+
+  previousSmartSelectInputCode = inputCode;
+
+  if (!enteredTv || smartSelectCommandInFlight) return;
+
+  smartSelectCommandInFlight = true;
+
+  try {
+    await avr("MSSMART4");
+  } catch (error) {
+    console.warn(`Automatic Smart Select 4 failed: ${error.message}`);
+  } finally {
+    smartSelectCommandInFlight = false;
+  }
+}
 
 async function runDdcutil(...args) {
   await execFileAsync(
@@ -292,6 +323,9 @@ async function getStatus() {
           muted: false
         };
 
+  handleAutomaticSmartSelect(receiver);
+
+
   let song = String(media.song || '').trim();
   let artist = String(media.artist || '').trim();
   let album = String(media.album || media.station || '').trim();
@@ -494,9 +528,9 @@ async function receiverControl(action, requestedVolume = null) {
     'power-off': 'ZMOFF',
     'volume-up': 'MVUP',
     'volume-down': 'MVDOWN',
-    phono: 'SI8K',
-    cd: 'SICD',
-    heos: 'SINET',
+    phono: 'MSSMART1',
+    cd: 'MSSMART2',
+    heos: 'MSSMART3',
     aux: 'SIAUX1'
   };
 
@@ -578,6 +612,11 @@ http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
     }
+
+      if (req.method === 'POST' && url.pathname === '/api/smart-select/4') {
+        await avr('MSSMART4');
+        return sendJson(res, 200, { ok: true });
+      }
 
       if (req.method === 'POST' && url.pathname === '/api/panel/on') {
         return sendJson(res, 200, await powerPanelOn());
