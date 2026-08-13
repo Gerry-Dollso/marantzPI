@@ -4,6 +4,8 @@ const fs = require('fs');
 const http = require('http');
 const net = require('net');
 const path = require('path');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const { URL } = require('url');
 
 const config = JSON.parse(
@@ -32,6 +34,60 @@ try {
 const publicDir = path.join(__dirname, 'public');
 
 let activeRadioFavourite = null;
+
+const execFileAsync = promisify(execFile);
+
+const PANEL_DDC_BUS = '21';
+const PANEL_NORMAL_BRIGHTNESS = '50';
+
+let panelPowerState = 'unknown';
+let panelCommandQueue = Promise.resolve();
+
+async function runDdcutil(...args) {
+  await execFileAsync(
+    'ddcutil',
+    ['--bus', PANEL_DDC_BUS, ...args],
+    { timeout: 5000 }
+  );
+}
+
+function queuePanelCommand(command) {
+  panelCommandQueue = panelCommandQueue.then(command, command);
+  return panelCommandQueue;
+}
+
+async function powerPanelOn() {
+  return queuePanelCommand(async () => {
+    await runDdcutil('setvcp', 'D6', '01');
+    await runDdcutil('setvcp', '10', PANEL_NORMAL_BRIGHTNESS);
+
+    panelPowerState = 'on';
+
+    return {
+      power: panelPowerState,
+      brightness: Number(PANEL_NORMAL_BRIGHTNESS)
+    };
+  });
+}
+
+async function powerPanelOff() {
+  return queuePanelCommand(async () => {
+    if (panelPowerState === 'off') {
+      return {
+        power: panelPowerState,
+        brightness: Number(PANEL_NORMAL_BRIGHTNESS)
+      };
+    }
+
+    await runDdcutil('setvcp', 'D6', '05');
+    panelPowerState = 'off';
+
+    return {
+      power: panelPowerState,
+      brightness: Number(PANEL_NORMAL_BRIGHTNESS)
+    };
+  });
+}
 
 function heos(command, timeoutMs = 3000, waitForFinal = false) {
   return new Promise((resolve, reject) => {
@@ -522,6 +578,14 @@ http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
     }
+
+      if (req.method === 'POST' && url.pathname === '/api/panel/on') {
+        return sendJson(res, 200, await powerPanelOn());
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/panel/off') {
+        return sendJson(res, 200, await powerPanelOff());
+      }
 
     if (req.method === 'GET' && url.pathname === '/api/radio/favourites') {
       return sendJson(res, 200, {

@@ -373,6 +373,7 @@ function render(data) {
   );
   connection.classList.add('connected');
   updateIdleDisplay(data);
+    updatePhysicalPanelForReceiver(data);
 }
 
 async function refresh() {
@@ -934,3 +935,106 @@ setInterval(refresh, 750);
   window.setInterval(checkServerInstance, 2000);
 })();
 
+
+/* Wake the physical Waveshare panel on any touchscreen press.
+   This deliberately does not consume the event, so the original
+   control underneath the touch continues to work normally. */
+let panelWakeRequestInFlight = false;
+
+async function wakePhysicalPanel() {
+  if (panelWakeRequestInFlight) return;
+
+  panelWakeRequestInFlight = true;
+
+  try {
+    await fetch('/api/panel/on', {
+      method: 'POST',
+      cache: 'no-store'
+    });
+  } catch (error) {
+    console.warn('Panel wake failed:', error);
+  } finally {
+    panelWakeRequestInFlight = false;
+  }
+}
+
+document.addEventListener(
+  'pointerdown',
+  event => {
+    if (event.pointerType === 'touch') {
+      wakePhysicalPanel();
+    }
+  },
+  { capture: true }
+);
+
+let previousPanelReceiverPower = null;
+let previousPanelInputCode = null;
+
+async function sleepPhysicalPanel() {
+  try {
+    await fetch('/api/panel/off', {
+      method: 'POST',
+      cache: 'no-store'
+    });
+  } catch (error) {
+    console.warn('Panel sleep failed:', error);
+  }
+}
+
+function updatePhysicalPanelForReceiver(data) {
+  const receiver = data?.receiver || {};
+  const power = String(receiver.power || '').toLowerCase();
+  const inputCode = String(receiver.inputCode || '').toUpperCase();
+
+  if (previousPanelReceiverPower === null) {
+    previousPanelReceiverPower = power;
+    previousPanelInputCode = inputCode;
+    return;
+  }
+
+  const poweredOn =
+    previousPanelReceiverPower !== 'on' && power === 'on';
+
+  const inputChanged =
+    previousPanelInputCode !== inputCode;
+
+  if (poweredOn) {
+    wakePhysicalPanel();
+  } else if (power === 'on' && inputChanged) {
+    if (inputCode === 'TV' || inputCode === 'AUX1') {
+      sleepPhysicalPanel();
+    } else {
+      wakePhysicalPanel();
+    }
+  }
+
+  previousPanelReceiverPower = power;
+  previousPanelInputCode = inputCode;
+}
+
+const PANEL_IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+let panelIdleTimer = null;
+
+function resetPanelIdleTimer() {
+  if (panelIdleTimer) {
+    clearTimeout(panelIdleTimer);
+  }
+
+  panelIdleTimer = setTimeout(() => {
+    panelIdleTimer = null;
+    sleepPhysicalPanel();
+  }, PANEL_IDLE_TIMEOUT_MS);
+}
+
+document.addEventListener(
+  'pointerdown',
+  event => {
+    if (event.pointerType === 'touch') {
+      resetPanelIdleTimer();
+    }
+  },
+  { capture: true }
+);
+
+resetPanelIdleTimer();
