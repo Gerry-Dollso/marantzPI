@@ -22,6 +22,8 @@ const idleVolume = document.getElementById('idleVolume');
 const volumeOverlay = document.getElementById('volumeOverlay');
 const volumeOverlayValue = document.getElementById('volumeOverlayValue');
 const volumeOverlayBar = document.getElementById('volumeOverlayBar');
+const zone2Power = document.getElementById('zone2Power');
+const zone3Power = document.getElementById('zone3Power');
 
 let latest = null;
 let lastImageUrl = '';
@@ -292,6 +294,9 @@ function render(data) {
   const receiver = data.receiver || {};
   updateVolumeOverlay(receiver);
 
+  zone2Power?.classList.toggle('on', receiver.zone2Power === 'on');
+  zone3Power?.classList.toggle('on', receiver.zone3Power === 'on');
+
   const inputCode = String(receiver.inputCode || '').toUpperCase();
   const inputName = receiver.input || 'MARANTZ';
 
@@ -375,6 +380,34 @@ function render(data) {
   updateIdleDisplay(data);
     updatePhysicalPanelForReceiver(data);
 }
+
+
+async function toggleZonePower(action) {
+  try {
+    const response = await fetch(`/api/control/${action}`, {
+      method: 'POST',
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Status ${response.status}`);
+    }
+
+    setTimeout(refresh, 200);
+  } catch (error) {
+    console.warn('Zone power control failed:', error);
+  }
+}
+
+zone2Power?.addEventListener('click', event => {
+  event.stopPropagation();
+  toggleZonePower('zone2-toggle');
+});
+
+zone3Power?.addEventListener('click', event => {
+  event.stopPropagation();
+  toggleZonePower('zone3-toggle');
+});
 
 async function refresh() {
   try {

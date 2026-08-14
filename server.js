@@ -237,6 +237,52 @@ function avr(command, expectedPrefix = '', timeoutMs = 2000) {
   });
 }
 
+function getZonePower(zone, timeoutMs = 1500) {
+  return new Promise((resolve, reject) => {
+    const socket = net.createConnection({
+      host: config.marantzHost,
+      port: 23
+    });
+
+    let buffer = '';
+    let settled = false;
+
+    function finish(error, value) {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      error ? reject(error) : resolve(value);
+    }
+
+    socket.setTimeout(timeoutMs);
+
+    socket.on('connect', () => {
+      socket.write(`${zone}?\r`);
+    });
+
+    socket.on('data', chunk => {
+      buffer += chunk.toString('utf8');
+
+      const lines = buffer.split('\r');
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+
+        if (line === `${zone}ON` || line === `${zone}OFF`) {
+          finish(null, line);
+          return;
+        }
+      }
+    });
+
+    socket.on('timeout', () => {
+      finish(new Error(`No power response from ${zone}`));
+    });
+
+    socket.on('error', finish);
+  });
+}
+
 function params(response) {
   return Object.fromEntries(
     new URLSearchParams(response?.heos?.message || '')
@@ -267,7 +313,9 @@ async function getReceiverStatus() {
     avr('ZM?', 'ZM'),
     avr('SI?', 'SI'),
     avr('MV?', 'MV'),
-    avr('MU?', 'MU')
+    avr('MU?', 'MU'),
+    getZonePower('Z2'),
+    getZonePower('Z3')
   ]);
 
   const value = index =>
@@ -275,11 +323,15 @@ async function getReceiverStatus() {
 
   const powerLine = value(0);
   const inputLine = value(1);
+  const zone2Line = value(4);
+  const zone3Line = value(5);
   const volumeLine = value(2);
   const muteLine = value(3);
 
   return {
     power: powerLine === 'ZMON' ? 'on' : 'standby',
+    zone2Power: zone2Line === 'Z2ON' ? 'on' : 'off',
+    zone3Power: zone3Line === 'Z3ON' ? 'on' : 'off',
     input: inputLabel(inputLine),
     inputCode: inputLine.slice(2) || 'UNKNOWN',
     volume: parseVolume(volumeLine),
@@ -518,6 +570,20 @@ async function setReceiverVolume(value) {
 }
 
 async function receiverControl(action, requestedVolume = null) {
+  if (action === 'zone2-toggle' || action === 'zone3-toggle') {
+    const zone = action === 'zone2-toggle' ? 'Z2' : 'Z3';
+
+    const response = await getZonePower(zone);
+    const isOn = response === `${zone}ON`;
+
+    await avr(`${zone}${isOn ? 'OFF' : 'ON'}`);
+
+    return {
+      ok: true,
+      power: isOn ? 'off' : 'on'
+    };
+  }
+
   if (action === 'volume-set') {
     const volume = await setReceiverVolume(requestedVolume);
     return { ok: true, volume };
