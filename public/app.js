@@ -838,70 +838,22 @@ document.addEventListener('visibilitychange', () => {
 });
 
 
-// Hold the top-right power symbol for one second to place the AVR
-// into standby. A normal tap does nothing, preventing accidental shutdown.
-let powerOffHoldTimer = null;
-let powerOffStartX = 0;
-let powerOffStartY = 0;
-let powerOffTriggered = false;
-
-function cancelPowerOffHold() {
-  if (powerOffHoldTimer) {
-    clearTimeout(powerOffHoldTimer);
-    powerOffHoldTimer = null;
-  }
-
-  connection.classList.remove('holding');
-}
-
-connection.addEventListener('pointerdown', event => {
+// Tap the top-right power symbol to place the AVR into standby.
+connection.addEventListener('click', async event => {
   if (document.body.classList.contains('show-idle')) return;
-  if (event.pointerType === 'mouse' && event.button !== 0) return;
 
   event.preventDefault();
 
-  powerOffTriggered = false;
-  powerOffStartX = event.clientX;
-  powerOffStartY = event.clientY;
-
-  connection.classList.add('holding');
+  connection.classList.add('powering-off');
 
   try {
-    connection.setPointerCapture(event.pointerId);
-  } catch {
-    // Pointer capture is optional.
-  }
-
-  powerOffHoldTimer = setTimeout(async () => {
-    powerOffHoldTimer = null;
-    powerOffTriggered = true;
-    connection.classList.remove('holding');
-    connection.classList.add('powering-off');
-
-    try {
-      await requestControl('power-off');
-      setTimeout(refresh, 500);
-    } catch (error) {
-      connection.classList.remove('powering-off');
-      connection.classList.add('error');
-    }
-  }, 1000);
-});
-
-connection.addEventListener('pointermove', event => {
-  if (!powerOffHoldTimer) return;
-
-  const movementX = event.clientX - powerOffStartX;
-  const movementY = event.clientY - powerOffStartY;
-
-  if (Math.hypot(movementX, movementY) > 18) {
-    cancelPowerOffHold();
+    await requestControl('power-off');
+    setTimeout(refresh, 500);
+  } catch (error) {
+    connection.classList.remove('powering-off');
+    connection.classList.add('error');
   }
 });
-
-connection.addEventListener('pointerup', cancelPowerOffHold);
-connection.addEventListener('pointercancel', cancelPowerOffHold);
-connection.addEventListener('lostpointercapture', cancelPowerOffHold);
 
 document.addEventListener('click', event => {
   const button = event.target.closest('button[data-action]');
