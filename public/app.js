@@ -24,6 +24,8 @@ const volumeOverlayValue = document.getElementById('volumeOverlayValue');
 const volumeOverlayBar = document.getElementById('volumeOverlayBar');
 const zone2Power = document.getElementById('zone2Power');
 const zone3Power = document.getElementById('zone3Power');
+const standbyZone2Power = document.getElementById('standbyZone2Power');
+const standbyZone3Power = document.getElementById('standbyZone3Power');
 
 let latest = null;
 let lastImageUrl = '';
@@ -294,6 +296,8 @@ function render(data) {
   const receiver = data.receiver || {};
   updateVolumeOverlay(receiver);
 
+  standbyZone2Power?.classList.toggle('on', receiver.zone2Power === 'on');
+  standbyZone3Power?.classList.toggle('on', receiver.zone3Power === 'on');
   zone2Power?.classList.toggle('on', receiver.zone2Power === 'on');
   zone3Power?.classList.toggle('on', receiver.zone3Power === 'on');
 
@@ -408,6 +412,16 @@ zone3Power?.addEventListener('click', event => {
   event.stopPropagation();
   toggleZonePower('zone3-toggle');
 });
+standbyZone2Power?.addEventListener('click', event => {
+  event.stopPropagation();
+  toggleZonePower('zone2-toggle');
+});
+
+standbyZone3Power?.addEventListener('click', event => {
+  event.stopPropagation();
+  toggleZonePower('zone3-toggle');
+});
+
 
 async function refresh() {
   try {
@@ -629,8 +643,8 @@ idleScreen.addEventListener('pointerdown', event => {
   const inWakeZone =
     x >= rect.width * 0.25 &&
     x <= rect.width * 0.75 &&
-    y >= rect.height * 0.30 &&
-    y <= rect.height * 0.70;
+    y >= rect.height * 0.55 &&
+    y <= rect.height * 0.95;
 
   if (!inWakeZone) return;
 

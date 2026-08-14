@@ -1313,3 +1313,26 @@ body.show-standby .idle-status {
 .zone-power-button.on::after {
   background: #32d06f;
 }
+
+/* ===== Standby secondary-zone controls ===== */
+
+body.show-standby .standby-zone-control {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 30;
+}
+
+body.show-standby .standby-zone-left {
+  left: 28px;
+}
+
+body.show-standby .standby-zone-right {
+  right: 28px;
+}
+
+body:not(.show-standby) .standby-zone-control {
+  display: none;
+}
