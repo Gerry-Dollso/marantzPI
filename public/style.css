@@ -1427,3 +1427,45 @@ body:not(.show-standby) .standby-zone-control {
 body.show-standby .receiver-settings {
   display: none;
 }
+
+/* ===== Zone 2 patio source selector ===== */
+.zone2-source-menu {
+  position: fixed;
+  right: 24px;
+  bottom: 84px;
+  display: none;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(14, 18, 24, 0.96);
+  z-index: 120;
+}
+
+.zone2-source-menu.open {
+  display: flex;
+}
+
+.zone2-source-menu button {
+  min-width: 78px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 7px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.zone2-source-menu button:active {
+  opacity: 0.6;
+}
+
+.zone-outdoor[role="button"] {
+  cursor: pointer;
+}
+
+/* Zone 2 source menu follows patio control on standby screen */
+body.show-standby .zone2-source-menu {
+  left: 24px;
+  right: auto;
+}

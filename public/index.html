@@ -49,7 +49,7 @@
       <button data-radio-open>RADIO</button>
       <button data-action="aux">AUX</button>
     </div>
-      <div class="standby-zone-control standby-zone-left"><span class="zone-outdoor" aria-hidden="true"></span><button id="standbyZone2Power" class="zone-power-button">POWER</button></div>
+      <div class="standby-zone-control standby-zone-left"><span id="standbyZone2Source" class="zone-outdoor" role="button" aria-label="Select Patio source" title="Patio source"></span><button id="standbyZone2Power" class="zone-power-button">POWER</button></div>
       <div class="standby-zone-control standby-zone-right"><span class="zone-headphones"></span><button id="standbyZone3Power" class="zone-power-button">POWER</button></div>
   </section>
 
@@ -166,7 +166,7 @@
     </section>
 
     <div class="zone-power-controls" aria-label="Zone power controls">
-      <span class="zone-outdoor" aria-hidden="true"></span>
+      <span id="zone2Source" class="zone-outdoor" role="button" aria-label="Select Patio source" title="Patio source"></span>
       <button
         id="zone2Power"
         class="zone-power-button"
@@ -185,6 +185,12 @@
       >POWER</button>
     </div>
   </main>
+  <div id="zone2SourceMenu" class="zone2-source-menu" aria-hidden="true">
+    <button type="button" data-zone2-source="source">SOURCE</button>
+    <button type="button" data-zone2-source="phono">PHONO</button>
+    <button type="button" data-zone2-source="cd">CD</button>
+    <button type="button" data-zone2-source="heos">HEOS</button>
+  </div>
 
   <section id="radioScreen" class="radio-screen" aria-hidden="true">
     <header class="radio-header">

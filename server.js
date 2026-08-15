@@ -598,7 +598,11 @@ async function receiverControl(action, requestedVolume = null) {
     phono: 'MSSMART1',
     cd: 'MSSMART2',
     heos: 'MSSMART3',
-    aux: 'SIAUX1'
+    aux: 'SIAUX1',
+    "zone2-source-source": "Z2SOURCE",
+    "zone2-source-phono": "Z28K",
+    "zone2-source-cd": "Z2CD",
+    "zone2-source-heos": "Z2NET"
   };
 
   if (action === 'mute') {

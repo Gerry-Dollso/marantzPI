@@ -26,6 +26,9 @@ const zone2Power = document.getElementById('zone2Power');
 const zone3Power = document.getElementById('zone3Power');
 const standbyZone2Power = document.getElementById('standbyZone2Power');
 const standbyZone3Power = document.getElementById('standbyZone3Power');
+const zone2Source = document.getElementById("zone2Source");
+const standbyZone2Source = document.getElementById("standbyZone2Source");
+const zone2SourceMenu = document.getElementById("zone2SourceMenu");
 const receiverSettings = document.getElementById("receiverSettings");
 
 let latest = null;
@@ -432,6 +435,31 @@ standbyZone3Power?.addEventListener('click', event => {
   event.stopPropagation();
   toggleZonePower('zone3-toggle');
 });
+function toggleZone2SourceMenu(event) {
+  event?.stopPropagation();
+  const open = !zone2SourceMenu?.classList.contains("open");
+  zone2SourceMenu?.classList.toggle("open", open);
+  zone2SourceMenu?.setAttribute("aria-hidden", String(!open));
+}
+
+zone2Source?.addEventListener("click", toggleZone2SourceMenu);
+standbyZone2Source?.addEventListener("click", toggleZone2SourceMenu);
+
+zone2SourceMenu?.addEventListener("click", async event => {
+  const button = event.target.closest("[data-zone2-source]");
+  if (!button) return;
+
+  const source = button.dataset.zone2Source;
+  try {
+    await requestControl("zone2-source-" + source);
+    zone2SourceMenu.classList.remove("open");
+    zone2SourceMenu.setAttribute("aria-hidden", "true");
+    setTimeout(refresh, 200);
+  } catch (error) {
+    console.warn("Zone 2 source control failed:", error);
+  }
+});
+
 
 
 receiverSettings?.addEventListener("click", () => {
