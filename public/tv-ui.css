@@ -165,3 +165,11 @@ body.show-tv-screen #tvScreen {
     transition: none;
   }
 }
+
+/* Official Marantz logo on TV Audio screen */
+.tv-marantz-logo {
+  display: block;
+  width: 240px;
+  height: auto;
+  margin: 0 auto;
+}

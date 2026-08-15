@@ -74,3 +74,27 @@ body.show-standby.standby-holding .idle-input::after,
 body.show-standby.standby-waking .idle-input::after {
   content: 'POWERING ON';
 }
+
+/* Official Marantz artwork replaces standby text brand */
+body.show-standby .idle-brand {
+  padding-left: 0;
+  text-shadow: none;
+}
+
+body.show-standby .standby-marantz-logo {
+  display: block;
+  width: 340px;
+  height: auto;
+}
+
+/* Tighten standby logo-to-divider spacing */
+body.show-standby .idle-divider {
+  margin-top: 18px;
+}
+
+
+/* Lower complete standby centre layout */
+body.show-standby .idle-screen {
+  padding-top: 24px;
+  box-sizing: border-box;
+}

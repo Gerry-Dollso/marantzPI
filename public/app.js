@@ -478,7 +478,16 @@ async function refresh() {
       throw new Error(`Status ${response.status}`);
     }
 
-    render(await response.json());
+    const data = await response.json();
+
+    if (
+      Date.now() < standbyWakeGraceUntil &&
+      data.receiver?.power !== 'on'
+    ) {
+      return;
+    }
+
+    render(data);
   } catch (error) {
     connection.classList.remove('connected');
     connection.classList.add('error');
@@ -665,6 +674,7 @@ let standbyHoldTimer = null;
 let standbyHoldStartX = 0;
 let standbyHoldStartY = 0;
 let standbyWakeTriggered = false;
+let standbyWakeGraceUntil = 0;
 
 function cancelStandbyHold() {
   if (standbyHoldTimer) {
@@ -713,6 +723,7 @@ idleScreen.addEventListener('pointerdown', event => {
     idlePower.textContent = 'POWERING ON';
 
     try {
+      standbyWakeGraceUntil = Date.now() + 15000;
       await requestControl('power-on');
       setTimeout(refresh, 500);
     } catch (error) {
