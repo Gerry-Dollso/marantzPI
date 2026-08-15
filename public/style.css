@@ -1469,3 +1469,9 @@ body.show-standby .zone2-source-menu {
   left: 24px;
   right: auto;
 }
+
+.marantz-fallback-logo {
+  width: 240px;
+  height: auto;
+  display: block;
+}
