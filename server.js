@@ -431,6 +431,7 @@ async function getStatus() {
     duration: Number(progress.duration || 0),
     receiver,
     settings: {
+      marantzHost: config.marantzHost,
       clock24h: settings.clock24h !== false,
       idleTimeoutSeconds: Math.max(
         0,

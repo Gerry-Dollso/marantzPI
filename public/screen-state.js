@@ -8,6 +8,7 @@
 //   unknown -> preserve the current screen until a valid state arrives
 (() => {
   const tvScreen = document.getElementById('tvScreen');
+  const projectorScreen = document.getElementById('projectorScreen');
 
   updateIdleDisplay = function updateScreenState(data) {
     const receiver = data?.receiver || {};
@@ -22,6 +23,7 @@
     const inputCode = String(receiver.inputCode || '').toUpperCase();
     const isStandby = power === 'standby';
     const isTv = power === 'on' && inputCode === 'TV';
+    const isProjector = power === 'on' && inputCode === 'AUX1';
 
     idleInput.textContent = isStandby
       ? 'MARANTZ'
@@ -50,6 +52,7 @@
     document.body.classList.toggle('show-idle', isStandby);
     document.body.classList.toggle('show-standby', isStandby);
     document.body.classList.toggle('show-tv-screen', isTv);
+    document.body.classList.toggle('show-projector-screen', isProjector);
     document.body.classList.remove('show-tv-idle');
 
     if (!isStandby) {
@@ -62,8 +65,12 @@
     idleScreen.setAttribute('aria-hidden', String(!isStandby));
     nowPlayingScreen.setAttribute(
       'aria-hidden',
-      String(isStandby || isTv)
+      String(isStandby || isTv || isProjector)
     );
+
+    if (projectorScreen) {
+      projectorScreen.setAttribute("aria-hidden", String(!isProjector));
+    }
 
     if (tvScreen) {
       tvScreen.setAttribute('aria-hidden', String(!isTv));

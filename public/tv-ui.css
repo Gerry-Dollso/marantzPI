@@ -12,7 +12,11 @@
   color: #f2f2f2;
 }
 
-body.show-tv-screen .tv-screen {
+body.show-projector-screen #projectorScreen {
+  display: block;
+}
+
+body.show-tv-screen #tvScreen {
   display: block;
 }
 

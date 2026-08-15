@@ -16,6 +16,7 @@
 </head>
 
 <body>
+  <button id="receiverSettings" class="receiver-settings" type="button" aria-label="Open SR8015 settings" title="SR8015 settings">SETTINGS</button>
   <section id="idleScreen" class="idle-screen" aria-hidden="true">
     <div class="idle-brand">MARANTZ</div>
 
@@ -48,7 +49,7 @@
       <button data-radio-open>RADIO</button>
       <button data-action="aux">AUX</button>
     </div>
-      <div class="standby-zone-control standby-zone-left"><span class="zone-label">Z2</span><button id="standbyZone2Power" class="zone-power-button">POWER</button></div>
+      <div class="standby-zone-control standby-zone-left"><span class="zone-outdoor" aria-hidden="true"></span><button id="standbyZone2Power" class="zone-power-button">POWER</button></div>
       <div class="standby-zone-control standby-zone-right"><span class="zone-headphones"></span><button id="standbyZone3Power" class="zone-power-button">POWER</button></div>
   </section>
 
@@ -65,6 +66,29 @@
       <div class="tv-brand">MARANTZ</div>
       <div class="tv-divider"></div>
       <div class="tv-title">TV</div>
+    </div>
+
+    <div class="tv-inputs">
+      <button data-action="phono">PHONO</button>
+      <button data-action="cd">CD</button>
+      <button data-action="heos" data-net-source="tidal">TIDAL</button>
+      <button data-radio-open>RADIO</button>
+      <button data-action="aux">AUX</button>
+    </div>
+  </section>
+  <section id="projectorScreen" class="tv-screen" aria-hidden="true">
+    <button
+      id="projectorPower"
+      class="tv-power"
+      type="button"
+      aria-label="Hold to put receiver into standby"
+      title="Hold to power off AVR"
+    >POWER</button>
+
+    <div class="tv-centre">
+      <div class="tv-brand">MARANTZ</div>
+      <div class="tv-divider"></div>
+      <div class="tv-title">SONY<br>VPL-HW65ES</div>
     </div>
 
     <div class="tv-inputs">
@@ -142,7 +166,7 @@
     </section>
 
     <div class="zone-power-controls" aria-label="Zone power controls">
-      <span class="zone-label">Z2</span>
+      <span class="zone-outdoor" aria-hidden="true"></span>
       <button
         id="zone2Power"
         class="zone-power-button"

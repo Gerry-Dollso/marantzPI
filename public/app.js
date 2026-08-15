@@ -26,6 +26,7 @@ const zone2Power = document.getElementById('zone2Power');
 const zone3Power = document.getElementById('zone3Power');
 const standbyZone2Power = document.getElementById('standbyZone2Power');
 const standbyZone3Power = document.getElementById('standbyZone3Power');
+const receiverSettings = document.getElementById("receiverSettings");
 
 let latest = null;
 let lastImageUrl = '';
@@ -361,9 +362,19 @@ function render(data) {
       Number(data.duration) || 0
     );
   } else {
-    song.textContent = inputName;
-    artist.textContent = '';
-    album.textContent = '';
+    if (inputCode === "8K") {
+      song.textContent = "TECHNICS";
+      artist.textContent = "SL-1210G";
+      album.textContent = "";
+    } else if (inputCode === "CD") {
+      song.textContent = "SHANLING";
+      artist.textContent = "ET3";
+      album.textContent = "";
+    } else {
+      song.textContent = inputName;
+      artist.textContent = "";
+      album.textContent = "";
+    }
 
     showArtwork('');
 
@@ -422,6 +433,12 @@ standbyZone3Power?.addEventListener('click', event => {
   toggleZonePower('zone3-toggle');
 });
 
+
+receiverSettings?.addEventListener("click", () => {
+  const host = latest?.settings?.marantzHost;
+  if (host == null || host === "") return;
+  window.location.href = "https://" + host + ":10443";
+});
 
 async function refresh() {
   try {
