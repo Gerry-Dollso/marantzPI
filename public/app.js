@@ -1045,41 +1045,58 @@ function updatePhysicalPanelForReceiver(data) {
   if (previousPanelReceiverPower === null) {
     previousPanelReceiverPower = power;
     previousPanelInputCode = inputCode;
+    resetPanelIdleTimer();
     return;
   }
 
   const poweredOn =
     previousPanelReceiverPower !== 'on' && power === 'on';
 
+  const powerChanged =
+    previousPanelReceiverPower !== power;
+
   const inputChanged =
     previousPanelInputCode !== inputCode;
 
-  if (poweredOn) {
-    wakePhysicalPanel();
-  } else if (power === 'on' && inputChanged) {
-    if (inputCode === 'TV' || inputCode === 'AUX1') {
-      sleepPhysicalPanel();
-    } else {
-      wakePhysicalPanel();
-    }
-  }
-
   previousPanelReceiverPower = power;
   previousPanelInputCode = inputCode;
+
+  if (poweredOn || inputChanged) {
+    wakePhysicalPanel();
+  }
+
+  if (powerChanged || inputChanged) {
+    resetPanelIdleTimer();
+  }
 }
 
-const PANEL_IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+const PANEL_STANDBY_TIMEOUT_MS = 60 * 60 * 1000;
+const PANEL_VIDEO_TIMEOUT_MS = 5 * 60 * 1000;
 let panelIdleTimer = null;
 
 function resetPanelIdleTimer() {
   if (panelIdleTimer) {
     clearTimeout(panelIdleTimer);
+    panelIdleTimer = null;
   }
+
+  let timeoutMs = null;
+
+  if (previousPanelReceiverPower !== 'on') {
+    timeoutMs = PANEL_STANDBY_TIMEOUT_MS;
+  } else if (
+    previousPanelInputCode === 'TV' ||
+    previousPanelInputCode === 'AUX1'
+  ) {
+    timeoutMs = PANEL_VIDEO_TIMEOUT_MS;
+  }
+
+  if (timeoutMs === null) return;
 
   panelIdleTimer = setTimeout(() => {
     panelIdleTimer = null;
     sleepPhysicalPanel();
-  }, PANEL_IDLE_TIMEOUT_MS);
+  }, timeoutMs);
 }
 
 document.addEventListener(
