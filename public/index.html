@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/style.css?v=230">
   <link rel="stylesheet" href="/playback-source-ui.css?v=3">
   <link rel="stylesheet" href="/radio-ui.css?v=2">
+  <link rel="stylesheet" href="/tidal-ui.css?v=1">
   <link rel="stylesheet" href="/standby-skin.css?v=1">
   <link rel="stylesheet" href="/tv-ui.css?v=3">
   <link rel="stylesheet" href="/waveshare-1280.css?v=1">
@@ -192,6 +193,73 @@
     <button type="button" data-zone2-source="heos">HEOS</button>
   </div>
 
+    <section id="tidalScreen" class="tidal-screen" aria-hidden="true">
+      <header class="tidal-header">
+        <button id="tidalBack" class="tidal-back" type="button">BACK</button>
+        <div>
+          <div class="tidal-kicker">HEOS MUSIC</div>
+          <h1>TIDAL</h1>
+        </div>
+        <div></div>
+      </header>
+
+      <form id="tidalSearchForm" class="tidal-search">
+        <input
+          id="tidalSearchInput"
+          type="search"
+          placeholder="Search artists"
+          autocomplete="off"
+          autocapitalize="words"
+          spellcheck="false"
+        >
+        <button type="submit">SEARCH</button>
+      </form>
+
+      <div id="tidalStatus" class="tidal-status">Search TIDAL by artist</div>
+      <div id="tidalResults" class="tidal-results" aria-live="polite"></div>
+
+    <div id="tidalKeyboard" class="tidal-keyboard" aria-hidden="true">
+      <div class="tidal-key-row">
+        <button type="button" data-key="Q">Q</button>
+        <button type="button" data-key="W">W</button>
+        <button type="button" data-key="E">E</button>
+        <button type="button" data-key="R">R</button>
+        <button type="button" data-key="T">T</button>
+        <button type="button" data-key="Y">Y</button>
+        <button type="button" data-key="U">U</button>
+        <button type="button" data-key="I">I</button>
+        <button type="button" data-key="O">O</button>
+        <button type="button" data-key="P">P</button>
+      </div>
+      <div class="tidal-key-row tidal-key-row-middle">
+        <button type="button" data-key="A">A</button>
+        <button type="button" data-key="S">S</button>
+        <button type="button" data-key="D">D</button>
+        <button type="button" data-key="F">F</button>
+        <button type="button" data-key="G">G</button>
+        <button type="button" data-key="H">H</button>
+        <button type="button" data-key="J">J</button>
+        <button type="button" data-key="K">K</button>
+        <button type="button" data-key="L">L</button>
+      </div>
+      <div class="tidal-key-row">
+        <button type="button" data-key="Z">Z</button>
+        <button type="button" data-key="X">X</button>
+        <button type="button" data-key="C">C</button>
+        <button type="button" data-key="V">V</button>
+        <button type="button" data-key="B">B</button>
+        <button type="button" data-key="N">N</button>
+        <button type="button" data-key="M">M</button>
+        <button type="button" data-key-action="backspace">⌫</button>
+      </div>
+      <div class="tidal-key-row tidal-key-row-bottom">
+        <button type="button" data-key-action="clear">CLEAR</button>
+        <button type="button" class="tidal-space-key" data-key=" ">SPACE</button>
+        <button type="button" data-key-action="search">SEARCH</button>
+      </div>
+    </div>
+    </section>
+
   <section id="radioScreen" class="radio-screen" aria-hidden="true">
     <header class="radio-header">
       <button id="radioBack" class="radio-back" type="button">BACK</button>
@@ -224,5 +292,6 @@
   <script src="/tv-ui.js?v=1"></script>
   <script src="/playback-source-ui.js?v=5"></script>
   <script src="/radio-ui.js?v=2"></script>
+  <script src="/tidal-ui.js?v=1"></script>
 </body>
 </html>

@@ -1,0 +1,235 @@
+.tidal-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  box-sizing: border-box;
+  padding: 24px 28px 22px;
+  background: #0b0b0b;
+  color: #f4f4f4;
+  overflow: hidden;
+}
+
+body.show-tidal .tidal-screen {
+  display: block;
+}
+
+body.show-tidal .idle-screen,
+body.show-tidal .display {
+  visibility: hidden;
+}
+
+.tidal-header {
+  height: 72px;
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  align-items: center;
+  gap: 18px;
+}
+
+.tidal-header h1 {
+  margin: 1px 0 0;
+  font-size: 31px;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.tidal-kicker {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-align: center;
+  opacity: 0.58;
+}
+
+.tidal-back,
+.tidal-search button {
+  height: 48px;
+  border: 1px solid rgba(255,255,255,0.26);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+
+.tidal-search {
+  display: grid;
+  grid-template-columns: 1fr 130px;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.tidal-search input {
+  height: 48px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 10px;
+  padding: 0 15px;
+  background: rgba(255,255,255,0.07);
+  color: #f4f4f4;
+  font: inherit;
+  font-size: 17px;
+  outline: none;
+}
+
+.tidal-search input::placeholder {
+  color: rgba(255,255,255,0.42);
+}
+
+.tidal-status {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
+.tidal-results {
+  height: 292px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 72px;
+  align-content: start;
+  gap: 10px 12px;
+  padding: 4px 2px 18px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tidal-results::-webkit-scrollbar {
+  display: none;
+}
+
+.tidal-artist {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 13px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 14px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.095),
+    rgba(255,255,255,0.035)
+  );
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.tidal-artist-artwork {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.10);
+}
+
+.tidal-artist-artwork img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.tidal-artist-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+}
+
+.tidal-screen button:active,
+.tidal-screen button.loading {
+  transform: scale(0.985);
+  background: rgba(255,255,255,0.16);
+}
+
+.tidal-screen button:disabled {
+  opacity: 0.62;
+}
+
+.tidal-keyboard {
+  display: none;
+  margin-top: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tidal-keyboard.open {
+  display: block;
+}
+
+.tidal-key-row {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.tidal-key-row button {
+  min-width: 58px;
+  height: 52px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.07);
+  color: #f4f4f4;
+  font: inherit;
+  font-size: 17px;
+}
+
+.tidal-key-row-middle {
+  padding: 0 30px;
+}
+
+.tidal-key-row-bottom button {
+  min-width: 120px;
+}
+
+.tidal-space-key {
+  flex: 1;
+  max-width: 360px;
+}
+
+.tidal-screen.keyboard-open .tidal-results {
+  display: none;
+}
+
+.tidal-screen.keyboard-open .tidal-status {
+  height: 24px;
+}
+
+.tidal-keyboard button:active {
+  transform: scale(0.97);
+  background: rgba(255,255,255,0.18);
+}
+
+.tidal-play-all {
+  grid-column: 1 / -1;
+  height: 58px;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.10);
+  color: #f4f4f4;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.tidal-play-all:active,
+.tidal-play-all.loading {
+  transform: scale(0.985);
+  background: rgba(255,255,255,0.18);
+}
