@@ -46,6 +46,61 @@ const PANEL_NORMAL_BRIGHTNESS = '50';
 let panelPowerState = 'unknown';
 let panelCommandQueue = Promise.resolve();
 
+
+function mediaBackendRequest(pathname, method = 'GET', timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    const request = http.request(
+      {
+        host: '192.168.50.145',
+        port: 3100,
+        path: pathname,
+        method,
+        timeout: timeoutMs
+      },
+      response => {
+        let body = '';
+
+        response.setEncoding('utf8');
+
+        response.on('data', chunk => {
+          body += chunk;
+        });
+
+        response.on('end', () => {
+          let data;
+
+          try {
+            data = body ? JSON.parse(body) : {};
+          } catch {
+            reject(new Error('Invalid media-backend JSON'));
+            return;
+          }
+
+          if (
+            response.statusCode < 200 ||
+            response.statusCode >= 300
+          ) {
+            reject(new Error(
+              data.error ||
+              `Media backend HTTP ${response.statusCode}`
+            ));
+            return;
+          }
+
+          resolve(data);
+        });
+      }
+    );
+
+    request.on('timeout', () => {
+      request.destroy(new Error('Media backend timeout'));
+    });
+
+    request.on('error', reject);
+    request.end();
+  });
+}
+
 async function handleAutomaticSmartSelect(receiver) {
   const inputCode = String(receiver?.inputCode || "").toUpperCase();
 
@@ -679,6 +734,48 @@ http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/instance-id') {
       return sendJson(res, 200, { instanceId: serverInstanceId });
     }
+
+      if (req.method === 'GET' && url.pathname === '/api/tidal/search') {
+        const query = url.searchParams.get('q') || '';
+
+        const result = await mediaBackendRequest(
+          '/api/tidal/search?q=' + encodeURIComponent(query)
+        );
+
+        return sendJson(res, 200, result);
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/tidal/artist/albums') {
+        const cid = url.searchParams.get('cid') || '';
+
+        const result = await mediaBackendRequest(
+          '/api/tidal/artist/albums?cid=' + encodeURIComponent(cid)
+        );
+
+        return sendJson(res, 200, result);
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/tidal/album/tracks') {
+        const cid = url.searchParams.get('cid') || '';
+
+        const result = await mediaBackendRequest(
+          '/api/tidal/album/tracks?cid=' + encodeURIComponent(cid)
+        );
+
+        return sendJson(res, 200, result);
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/tidal/play') {
+        const cid = url.searchParams.get('cid') || '';
+        const mid = url.searchParams.get('mid') || '';
+
+        const result = await mediaBackendRequest(
+          '/api/tidal/play?cid=' + encodeURIComponent(cid) +
+          '&mid=' + encodeURIComponent(mid)
+        );
+
+        return sendJson(res, 200, result);
+      }
 
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
