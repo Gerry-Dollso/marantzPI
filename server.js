@@ -745,7 +745,19 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
-      if (req.method === 'GET' && url.pathname === '/api/tidal/artist/albums') {
+      if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
+    const cid = url.searchParams.get('cid') || '';
+
+    const result = await mediaBackendRequest(
+      '/api/tidal/browse?cid=' + encodeURIComponent(cid),
+      'GET',
+      20000
+    );
+
+    return sendJson(res, 200, result);
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/tidal/artist/albums') {
         const cid = url.searchParams.get('cid') || '';
 
         const result = await mediaBackendRequest(

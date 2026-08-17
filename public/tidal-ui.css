@@ -233,3 +233,37 @@ body.show-tidal .display {
   transform: scale(0.985);
   background: rgba(255,255,255,0.18);
 }
+
+.tidal-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.tidal-shortcuts button {
+  height: 76px;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.07);
+  color: #f4f4f4;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tidal-screen.keyboard-open .tidal-shortcuts {
+  display: none;
+}
+
+.tidal-screen.browsing .tidal-shortcuts {
+  display: none;
+}
+
+.tidal-screen.browsing .tidal-results {
+  height: calc(100% - 162px);
+  box-sizing: border-box;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}

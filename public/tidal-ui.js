@@ -8,15 +8,105 @@ const tidalStatus = document.getElementById('tidalStatus');
 const tidalResults = document.getElementById('tidalResults');
 
 function setTidalOpen(open) {
-  document.body.classList.toggle('show-tidal', open);
-  tidalScreen.setAttribute('aria-hidden', String(!open));
+  document.body.classList.toggle("show-tidal", open);
+  tidalScreen.setAttribute("aria-hidden", String(!open));
+  if (!open) tidalSearchInput.blur();
+}
 
-  if (open) {
-    setTimeout(() => tidalSearchInput.focus(), 50);
-  } else {
-    tidalSearchInput.blur();
+const tidalShortcuts = document.getElementById('tidalShortcuts');
+const tidalHistory = [];
+
+
+function makeBrowseButton(item) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'tidal-artist tidal-browse-item';
+  button.dataset.cid = item.cid || '';
+  button.dataset.type = item.type || '';
+  button.dataset.container = item.container ? 'yes' : 'no';
+  button.dataset.playable = item.playable ? 'yes' : 'no';
+  button.dataset.mid = item.mid || '';
+
+  const artwork = document.createElement('span');
+  artwork.className = 'tidal-artist-artwork';
+
+  if (item.imageUrl) {
+    const image = document.createElement('img');
+    image.src = item.imageUrl;
+    image.alt = '';
+    image.addEventListener('error', () => image.remove());
+    artwork.appendChild(image);
+  }
+
+  const name = document.createElement('span');
+  name.className = 'tidal-artist-name';
+  name.textContent = item.name || 'Unknown';
+
+  button.append(artwork, name);
+  return button;
+}
+
+function renderBrowseItems(items, title) {
+  tidalResults.replaceChildren();
+
+  if (!items.length) {
+    tidalStatus.textContent = 'Nothing found';
+    return;
+  }
+
+  tidalStatus.textContent =
+    `${title || 'TIDAL'} — ${items.length} item${items.length === 1 ? '' : 's'}`;
+
+  items.forEach(item => {
+    tidalResults.appendChild(makeBrowseButton(item));
+  });
+}
+
+async function browseTidal(cid, title, pushHistory = true) {
+  if (pushHistory) {
+    tidalHistory.push({
+      cid,
+      title
+    });
+  }
+
+  tidalScreen.classList.add("browsing");
+  setTidalKeyboardOpen(false);
+  tidalSearchInput.blur();
+
+  tidalStatus.textContent = `Loading ${title || 'TIDAL'}…`;
+  tidalResults.replaceChildren();
+
+  try {
+    const response = await fetch(
+      '/api/tidal/browse?cid=' + encodeURIComponent(cid),
+      { cache: 'no-store' }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not browse TIDAL');
+    }
+
+    renderBrowseItems(
+      Array.isArray(result.items) ? result.items : [],
+      title
+    );
+  } catch (error) {
+    tidalStatus.textContent = error.message;
   }
 }
+
+tidalShortcuts.addEventListener('click', event => {
+  const button = event.target.closest('[data-tidal-cid]');
+  if (!button) return;
+
+  browseTidal(
+    button.dataset.tidalCid,
+    button.textContent.trim()
+  );
+});
 
 function makeArtistButton(artist) {
   const button = document.createElement('button');
@@ -123,11 +213,30 @@ document.addEventListener(
     event.stopImmediatePropagation();
 
     setTidalOpen(true);
+    tidalHistory.length = 0;
+    tidalScreen.classList.remove("browsing");
+    tidalResults.replaceChildren();
+    tidalStatus.textContent = "Choose a section or search TIDAL";
   },
   true
 );
 
 tidalBack.addEventListener('click', () => {
+  if (tidalHistory.length > 1) {
+    tidalHistory.pop();
+    const previous = tidalHistory[tidalHistory.length - 1];
+    browseTidal(previous.cid, previous.title, false);
+    return;
+  }
+
+  if (tidalHistory.length === 1) {
+    tidalHistory.length = 0;
+    tidalScreen.classList.remove("browsing");
+    tidalResults.replaceChildren();
+    tidalStatus.textContent = "Choose a section or search TIDAL";
+    return;
+  }
+
   setTidalOpen(false);
 });
 
@@ -413,6 +522,15 @@ tidalResults.addEventListener('click', event => {
 
   if (button.classList.contains('tidal-album')) {
     loadTidalAlbumTracks(button.dataset.cid, name);
+    return;
+  }
+
+  if (button.classList.contains('tidal-browse-item')) {
+    if (button.dataset.type === 'artist') {
+      loadTidalArtistAlbums(button.dataset.cid, name);
+    } else {
+      browseTidal(button.dataset.cid, name);
+    }
     return;
   }
 
