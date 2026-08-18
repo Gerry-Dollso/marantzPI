@@ -495,6 +495,13 @@ async function searchTidal(query) {
   setTidalKeyboardOpen(false);
   tidalSearchInput.blur();
 
+  tidalScreen.classList.add("browsing");
+  tidalHistory.length = 0;
+  tidalHistory.push({
+    cid: '__search__',
+    title: query
+  });
+
   tidalStatus.textContent = 'Searching TIDAL…';
   tidalResults.replaceChildren();
 
