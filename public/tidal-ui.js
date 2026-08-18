@@ -13,7 +13,56 @@ function setTidalOpen(open) {
   if (!open) tidalSearchInput.blur();
 }
 
+function tidalDisplayName(value) {
+  const text = String(value || '');
+
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;
+  }
+}
+
 const tidalShortcuts = document.getElementById('tidalShortcuts');
+const tidalAlphabet = document.getElementById('tidalAlphabet');
+let tidalArtistItems = [];
+let tidalArtistLetter = 'ALL';
+let tidalAlbumPage = 0;
+const tidalAlbumPageSize = 50;
+let tidalAlbumTotal = 0;
+let tidalTrackPage = 0;
+const tidalTrackPageSize = 50;
+let tidalTrackTotal = 0;
+let tidalShowAlbumArtists = false;
+let tidalCurrentPlaylistCid = '';
+
+
+function buildTidalAlphabet() {
+  tidalAlphabet.replaceChildren();
+
+  const all = document.createElement('button');
+  all.type = 'button';
+  all.dataset.letter = 'ALL';
+  all.textContent = 'ALL';
+  all.className = 'tidal-letter-all';
+  tidalAlphabet.appendChild(all);
+
+  const left = 'ABCDEFGHIJKLM';
+  const right = 'NOPQRSTUVWXYZ';
+
+  for (let i = 0; i < 13; i++) {
+    [left[i], right[i]].forEach(letter => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.letter = letter;
+      button.textContent = letter;
+      tidalAlphabet.appendChild(button);
+    });
+  }
+}
+
+buildTidalAlphabet();
+
 const tidalHistory = [];
 
 
@@ -21,11 +70,14 @@ function makeBrowseButton(item) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'tidal-artist tidal-browse-item';
-  button.dataset.cid = item.cid || '';
+  button.dataset.cid =
+    item.cid ||
+    (item.type === 'song' ? tidalCurrentPlaylistCid : '');
   button.dataset.type = item.type || '';
   button.dataset.container = item.container ? 'yes' : 'no';
   button.dataset.playable = item.playable ? 'yes' : 'no';
   button.dataset.mid = item.mid || '';
+  button.dataset.albumId = item.albumId || '';
 
   const artwork = document.createElement('span');
   artwork.className = 'tidal-artist-artwork';
@@ -38,12 +90,128 @@ function makeBrowseButton(item) {
     artwork.appendChild(image);
   }
 
+  const text = document.createElement('span');
+  text.className = 'tidal-browse-text';
+
   const name = document.createElement('span');
   name.className = 'tidal-artist-name';
-  name.textContent = item.name || 'Unknown';
+  name.textContent = tidalDisplayName(item.name) || 'Unknown';
+  text.appendChild(name);
 
-  button.append(artwork, name);
+  if (
+    (tidalShowAlbumArtists ||
+     item.type === 'song' ||
+     item.type === 'album') &&
+    item.artist
+  ) {
+    const artist = document.createElement('span');
+    artist.className = 'tidal-browse-artist';
+    artist.textContent = tidalDisplayName(item.artist);
+    text.appendChild(artist);
+  }
+
+  button.append(artwork, text);
   return button;
+}
+
+function setTidalAlphabetVisible(visible) {
+  tidalAlphabet.classList.toggle('open', visible);
+  tidalAlphabet.setAttribute('aria-hidden', String(!visible));
+  tidalScreen.classList.toggle('artist-filtering', visible);
+}
+
+function renderFilteredArtists() {
+  let items = tidalArtistItems;
+
+  if (tidalArtistLetter !== 'ALL') {
+    items = tidalArtistItems.filter(item => {
+      const name = String(item.name || '').trim().toUpperCase();
+      return name.startsWith(tidalArtistLetter);
+    });
+  }
+
+  tidalResults.replaceChildren();
+
+  tidalStatus.textContent =
+    tidalArtistLetter === 'ALL'
+      ? `Artists — ${items.length} items`
+      : `Artists — ${tidalArtistLetter} — ${items.length} items`;
+
+  items.forEach(item => {
+    tidalResults.appendChild(makeBrowseButton(item));
+  });
+
+  tidalAlphabet.querySelectorAll('button').forEach(button => {
+    button.classList.toggle(
+      'active',
+      button.dataset.letter === tidalArtistLetter
+    );
+  });
+}
+
+tidalAlphabet.addEventListener('click', event => {
+  const button = event.target.closest('button[data-letter]');
+  if (!button) return;
+
+  tidalArtistLetter = button.dataset.letter || 'ALL';
+  renderFilteredArtists();
+});
+
+function renderAlbumPager() {
+  const totalPages = Math.max(
+    1,
+    Math.ceil(tidalAlbumTotal / tidalAlbumPageSize)
+  );
+
+  const pager = document.createElement('div');
+  pager.className = 'tidal-album-pager';
+
+  const previous = document.createElement('button');
+  previous.type = 'button';
+  previous.dataset.albumPageAction = 'previous';
+  previous.textContent = 'PREVIOUS';
+  previous.disabled = tidalAlbumPage <= 0;
+
+  const label = document.createElement('div');
+  label.className = 'tidal-album-page-label';
+  label.textContent =
+    `PAGE ${tidalAlbumPage + 1} OF ${totalPages}`;
+
+  const next = document.createElement('button');
+  next.type = 'button';
+  next.dataset.albumPageAction = 'next';
+  next.textContent = 'NEXT';
+  next.disabled = tidalAlbumPage >= totalPages - 1;
+
+  pager.append(previous, label, next);
+  tidalResults.appendChild(pager);
+}
+
+function renderPlaylistItems(items, title) {
+  tidalResults.replaceChildren();
+
+  const controls = document.createElement('div');
+  controls.className = 'tidal-playlist-controls';
+
+  const playAll = document.createElement('button');
+  playAll.type = 'button';
+  playAll.dataset.playlistAction = 'play-all';
+  playAll.textContent = 'PLAY ALL';
+
+  const shuffleAll = document.createElement('button');
+  shuffleAll.type = 'button';
+  shuffleAll.dataset.playlistAction = 'shuffle-all';
+  shuffleAll.textContent = 'SHUFFLE ALL';
+
+  controls.append(playAll, shuffleAll);
+  tidalResults.appendChild(controls);
+
+  items.forEach(item => {
+    tidalResults.appendChild(makeBrowseButton(item));
+  });
+
+  tidalStatus.textContent =
+    `${title || 'Playlist'} — ${items.length} tracks`;
 }
 
 function renderBrowseItems(items, title) {
@@ -62,12 +230,172 @@ function renderBrowseItems(items, title) {
   });
 }
 
+async function loadTidalAlbumPage(page = 0) {
+  tidalShowAlbumArtists = true;
+  tidalAlbumPage = Math.max(0, page);
+
+  const start = tidalAlbumPage * tidalAlbumPageSize;
+
+  tidalStatus.textContent = 'Loading Albums…';
+  tidalResults.replaceChildren();
+  setTidalAlphabetVisible(false);
+
+  try {
+    const response = await fetch(
+      '/api/tidal/browse?cid=' +
+      encodeURIComponent('My Music-Albums') +
+      '&start=' + start +
+      '&limit=' + tidalAlbumPageSize,
+      { cache: 'no-store' }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not load albums');
+    }
+
+    const items = Array.isArray(result.items)
+      ? result.items
+      : [];
+
+    tidalAlbumTotal = Number(result.count) || items.length;
+
+    tidalResults.replaceChildren();
+
+    items.forEach(item => {
+      tidalResults.appendChild(makeBrowseButton(item));
+    });
+
+    renderAlbumPager();
+
+    const totalPages = Math.max(
+      1,
+      Math.ceil(tidalAlbumTotal / tidalAlbumPageSize)
+    );
+
+    tidalStatus.textContent =
+      `Albums — ${tidalAlbumTotal} items — Page ${tidalAlbumPage + 1} of ${totalPages}`;
+
+    tidalResults.scrollTop = 0;
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+  }
+}
+
+function renderTrackPager() {
+  const totalPages = Math.max(
+    1,
+    Math.ceil(tidalTrackTotal / tidalTrackPageSize)
+  );
+
+  const pager = document.createElement('div');
+  pager.className = 'tidal-album-pager';
+
+  const previous = document.createElement('button');
+  previous.type = 'button';
+  previous.dataset.trackPageAction = 'previous';
+  previous.textContent = 'PREVIOUS';
+  previous.disabled = tidalTrackPage <= 0;
+
+  const label = document.createElement('div');
+  label.className = 'tidal-album-page-label';
+  label.textContent =
+    `PAGE ${tidalTrackPage + 1} OF ${totalPages}`;
+
+  const next = document.createElement('button');
+  next.type = 'button';
+  next.dataset.trackPageAction = 'next';
+  next.textContent = 'NEXT';
+  next.disabled = tidalTrackPage >= totalPages - 1;
+
+  pager.append(previous, label, next);
+  tidalResults.appendChild(pager);
+}
+
+async function loadTidalTrackPage(page = 0) {
+  tidalShowAlbumArtists = true;
+  tidalTrackPage = Math.max(0, page);
+
+  const start = tidalTrackPage * tidalTrackPageSize;
+
+  tidalStatus.textContent = 'Loading Tracks…';
+  tidalResults.replaceChildren();
+  setTidalAlphabetVisible(false);
+
+  try {
+    const response = await fetch(
+      '/api/tidal/browse?cid=' +
+      encodeURIComponent('My Music-Tracks') +
+      '&start=' + start +
+      '&limit=' + tidalTrackPageSize,
+      { cache: 'no-store' }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not load tracks');
+    }
+
+    const items = Array.isArray(result.items)
+      ? result.items
+      : [];
+
+    tidalTrackTotal = Number(result.count) || items.length;
+
+    tidalResults.replaceChildren();
+
+    items.forEach(item => {
+      tidalResults.appendChild(makeBrowseButton(item));
+    });
+
+    renderTrackPager();
+
+    const totalPages = Math.max(
+      1,
+      Math.ceil(tidalTrackTotal / tidalTrackPageSize)
+    );
+
+    tidalStatus.textContent =
+      `Tracks — ${tidalTrackTotal} items — Page ${tidalTrackPage + 1} of ${totalPages}`;
+
+    tidalResults.scrollTop = 0;
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+  }
+}
+
 async function browseTidal(cid, title, pushHistory = true) {
+  if (cid !== 'My Music-Albums') {
+    tidalShowAlbumArtists = false;
+  }
+
+  if (String(cid).startsWith('LIBPLAYLIST-')) {
+    tidalCurrentPlaylistCid = cid;
+  }
+
   if (pushHistory) {
     tidalHistory.push({
       cid,
       title
     });
+  }
+
+  if (cid === 'My Music-Albums') {
+    tidalScreen.classList.add("browsing");
+    setTidalKeyboardOpen(false);
+    tidalSearchInput.blur();
+    await loadTidalAlbumPage(0);
+    return;
+  }
+
+  if (cid === 'My Music-Tracks') {
+    tidalScreen.classList.add("browsing");
+    setTidalKeyboardOpen(false);
+    tidalSearchInput.blur();
+    await loadTidalTrackPage(0);
+    return;
   }
 
   tidalScreen.classList.add("browsing");
@@ -89,10 +417,22 @@ async function browseTidal(cid, title, pushHistory = true) {
       throw new Error(result.error || 'Could not browse TIDAL');
     }
 
-    renderBrowseItems(
-      Array.isArray(result.items) ? result.items : [],
-      title
-    );
+    const items = Array.isArray(result.items)
+      ? result.items
+      : [];
+
+    if (cid === 'My Music-Artists') {
+      tidalArtistItems = items;
+      tidalArtistLetter = 'ALL';
+      setTidalAlphabetVisible(true);
+      renderFilteredArtists();
+    } else if (String(cid).startsWith('LIBPLAYLIST-')) {
+      setTidalAlphabetVisible(false);
+      renderPlaylistItems(items, title);
+    } else {
+      setTidalAlphabetVisible(false);
+      renderBrowseItems(items, title);
+    }
   } catch (error) {
     tidalStatus.textContent = error.message;
   }
@@ -129,7 +469,7 @@ function makeArtistButton(artist) {
 
   const name = document.createElement('span');
   name.className = 'tidal-artist-name';
-  name.textContent = artist.name || 'Unknown artist';
+  name.textContent = tidalDisplayName(artist.name) || 'Unknown artist';
 
   button.append(artwork, name);
   return button;
@@ -287,12 +627,6 @@ tidalKeyboard.addEventListener('pointerdown', event => {
 });
 
 tidalKeyboard.addEventListener('click', event => {
-  const playAll = event.target.closest(".tidal-play-all");
-  if (playAll) {
-    playTidalTrack(playAll.dataset.cid, playAll.dataset.mid, "album", playAll);
-    return;
-  }
-
   const button = event.target.closest('button');
   if (!button) return;
 
@@ -341,7 +675,7 @@ function makeAlbumButton(album) {
 
   const name = document.createElement('span');
   name.className = 'tidal-artist-name';
-  name.textContent = album.name || 'Unknown album';
+  name.textContent = tidalDisplayName(album.name) || 'Unknown album';
 
   button.append(artwork, name);
   return button;
@@ -408,7 +742,7 @@ function makeTrackButton(track) {
 
   const name = document.createElement('span');
   name.className = 'tidal-artist-name';
-  name.textContent = track.name || 'Unknown track';
+  name.textContent = tidalDisplayName(track.name) || 'Unknown track';
 
   button.append(artwork, name);
   return button;
@@ -463,6 +797,45 @@ async function loadTidalAlbumTracks(cid, albumName) {
   }
 }
 
+async function playTidalPlaylist(cid, mid = '', shuffle = false, button = null) {
+  if (!cid) {
+    tidalStatus.textContent = 'Playlist cannot be played';
+    return;
+  }
+
+  if (button) {
+    button.classList.add('loading');
+    button.disabled = true;
+  }
+
+  setTidalOpen(false);
+
+  try {
+    let url =
+      '/api/tidal/playlist/play?cid=' +
+      encodeURIComponent(cid) +
+      '&shuffle=' + (shuffle ? '1' : '0');
+
+    if (mid) {
+      url += '&mid=' + encodeURIComponent(mid);
+    }
+
+    const response = await fetch(url, { cache: 'no-store' });
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not play playlist');
+    }
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+
+    if (button) {
+      button.classList.remove('loading');
+      button.disabled = false;
+    }
+  }
+}
+
 async function playTidalTrack(cid, mid, trackName, button) {
   if (!cid || !mid) {
     tidalStatus.textContent = 'Track cannot be played';
@@ -498,6 +871,45 @@ async function playTidalTrack(cid, mid, trackName, button) {
 }
 
 tidalResults.addEventListener('click', event => {
+    const trackPageButton = event.target.closest('[data-track-page-action]');
+    if (trackPageButton) {
+      const action = trackPageButton.dataset.trackPageAction;
+
+      if (action === 'previous') {
+        loadTidalTrackPage(tidalTrackPage - 1);
+      } else if (action === 'next') {
+        loadTidalTrackPage(tidalTrackPage + 1);
+      }
+
+      return;
+    }
+
+  const pageButton = event.target.closest('[data-album-page-action]');
+  if (pageButton) {
+    const action = pageButton.dataset.albumPageAction;
+
+    if (action === 'previous') {
+      loadTidalAlbumPage(tidalAlbumPage - 1);
+    } else if (action === 'next') {
+      loadTidalAlbumPage(tidalAlbumPage + 1);
+    }
+
+    return;
+  }
+
+  const playlistAction = event.target.closest('[data-playlist-action]');
+  if (playlistAction) {
+    const action = playlistAction.dataset.playlistAction;
+
+    playTidalPlaylist(
+      tidalCurrentPlaylistCid,
+      '',
+      action === 'shuffle-all',
+      playlistAction
+    );
+    return;
+  }
+
   const playAll = event.target.closest(".tidal-play-all");
   if (playAll) {
     playTidalTrack(playAll.dataset.cid, playAll.dataset.mid, "album", playAll);
@@ -505,7 +917,7 @@ tidalResults.addEventListener('click', event => {
   }
 
   const button = event.target.closest('.tidal-artist');
-  if (!button || !button.dataset.cid) return;
+  if (!button) return;
 
   const label = button.querySelector('.tidal-artist-name');
   const name = label ? label.textContent.trim() : '';
@@ -525,9 +937,33 @@ tidalResults.addEventListener('click', event => {
     return;
   }
 
+  if (
+    button.classList.contains('tidal-browse-item') &&
+    button.dataset.type === 'song'
+  ) {
+    if (button.dataset.albumId) {
+      playTidalPlaylist(
+        'LIBALBUM-' + button.dataset.albumId,
+        button.dataset.mid,
+        false,
+        button
+      );
+    } else {
+      playTidalPlaylist(
+        button.dataset.cid,
+        button.dataset.mid,
+        false,
+        button
+      );
+    }
+    return;
+  }
+
   if (button.classList.contains('tidal-browse-item')) {
     if (button.dataset.type === 'artist') {
       loadTidalArtistAlbums(button.dataset.cid, name);
+    } else if (button.dataset.type === 'album') {
+      loadTidalAlbumTracks(button.dataset.cid, name);
     } else {
       browseTidal(button.dataset.cid, name);
     }

@@ -267,3 +267,114 @@ body.show-tidal .display {
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
+
+.tidal-alphabet {
+  display: none;
+}
+
+.tidal-alphabet.open {
+  position: absolute;
+  left: 28px;
+  top: 186px;
+  width: 82px;
+  height: 254px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 18px;
+  gap: 1px 4px;
+  align-content: start;
+  z-index: 2;
+}
+
+.tidal-alphabet button {
+  min-width: 0;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255,255,255,0.72);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.tidal-alphabet button.active {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.tidal-screen.artist-filtering .tidal-results {
+  margin-left: 94px;
+  width: calc(100% - 94px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tidal-alphabet .tidal-letter-all {
+  grid-column: 1 / -1;
+}
+
+.tidal-album-pager {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+}
+
+.tidal-album-pager button {
+  height: 44px;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.07);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tidal-album-page-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tidal-browse-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tidal-browse-artist {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.62;
+}
+
+.tidal-playlist-controls {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  height: 52px;
+}
+
+.tidal-playlist-controls button {
+  height: 48px;
+  border: 1px solid rgba(255,255,255,0.24);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}

@@ -745,17 +745,30 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
-      if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
-    const cid = url.searchParams.get('cid') || '';
+        if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
+      const cid = url.searchParams.get('cid') || '';
+      const start = url.searchParams.get('start');
+      const limit = url.searchParams.get('limit');
 
-    const result = await mediaBackendRequest(
-      '/api/tidal/browse?cid=' + encodeURIComponent(cid),
-      'GET',
-      20000
-    );
+      let pathname =
+        '/api/tidal/browse?cid=' + encodeURIComponent(cid);
 
-    return sendJson(res, 200, result);
-  }
+      if (start !== null) {
+        pathname += '&start=' + encodeURIComponent(start);
+      }
+
+      if (limit !== null) {
+        pathname += '&limit=' + encodeURIComponent(limit);
+      }
+
+      const result = await mediaBackendRequest(
+        pathname,
+        'GET',
+        40000
+      );
+
+      return sendJson(res, 200, result);
+    }
 
   if (req.method === 'GET' && url.pathname === '/api/tidal/artist/albums') {
         const cid = url.searchParams.get('cid') || '';
@@ -776,6 +789,29 @@ http.createServer(async (req, res) => {
 
         return sendJson(res, 200, result);
       }
+
+        if (req.method === 'GET' && url.pathname === '/api/tidal/playlist/play') {
+          const cid = url.searchParams.get('cid') || '';
+          const mid = url.searchParams.get('mid');
+          const shuffle = url.searchParams.get('shuffle') || '0';
+
+          let pathname =
+            '/api/tidal/playlist/play?cid=' + encodeURIComponent(cid);
+
+          if (mid) {
+            pathname += '&mid=' + encodeURIComponent(mid);
+          }
+
+          pathname += '&shuffle=' + encodeURIComponent(shuffle);
+
+          const result = await mediaBackendRequest(
+            pathname,
+            'GET',
+            20000
+          );
+
+          return sendJson(res, 200, result);
+        }
 
       if (req.method === 'GET' && url.pathname === '/api/tidal/play') {
         const cid = url.searchParams.get('cid') || '';
