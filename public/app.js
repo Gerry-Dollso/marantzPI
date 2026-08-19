@@ -22,6 +22,9 @@ const idleVolume = document.getElementById('idleVolume');
 const volumeOverlay = document.getElementById('volumeOverlay');
 const volumeOverlayValue = document.getElementById('volumeOverlayValue');
 const volumeOverlayBar = document.getElementById('volumeOverlayBar');
+const volumeSlider = document.getElementById('volumeSlider');
+const volumeSliderFill = document.getElementById('volumeSliderFill');
+const volumeSliderThumb = document.getElementById('volumeSliderThumb');
 const zone2Power = document.getElementById('zone2Power');
 const zone3Power = document.getElementById('zone3Power');
 const standbyZone2Power = document.getElementById('standbyZone2Power');
@@ -143,6 +146,18 @@ function volumeBarPercentage(value) {
   const clamped = Math.min(maximum, Math.max(minimum, volume));
 
   return ((clamped - minimum) / (maximum - minimum)) * 100;
+}
+
+function updateVolumeSlider(value) {
+  if (!validReceiverVolume(value)) return;
+
+  const volume = Number(value);
+  const percentage = volumeBarPercentage(volume);
+
+  volumeSliderFill.style.width = `${percentage}%`;
+  volumeSliderThumb.style.left = `${percentage}%`;
+  volumeSlider.setAttribute('aria-valuenow', String(volume));
+  volumeSlider.setAttribute('aria-valuetext', formatVolume(volume));
 }
 
 function hideVolumeOverlay() {
@@ -299,6 +314,7 @@ function render(data) {
 
   const receiver = data.receiver || {};
   updateVolumeOverlay(receiver);
+  updateVolumeSlider(receiver.volume);
 
   standbyZone2Power?.classList.toggle('on', receiver.zone2Power === 'on');
   standbyZone3Power?.classList.toggle('on', receiver.zone3Power === 'on');
@@ -907,6 +923,105 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopVolumeRepeat();
 });
 
+
+// Touch/drag receiver volume slider.
+let volumeSliderPointer = null;
+let volumeSliderRequestBusy = false;
+let volumeSliderPending = null;
+
+function volumeFromSliderPosition(clientX) {
+  const rect = volumeSlider.getBoundingClientRect();
+  if (!rect.width) return null;
+
+  const ratio = Math.min(
+    1,
+    Math.max(0, (clientX - rect.left) / rect.width)
+  );
+
+  const raw = -80 + ratio * 98;
+  return Math.min(18, Math.max(-80, Math.round(raw * 2) / 2));
+}
+
+function previewSliderVolume(volume) {
+  updateVolumeSlider(volume);
+  showVolumeOverlay({
+    power: 'on',
+    muted: false,
+    volume
+  });
+}
+
+async function sendSliderVolume() {
+  if (volumeSliderRequestBusy) return;
+  if (!validReceiverVolume(volumeSliderPending)) return;
+
+  const target = Number(volumeSliderPending);
+  volumeSliderPending = null;
+  volumeSliderRequestBusy = true;
+
+  try {
+    const result = await requestVolumeSet(target);
+    const confirmed = validReceiverVolume(result.volume)
+      ? Number(result.volume) : target;
+    previewSliderVolume(confirmed);
+  } catch (error) {
+    connection.classList.add('error');
+    volumeSliderPending = null;
+  } finally {
+    volumeSliderRequestBusy = false;
+
+    if (volumeSliderPending !== null) {
+      setTimeout(sendSliderVolume, 70);
+    }
+  }
+}
+
+function queueSliderVolume(clientX) {
+  const target = volumeFromSliderPosition(clientX);
+  if (!validReceiverVolume(target)) return;
+
+  previewSliderVolume(target);
+  volumeSliderPending = target;
+  sendSliderVolume();
+}
+
+volumeSlider.addEventListener(
+  'pointerdown',
+  event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    event.preventDefault();
+    volumeSliderPointer = event.pointerId;
+    queueSliderVolume(event.clientX);
+  },
+  { passive: false }
+);
+
+volumeSlider.addEventListener(
+  'pointermove',
+  event => {
+    if (event.pointerId !== volumeSliderPointer) return;
+
+    event.preventDefault();
+    queueSliderVolume(event.clientX);
+  },
+  { passive: false }
+);
+
+function finishVolumeSlider(event) {
+  if (event.pointerId !== volumeSliderPointer) return;
+
+  volumeSliderPointer = null;
+
+  if (volumeSliderPending !== null) {
+    sendSliderVolume();
+  }
+
+  setTimeout(refresh, 150);
+}
+
+volumeSlider.addEventListener('pointerup', finishVolumeSlider);
+volumeSlider.addEventListener('pointercancel', finishVolumeSlider);
 
 // Tap the top-right power symbol to place the AVR into standby.
 connection.addEventListener('click', async event => {

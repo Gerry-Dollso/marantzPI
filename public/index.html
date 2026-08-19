@@ -155,6 +155,20 @@
         <button data-action="volume-down" aria-label="Volume down">−</button>
         <button id="muteButton" data-action="mute" aria-label="Mute">MUTE</button>
         <button data-action="volume-up" aria-label="Volume up">＋</button>
+          <div
+            id="volumeSlider"
+            class="volume-slider"
+            role="slider"
+            aria-label="Volume"
+            aria-valuemin="-80"
+            aria-valuemax="18"
+            aria-valuenow="-32"
+          >
+            <div class="volume-slider-track">
+              <div id="volumeSliderFill" class="volume-slider-fill"></div>
+              <div id="volumeSliderThumb" class="volume-slider-thumb"></div>
+            </div>
+          </div>
       </div>
 
       <div class="inputs">
