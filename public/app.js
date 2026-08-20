@@ -38,6 +38,8 @@ let latest = null;
 let lastImageUrl = '';
 let localTickStarted = 0;
 let localTickPosition = 0;
+let lastServerProgressCurrent = null;
+let lastServerProgressDuration = null;
 let lastTrackInfoAt = 0;
 let idleDelayMs = 60000;
 let clock24h = true;
@@ -63,7 +65,17 @@ function updateProgress(position, total) {
       ? Math.min(100, Math.max(0, (position / total) * 100))
       : 0;
 
-  progressBar.style.width = `${percentage}%`;
+  const previousPercentage =
+    Number.parseFloat(progressBar.style.width) || 0;
+
+  if (previousPercentage - percentage > 10) {
+    progressBar.style.transition = 'none';
+    progressBar.style.width = `${percentage}%`;
+    void progressBar.offsetWidth;
+    progressBar.style.transition = '';
+  } else {
+    progressBar.style.width = `${percentage}%`;
+  }
 }
 
 function showArtwork(url) {
@@ -373,12 +385,26 @@ function render(data) {
     playPause.dataset.action = playing ? 'pause' : 'play';
     playPause.textContent = playing ? 'Ⅱ' : '▶';
 
-    localTickPosition = Number(data.current) || 0;
-    localTickStarted = Date.now();
+    const serverCurrent = Number(data.current) || 0;
+    const serverDuration = Number(data.duration) || 0;
+
+    if (
+      serverCurrent !== lastServerProgressCurrent ||
+      serverDuration !== lastServerProgressDuration
+    ) {
+      localTickPosition = serverCurrent;
+      localTickStarted = Date.now();
+      lastServerProgressCurrent = serverCurrent;
+      lastServerProgressDuration = serverDuration;
+    }
+
+    const displayCurrent = playing
+      ? localTickPosition + (Date.now() - localTickStarted) / 1000
+      : localTickPosition;
 
     updateProgress(
-      localTickPosition,
-      Number(data.duration) || 0
+      displayCurrent,
+      serverDuration
     );
   } else {
     if (inputCode === "8K") {

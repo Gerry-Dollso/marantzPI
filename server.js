@@ -36,6 +36,11 @@ const publicDir = path.join(__dirname, 'public');
 let activeRadioFavourite = null;
 let previousSmartSelectInputCode = null;
 let smartSelectCommandInFlight = false;
+let heosProgressCurrentMs = 0;
+let heosProgressDurationMs = 0;
+let heosProgressSocket = null;
+let heosProgressReconnectTimer = null;
+
 
 
 const execFileAsync = promisify(execFile);
@@ -173,6 +178,59 @@ async function powerPanelOff() {
       brightness: Number(PANEL_NORMAL_BRIGHTNESS)
     };
   });
+}
+
+function handleHeosProgressEvent(response) {
+  if (response?.heos?.command !== 'event/player_now_playing_progress') return;
+
+  const values = params(response);
+  if (String(values.pid || '') !== String(config.playerId)) return;
+
+  heosProgressCurrentMs = Number(values.cur_pos || 0);
+  heosProgressDurationMs = Number(values.duration || 0);
+}
+
+function startHeosProgressListener() {
+  if (heosProgressSocket) return;
+
+  const socket = net.createConnection({
+    host: config.marantzHost,
+    port: config.marantzPort
+  });
+
+  heosProgressSocket = socket;
+  socket.setEncoding('utf8');
+  let buffer = '';
+
+  socket.on('connect', () => {
+    socket.write('heos://system/register_for_change_events?enable=on\r\n');
+  });
+
+  socket.on('data', chunk => {
+    buffer += chunk;
+    while (buffer.includes('\n')) {
+      const newline = buffer.indexOf('\n');
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (!line) continue;
+      try {
+        handleHeosProgressEvent(JSON.parse(line));
+      } catch {}
+    }
+  });
+
+  const reconnect = () => {
+    if (heosProgressSocket === socket) {
+      heosProgressSocket = null;
+    }
+
+    clearTimeout(heosProgressReconnectTimer);
+    heosProgressReconnectTimer =
+      setTimeout(startHeosProgressListener, 3000);
+  };
+
+  socket.on('error', reconnect);
+  socket.on('close', reconnect);
 }
 
 function heos(command, timeoutMs = 3000, waitForFinal = false) {
@@ -397,11 +455,10 @@ async function getReceiverStatus() {
 async function getStatus() {
   const pid = encodeURIComponent(config.playerId);
 
-  const [mediaResult, stateResult, progressResult, receiverResult] =
+  const [mediaResult, stateResult, receiverResult] =
     await Promise.allSettled([
       heos(`player/get_now_playing_media?pid=${pid}`),
       heos(`player/get_play_state?pid=${pid}`),
-      heos(`player/get_now_playing_progress?pid=${pid}`),
       getReceiverStatus()
     ]);
 
@@ -415,9 +472,6 @@ async function getStatus() {
 
   const state =
     stateResult.status === 'fulfilled' ? params(stateResult.value) : {};
-
-  const progress =
-    progressResult.status === 'fulfilled' ? params(progressResult.value) : {};
 
   const receiver =
     receiverResult.status === 'fulfilled'
@@ -482,8 +536,8 @@ async function getStatus() {
     hasTrackInfo,
     imageUrl,
     state: state.state || 'unknown',
-    current: Number(progress.cur_pos || 0),
-    duration: Number(progress.duration || 0),
+    current: heosProgressCurrentMs / 1000,
+    duration: heosProgressDurationMs / 1000,
     receiver,
     settings: {
       marantzHost: config.marantzHost,
@@ -891,4 +945,5 @@ http.createServer(async (req, res) => {
   console.log(
     `Marantz display: http://${config.listenHost}:${config.listenPort}`
   );
+  startHeosProgressListener();
 });
