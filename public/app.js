@@ -5,6 +5,7 @@ const artworkFallback = document.getElementById('artworkFallback');
 const song = document.getElementById('song');
 const artist = document.getElementById('artist');
 const album = document.getElementById('album');
+const progressTrack = document.getElementById('progressTrack');
 const progressBar = document.getElementById('progressBar');
 const currentTime = document.getElementById('currentTime');
 const duration = document.getElementById('duration');
@@ -40,6 +41,8 @@ let localTickStarted = 0;
 let localTickPosition = 0;
 let lastServerProgressCurrent = null;
 let lastServerProgressDuration = null;
+let progressSeekPointer = null;
+let progressSeekPreview = null;
 let lastTrackInfoAt = 0;
 let idleDelayMs = 60000;
 let clock24h = true;
@@ -49,11 +52,42 @@ let previousReceiverMuted = null;
 let volumeOverlayInitialised = false;
 let volumeOverlayTimer = null;
 
+// Keep browser swipe navigation trapped inside marantzPI.
+history.replaceState({ marantzPi: true }, '', location.href);
+history.pushState({ marantzPiGuard: true }, '', location.href);
+
+window.addEventListener('popstate', () => {
+  history.pushState({ marantzPiGuard: true }, '', location.href);
+});
+
 function formatTime(seconds) {
   const value = Math.max(0, Math.floor(Number(seconds) || 0));
   const minutes = Math.floor(value / 60);
   const remainder = value % 60;
   return `${minutes}:${String(remainder).padStart(2, '0')}`;
+}
+
+function progressPositionFromClientX(clientX) {
+  const total = Number(latest?.duration) || 0;
+  if (total <= 0) return null;
+
+  const rect = progressTrack.getBoundingClientRect();
+  if (!rect.width) return null;
+
+  const ratio = Math.min(
+    1,
+    Math.max(0, (clientX - rect.left) / rect.width)
+  );
+
+  return Math.round(ratio * total);
+}
+
+function previewProgressSeek(position) {
+  const total = Number(latest?.duration) || 0;
+  if (total <= 0) return;
+
+  progressSeekPreview = position;
+  updateProgress(position, total);
 }
 
 function updateProgress(position, total) {
@@ -555,6 +589,20 @@ async function requestControl(action) {
 }
 
 
+async function requestProgressSeek(position) {
+  const response = await fetch(
+    `/api/control/seek?position=${encodeURIComponent(position)}`,
+    { method: 'POST', cache: 'no-store' }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || 'Seek failed');
+  }
+
+  return result;
+}
+
 async function requestVolumeSet(value) {
   const response = await fetch(
     `/api/control/volume-set?value=${encodeURIComponent(value)}`,
@@ -1048,6 +1096,43 @@ function finishVolumeSlider(event) {
 
 volumeSlider.addEventListener('pointerup', finishVolumeSlider);
 volumeSlider.addEventListener('pointercancel', finishVolumeSlider);
+
+progressTrack.addEventListener(
+  'pointerdown',
+  event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    const position = progressPositionFromClientX(event.clientX);
+    if (position === null) return;
+
+    event.preventDefault();
+    progressSeekPointer = event.pointerId;
+    previewProgressSeek(position);
+  },
+  { passive: false }
+);
+
+async function finishProgressSeek(event) {
+  if (event.pointerId !== progressSeekPointer) return;
+
+  progressSeekPointer = null;
+
+  const target = progressSeekPreview;
+  progressSeekPreview = null;
+  if (target === null) return;
+
+  try {
+    await requestProgressSeek(target);
+    localTickPosition = target;
+    localTickStarted = Date.now();
+    lastServerProgressCurrent = null;
+  } catch (error) {
+    connection.classList.add('error');
+  }
+}
+
+progressTrack.addEventListener('pointerup', finishProgressSeek);
+progressTrack.addEventListener('pointercancel', finishProgressSeek);
 
 // Tap the top-right power symbol to place the AVR into standby.
 connection.addEventListener('click', async event => {

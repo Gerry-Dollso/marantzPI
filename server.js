@@ -551,6 +551,46 @@ async function getStatus() {
   };
 }
 
+async function seekHeos(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+
+  const target = [hours, minutes, secs]
+    .map(value => String(value).padStart(2, '0'))
+    .join(':');
+
+  const body =
+    '<?xml version="1.0"?>' +
+    '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ' +
+    's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' +
+    '<s:Body><u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">' +
+    '<InstanceID>0</InstanceID><Unit>REL_TIME</Unit>' +
+    '<Target>' + target + '</Target>' +
+    '</u:Seek></s:Body></s:Envelope>';
+
+  const response = await fetch(
+    'http://' + config.marantzHost +
+    ':60006/upnp/control/renderer_dvc/AVTransport',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset="utf-8"',
+        'SOAPACTION':
+          '"urn:schemas-upnp-org:service:AVTransport:1#Seek"'
+      },
+      body
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('UPnP seek failed');
+  }
+
+  return { ok: true, position: total };
+}
+
 async function heosControl(action) {
   const pid = encodeURIComponent(config.playerId);
   const commands = {
@@ -915,6 +955,11 @@ http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname.startsWith('/api/control/')) {
       const action = decodeURIComponent(url.pathname.split('/').pop());
+
+      if (action === 'seek') {
+        const position = url.searchParams.get('position');
+        return sendJson(res, 200, await seekHeos(position));
+      }
 
       if (['play', 'pause', 'next', 'previous'].includes(action)) {
         return sendJson(res, 200, await heosControl(action));
