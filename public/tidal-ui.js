@@ -559,6 +559,11 @@ document.addEventListener(
     event.preventDefault();
     event.stopImmediatePropagation();
 
+    fetch('/api/control/heos', {
+      method: 'POST',
+      cache: 'no-store'
+    }).catch(() => {});
+
     setTidalOpen(true);
     tidalHistory.length = 0;
     tidalScreen.classList.remove("browsing");
