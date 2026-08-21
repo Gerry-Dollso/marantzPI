@@ -56,7 +56,6 @@
     document.body.classList.toggle('show-standby', isStandby);
     document.body.classList.toggle('show-tv-screen', isTv);
     document.body.classList.toggle('show-projector-screen', isProjector);
-    document.body.classList.remove('show-tv-idle');
 
     if (!isStandby) {
       document.body.classList.remove(

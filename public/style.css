@@ -746,70 +746,6 @@ body.show-standby #idleVolume {
   display: none;
 }
 
-/* TV idle */
-body.show-tv-idle .idle-screen {
-  padding-top: 38px;
-}
-
-body.show-tv-idle .idle-clock {
-  font-size: 96px;
-}
-
-body.show-tv-idle .idle-date {
-  margin-top: 18px;
-}
-
-body.show-tv-idle .idle-divider {
-  width: 90px;
-  margin: 24px 0 18px;
-}
-
-body.show-tv-idle .idle-input {
-  color: #bca675;
-  font-size: 20px;
-  letter-spacing: 0.20em;
-  padding-left: 0.20em;
-}
-
-body.show-tv-idle .idle-status {
-  margin-top: 12px;
-}
-
-body.show-tv-idle .idle-input-controls {
-  width: 560px;
-  height: 58px;
-  margin-top: auto;
-  margin-bottom: 18px;
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr);
-  align-items: end;
-  pointer-events: auto !important;
-}
-
-body.show-tv-idle .idle-input-controls button {
-  height: 40px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  color: #7f8985;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-}
-
-body.show-tv-idle .idle-input-controls button.active {
-  color: #d4c18e;
-  border-bottom-color: #d4c18e;
-}
-
-body.show-tv-idle .idle-input-controls button:active,
-body.show-tv-idle .idle-input-controls button.pressed {
-  transform: scale(0.96);
-}
-
-
 /* ===== Standby touch-and-hold wake feedback ===== */
 
 body.show-standby .idle-screen {
@@ -1047,39 +983,6 @@ body.show-standby .idle-input {
 
 body.show-standby .idle-status {
   margin-top: 17px;
-}
-
-/* TV Audio screen: same visual proportions as standby.
-   The input-selection bar keeps its existing bottom anchoring and dimensions. */
-body.show-tv-idle .idle-screen {
-  padding-top: 30px;
-}
-
-body.show-tv-idle .idle-clock {
-  font-size: 132px;
-  line-height: 0.86;
-  font-weight: 300;
-  letter-spacing: -0.04em;
-}
-
-body.show-tv-idle .idle-date {
-  margin-top: 21px;
-}
-
-body.show-tv-idle .idle-divider {
-  width: 100px;
-  margin-top: 27px;
-  margin-bottom: 21px;
-}
-
-body.show-tv-idle .idle-input {
-  font-size: 23px;
-  letter-spacing: 0.22em;
-  padding-left: 0.22em;
-}
-
-body.show-tv-idle .idle-status {
-  margin-top: 13px;
 }
 
 /* The corner power button belongs only to the normal input screens. */
