@@ -49,7 +49,7 @@ journalctl --user -u marantz-display.service --since '24 hours ago' -p warning -
 
 ## Preserve journals across reboots
 
-Raspberry Pi OS normally retains journals according to the system journal configuration. To explicitly enable persistent system journals:
+To explicitly enable persistent system journals:
 
 ```bash
 sudo mkdir -p /var/log/journal
@@ -59,19 +59,28 @@ sudo systemctl restart systemd-journald
 
 This is a one-time operating-system setting, not a marantzPI code change.
 
-## Recovery branch
+## Recovery
 
-The protected recovery snapshot for this build is the GitHub branch:
+The active development branch is:
 
 ```text
-v3-stable-2026-07-31
+v3-development
 ```
 
-To restore it on the Pi without deleting the development branch:
+The known-good checkpoint immediately before the 2026-08-21 housekeeping pass is:
+
+```text
+99cdb6e — Add touch seek and kiosk history guard
+```
+
+To return the Pi to that exact checkpoint for diagnosis:
 
 ```bash
 cd ~/marantz-now-playing
 git fetch origin
-git checkout v3-stable-2026-07-31
-systemctl --user restart marantz-display.service
+git checkout v3-development
+git reset --hard 99cdb6e
+systemctl --user restart marantz-display
 ```
+
+Only use the hard reset after confirming there are no local changes you need to keep.
