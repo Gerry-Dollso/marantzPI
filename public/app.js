@@ -681,29 +681,6 @@ const SourceController = {
       });
   },
 
-  indexOfCurrent() {
-    const index = this.order.indexOf(this.current);
-    return index >= 0 ? index : 0;
-  },
-
-  relative(direction) {
-    const currentIndex = this.indexOfCurrent();
-
-    const nextIndex =
-      (currentIndex + direction + this.order.length) %
-      this.order.length;
-
-    return this.change(this.order[nextIndex]);
-  },
-
-  next() {
-    return this.relative(1);
-  },
-
-  previous() {
-    return this.relative(-1);
-  },
-
   async change(source) {
     if (!this.order.includes(source) || this.changing) {
       return;
