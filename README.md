@@ -1,23 +1,53 @@
-# marantzPI v2.1.0
+# marantzPI
 
-A touchscreen companion display for a Marantz receiver and HEOS playback.
+Touchscreen controller and now-playing display for a Marantz AVR with HEOS playback.
 
-## v2.1.0 changes
+## Current v3 feature set
 
-- Now Playing appears only while HEOS supplies track metadata.
-- The idle screen returns after the configured timeout when metadata disappears.
-- Receiver input labels are configurable in `settings.json`.
-- Default custom labels include `NET` → `TIDAL` and `8K` → `PHONO`.
-- The kiosk mouse pointer is hidden.
+- Marantz input control using Smart Select mappings for PHONO, CD and TIDAL/HEOS.
+- TIDAL library browsing, search, albums, playlists and track playback through the companion media backend.
+- HEOS favourites / internet-radio browser.
+- Receiver volume buttons plus touch volume slider.
+- HEOS track progress display with tap-to-seek via UPnP AVTransport.
+- Zone 2 / Zone 3 power controls and Zone 2 source selection.
+- Standby, TV and projector display modes with physical panel power management.
+- Direct link to the AVR settings webpage with kiosk-history protection on the local UI.
 
-## Update an existing installation
+## Architecture
 
-From the extracted release directory:
+`server.js` runs locally on the Raspberry Pi and serves the touchscreen UI from `public/`. It talks directly to the AVR for receiver/HEOS status and control. TIDAL library operations are proxied to the separate `marantz-backend` service running on the media server.
 
-```bash
-chmod +x update.sh
-./update.sh
+The application runs as the user service:
+
+```text
+marantz-display.service
 ```
 
-The updater preserves `config.json`, creates a timestamped backup, restarts the
-user-level `marantz-display.service`, and verifies that it is active.
+## Development branch
+
+Active development is on:
+
+```text
+v3-development
+```
+
+The known-good checkpoint immediately before the 2026-08-21 housekeeping pass is:
+
+```text
+99cdb6e — Add touch seek and kiosk history guard
+```
+
+## Updating an installation
+
+The normal development workflow is Git-based. After updating the checked-out branch, validate the JavaScript before restarting:
+
+```bash
+node --check server.js
+node --check public/app.js
+node --check public/tidal-ui.js
+systemctl --user restart marantz-display
+```
+
+`config.json` remains local and is ignored by Git.
+
+See `DEBUGGING.md` for diagnostic and recovery commands.
