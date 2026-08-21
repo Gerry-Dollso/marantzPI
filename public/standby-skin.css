@@ -19,7 +19,6 @@ body.show-standby .idle-brand {
 
 body.show-standby .idle-clock,
 body.show-standby .idle-date,
-body.show-standby .idle-source-icon,
 body.show-standby .idle-status {
   display: none !important;
 }

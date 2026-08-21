@@ -357,86 +357,6 @@ button:disabled { opacity: 0.45; }
   opacity: 0.75;
 }
 
-.idle-source-icon {
-  position: relative;
-  width: 62px;
-  height: 62px;
-  margin-bottom: 14px;
-}
-.source-icon { position: absolute; inset: 0; display: none; }
-
-/* Vinyl record */
-.idle-source-icon.show-record .source-icon-record {
-  display: block;
-  border: 2px solid rgba(217, 218, 214, 0.9);
-  border-radius: 50%;
-  animation: source-spin 24s linear infinite;
-}
-
-.idle-source-icon.show-record .source-icon-record::before,
-.idle-source-icon.show-record .source-icon-record::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-}
-
-.idle-source-icon.show-record .source-icon-record::before {
-  inset: 9px;
-  border: 1px solid rgba(217, 218, 214, 0.28);
-  box-shadow: 0 0 0 6px rgba(217, 218, 214, 0.05), 0 0 0 13px rgba(217, 218, 214, 0.03);
-}
-
-.idle-source-icon.show-record .source-icon-record::after {
-  width: 12px;
-  height: 12px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  background: #a98f5d;
-  box-shadow: 0 0 0 5px rgba(169, 143, 93, 0.16);
-}
-
-/* Compact disc */
-.idle-source-icon.show-cd .source-icon-cd {
-  display: block;
-  border: 2px solid rgba(217, 218, 214, 0.82);
-  border-radius: 50%;
-  background: conic-gradient(from 20deg, rgba(217, 218, 214, 0.04), rgba(169, 143, 93, 0.22), rgba(217, 218, 214, 0.03), rgba(217, 218, 214, 0.18), rgba(217, 218, 214, 0.04));
-  animation: source-spin-reverse 18s linear infinite;
-}
-
-.idle-source-icon.show-cd .source-icon-cd::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid rgba(217, 218, 214, 0.8);
-  border-radius: 50%;
-  background: #12151a;
-}
-
-/* HEOS equaliser */
-.idle-source-icon.show-heos .source-icon-heos {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 10px;
-  gap: 7px;
-}
-
-.idle-source-icon.show-heos .source-icon-heos span {
-  width: 7px;
-  border-radius: 999px;
-  background: #a98f5d;
-  animation: source-pulse 1.8s ease-in-out infinite;
-}
-.idle-source-icon.show-heos .source-icon-heos span:nth-child(1) { height: 24px; animation-delay: 0s; }
-.idle-source-icon.show-heos .source-icon-heos span:nth-child(2) { height: 42px; animation-delay: 0.18s; }
-.idle-source-icon.show-heos .source-icon-heos span:nth-child(3) { height: 30px; animation-delay: 0.36s; }
-
 .idle-input {
   color: #d9dad6;
   font-size: 28px;
@@ -477,7 +397,6 @@ button:disabled { opacity: 0.45; }
 .idle-clock,
 .idle-date,
 .idle-divider,
-.idle-source-icon,
 .idle-input,
 .idle-status {
   will-change: opacity, transform;
@@ -545,7 +464,6 @@ body.show-idle .inputs {
 .idle-clock,
 .idle-date,
 .idle-divider,
-.idle-source-icon,
 .idle-input,
 .idle-status {
   transition:
@@ -565,10 +483,6 @@ body.show-idle .inputs {
   transition-delay: 100ms;
 }
 
-.idle-source-icon {
-  transition-delay: 130ms;
-}
-
 .idle-input {
   transition-delay: 160ms;
 }
@@ -581,8 +495,7 @@ body:not(.show-idle) .idle-brand,
 body:not(.show-idle) .idle-clock,
 body:not(.show-idle) .idle-date,
 body:not(.show-idle) .idle-divider,
-body:not(.show-idle) .idle-source-icon,
-body:not(.show-idle) .idle-input,
+body:not(.show-idle) body:not(.show-idle) .idle-input,
 body:not(.show-idle) .idle-status {
   opacity: 0;
   transform: translateY(-10px);
@@ -603,7 +516,6 @@ body:not(.show-idle) .idle-status {
   .idle-clock,
   .idle-date,
   .idle-divider,
-  .idle-source-icon,
   .idle-input,
   .idle-status {
     transition-duration: 1ms !important;
@@ -612,13 +524,6 @@ body:not(.show-idle) .idle-status {
 }
 
 /* ===== Animations ===== */
-@keyframes source-spin { to { transform: rotate(360deg); } }
-@keyframes source-spin-reverse { to { transform: rotate(-360deg); } }
-@keyframes source-pulse {
-  0%, 100% { transform: scaleY(0.55); opacity: 0.45; }
-  50% { transform: scaleY(1); opacity: 1; }
-}
-
 /* Hide streaming-only controls on Phono, CD and AUX */
 body:not(.streaming-source) .progress-section,
 body:not(.streaming-source) .transport {
@@ -693,8 +598,7 @@ body:not(.streaming-source) .inputs {
 
 /* ===== Standby and TV idle layouts ===== */
 
-.idle-brand,
-.idle-source-icon {
+.idle-brand {
   display: none !important;
 }
 
