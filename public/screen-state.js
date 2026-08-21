@@ -4,11 +4,16 @@
 // app.js remains the only /api/status poller and owner of shared controls.
 //   standby -> standby screen
 //   on + TV -> dedicated low-light TV screen
+//   on + AUX1 -> dedicated projector screen
 //   on + other input -> active source screen
 //   unknown -> preserve the current screen until a valid state arrives
 (() => {
   const tvScreen = document.getElementById('tvScreen');
   const projectorScreen = document.getElementById('projectorScreen');
+
+  function setScreenHidden(screen, hidden) {
+    screen?.setAttribute('aria-hidden', String(hidden));
+  }
 
   updateIdleDisplay = function updateScreenState(data) {
     const receiver = data?.receiver || {};
@@ -16,9 +21,7 @@
 
     clock24h = data?.settings?.clock24h !== false;
 
-    if (power === 'unknown') {
-      return;
-    }
+    if (power === 'unknown') return;
 
     const inputCode = String(receiver.inputCode || '').toUpperCase();
     const isStandby = power === 'standby';
@@ -62,18 +65,9 @@
       );
     }
 
-    idleScreen.setAttribute('aria-hidden', String(!isStandby));
-    nowPlayingScreen.setAttribute(
-      'aria-hidden',
-      String(isStandby || isTv || isProjector)
-    );
-
-    if (projectorScreen) {
-      projectorScreen.setAttribute("aria-hidden", String(!isProjector));
-    }
-
-    if (tvScreen) {
-      tvScreen.setAttribute('aria-hidden', String(!isTv));
-    }
+    setScreenHidden(idleScreen, !isStandby);
+    setScreenHidden(nowPlayingScreen, isStandby || isTv || isProjector);
+    setScreenHidden(projectorScreen, !isProjector);
+    setScreenHidden(tvScreen, !isTv);
   };
 })();
