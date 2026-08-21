@@ -298,49 +298,7 @@ function updateVolumeOverlay(receiver) {
   previousReceiverMuted = muted;
 }
 
-function updateIdleDisplay(data) {
-  const receiver = data.receiver || {};
-  clock24h = data.settings?.clock24h !== false;
-
-  idleInput.textContent =
-    receiver.power === 'on'
-      ? receiver.input || 'MARANTZ'
-      : 'MARANTZ';
-
-  const inputCode = String(receiver.inputCode || '').toUpperCase();
-
-  idleSourceIcon.className = 'idle-source-icon';
-
-  if (inputCode === '8K') {
-    idleSourceIcon.classList.add('show-record');
-  } else if (inputCode === 'CD') {
-    idleSourceIcon.classList.add('show-cd');
-  } else if (inputCode === 'NET') {
-    idleSourceIcon.classList.add('show-heos');
-  }
-
-  idlePower.textContent =
-    receiver.power === 'on'
-      ? receiver.muted
-        ? 'MUTED'
-        : 'RECEIVER ON'
-      : 'STANDBY';
-
-  idleVolume.textContent =
-    receiver.power === 'on'
-      ? formatVolume(receiver.volume)
-      : '';
-
-  const isStandby = receiver.power !== 'on';
-  const isTvIdle = receiver.power === 'on' && inputCode === 'TV';
-  const showIdle = isStandby || isTvIdle;
-
-  document.body.classList.toggle('show-idle', showIdle);
-  document.body.classList.toggle('show-standby', isStandby);
-  document.body.classList.toggle('show-tv-idle', isTvIdle);
-  idleScreen.setAttribute('aria-hidden', String(!showIdle));
-  nowPlayingScreen.setAttribute('aria-hidden', String(showIdle));
-}
+let updateIdleDisplay = null;
 
 function render(data) {
   latest = data;
@@ -459,7 +417,7 @@ function render(data) {
     'holding'
   );
   connection.classList.add('connected');
-  updateIdleDisplay(data);
+  updateIdleDisplay?.(data);
     updatePhysicalPanelForReceiver(data);
 }
 
@@ -1147,7 +1105,9 @@ setInterval(() => {
 
 updateClock();
 setInterval(updateClock, 1000);
-refresh();
+
+// Let the remaining UI modules install their render hooks first.
+setTimeout(refresh, 0);
 setInterval(refresh, 750);
 
 // Automatically refresh the kiosk whenever the Node server restarts.
