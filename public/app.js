@@ -43,8 +43,6 @@ let lastServerProgressCurrent = null;
 let lastServerProgressDuration = null;
 let progressSeekPointer = null;
 let progressSeekPreview = null;
-let lastTrackInfoAt = 0;
-let idleDelayMs = 60000;
 let clock24h = true;
 
 let previousReceiverVolume = null;
@@ -302,17 +300,7 @@ function updateVolumeOverlay(receiver) {
 
 function updateIdleDisplay(data) {
   const receiver = data.receiver || {};
-  const hasTrackInfo = data.hasTrackInfo === true;
-
-  idleDelayMs = Math.max(
-    0,
-    Number(data.settings?.idleTimeoutSeconds || 60) * 1000
-  );
   clock24h = data.settings?.clock24h !== false;
-
-  if (hasTrackInfo) {
-    lastTrackInfoAt = Date.now();
-  }
 
   idleInput.textContent =
     receiver.power === 'on'
