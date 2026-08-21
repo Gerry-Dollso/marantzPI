@@ -32,16 +32,6 @@
       ? 'MARANTZ'
       : receiver.input || 'MARANTZ';
 
-    idleSourceIcon.className = 'idle-source-icon';
-
-    if (inputCode === '8K') {
-      idleSourceIcon.classList.add('show-record');
-    } else if (inputCode === 'CD') {
-      idleSourceIcon.classList.add('show-cd');
-    } else if (inputCode === 'NET') {
-      idleSourceIcon.classList.add('show-heos');
-    }
-
     idlePower.textContent = isStandby
       ? 'STANDBY'
       : receiver.muted

@@ -17,7 +17,6 @@ const nowPlayingScreen = document.getElementById('nowPlayingScreen');
 const idleClock = document.getElementById('idleClock');
 const idleDate = document.getElementById('idleDate');
 const idleInput = document.getElementById('idleInput');
-const idleSourceIcon = document.getElementById('idleSourceIcon');
 const idlePower = document.getElementById('idlePower');
 const idleVolume = document.getElementById('idleVolume');
 const volumeOverlay = document.getElementById('volumeOverlay');
