@@ -1242,9 +1242,10 @@ async function wakePhysicalPanel() {
 document.addEventListener(
   'pointerdown',
   event => {
-    if (event.pointerType === 'touch') {
-      wakePhysicalPanel();
-    }
+    if (event.pointerType !== 'touch') return;
+
+    wakePhysicalPanel();
+    resetPanelIdleTimer();
   },
   { capture: true }
 );
@@ -1324,15 +1325,5 @@ function resetPanelIdleTimer() {
     sleepPhysicalPanel();
   }, timeoutMs);
 }
-
-document.addEventListener(
-  'pointerdown',
-  event => {
-    if (event.pointerType === 'touch') {
-      resetPanelIdleTimer();
-    }
-  },
-  { capture: true }
-);
 
 resetPanelIdleTimer();
