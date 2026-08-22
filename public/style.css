@@ -495,7 +495,7 @@ body:not(.show-idle) .idle-brand,
 body:not(.show-idle) .idle-clock,
 body:not(.show-idle) .idle-date,
 body:not(.show-idle) .idle-divider,
-body:not(.show-idle) body:not(.show-idle) .idle-input,
+body:not(.show-idle) .idle-input,
 body:not(.show-idle) .idle-status {
   opacity: 0;
   transform: translateY(-10px);
