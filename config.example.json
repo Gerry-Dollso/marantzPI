@@ -3,5 +3,7 @@
   "marantzPort": 1255,
   "playerId": "YOUR_HEOS_PLAYER_ID",
   "listenHost": "127.0.0.1",
-  "listenPort": 3000
+  "listenPort": 3000,
+  "mediaBackendHost": "192.168.1.101",
+  "mediaBackendPort": 3100
 }

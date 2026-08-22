@@ -56,8 +56,8 @@ function mediaBackendRequest(pathname, method = 'GET', timeoutMs = 5000) {
   return new Promise((resolve, reject) => {
     const request = http.request(
       {
-        host: '192.168.50.145',
-        port: 3100,
+        host: config.mediaBackendHost || '192.168.50.145',
+        port: Number(config.mediaBackendPort) || 3100,
         path: pathname,
         method,
         timeout: timeoutMs
