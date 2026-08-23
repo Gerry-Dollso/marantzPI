@@ -846,6 +846,20 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
+      if (
+        req.method === 'GET' &&
+        url.pathname === '/api/tidal/voice-search'
+      ) {
+        const after = url.searchParams.get('after') || '0';
+
+        const result = await mediaBackendRequest(
+          '/api/tidal/voice-search?after=' +
+          encodeURIComponent(after)
+        );
+
+        return sendJson(res, 200, result);
+      }
+
         if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
       const cid = url.searchParams.get('cid') || '';
       const start = url.searchParams.get('start');

@@ -547,6 +547,45 @@ async function searchTidal(query) {
   }
 }
 
+let tidalVoiceSearchLastId = 0;
+
+async function pollTidalVoiceSearch() {
+  try {
+    const response = await fetch(
+      '/api/tidal/voice-search?after=' +
+      encodeURIComponent(tidalVoiceSearchLastId),
+      { cache: 'no-store' }
+    );
+
+    const result = await response.json();
+    const request = result && result.request;
+
+    if (
+      !response.ok ||
+      result.ok === false ||
+      !result.pending ||
+      !request ||
+      !request.id
+    ) {
+      return;
+    }
+
+    tidalVoiceSearchLastId = Number(request.id);
+
+    const query = String(request.query || '').trim();
+    if (!query) return;
+
+    setTidalOpen(true);
+    tidalSearchInput.value = query;
+    await searchTidal(query);
+  } catch {
+    // Voice-search fallback is optional; normal TIDAL UI remains available.
+  }
+}
+
+setInterval(pollTidalVoiceSearch, 1500);
+pollTidalVoiceSearch();
+
 document.addEventListener(
   'click',
   event => {
