@@ -739,6 +739,13 @@ async function receiverControl(action, requestedVolume = null) {
     return { ok: true, volume };
   }
 
+  if (action === 'aux') {
+    return mediaBackendRequest(
+      '/api/control/source?source=aux',
+      'POST'
+    );
+  }
+
   const commands = {
     'power-on': 'ZMON',
     'power-off': 'ZMOFF',
