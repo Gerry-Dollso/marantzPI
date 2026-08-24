@@ -867,6 +867,8 @@ http.createServer(async (req, res) => {
         const id = url.searchParams.get('id') || '';
         const name = url.searchParams.get('name') || '';
         const cid = url.searchParams.get('cid') || '';
+        const type = url.searchParams.get('type') || '';
+        const mid = url.searchParams.get('mid') || '';
 
         const result = await mediaBackendRequest(
           '/api/tidal/voice-learn?id=' +
@@ -874,7 +876,11 @@ http.createServer(async (req, res) => {
           '&name=' +
           encodeURIComponent(name) +
           '&cid=' +
-          encodeURIComponent(cid),
+          encodeURIComponent(cid) +
+          '&type=' +
+          encodeURIComponent(type) +
+          '&mid=' +
+          encodeURIComponent(mid),
           'POST'
         );
 

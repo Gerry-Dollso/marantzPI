@@ -550,8 +550,14 @@ async function searchTidal(query) {
 let tidalVoiceSearchLastId = 0;
 let tidalPendingVoiceLearn = null;
 
-async function learnTidalVoiceArtist(cid, name) {
+async function learnTidalVoiceSelection(
+  type,
+  cid,
+  name,
+  mid = ''
+) {
   const request = tidalPendingVoiceLearn;
+
   if (!request || !request.id || !cid || !name) return;
 
   tidalPendingVoiceLearn = null;
@@ -562,7 +568,11 @@ async function learnTidalVoiceArtist(cid, name) {
     '&name=' +
     encodeURIComponent(name) +
     '&cid=' +
-    encodeURIComponent(cid),
+    encodeURIComponent(cid) +
+    '&type=' +
+    encodeURIComponent(type || '') +
+    '&mid=' +
+    encodeURIComponent(mid || ''),
     { method: 'POST', cache: 'no-store' }
   );
 
@@ -598,10 +608,7 @@ async function pollTidalVoiceSearch() {
 
     tidalVoiceSearchLastId = Number(request.id);
 
-    tidalPendingVoiceLearn =
-      String(request.requestedTitle || '').trim()
-        ? null
-        : request;
+    tidalPendingVoiceLearn = request;
 
     const query = String(request.query || '').trim();
     if (!query) return;
@@ -1005,6 +1012,20 @@ tidalResults.addEventListener('click', async event => {
   const name = label ? label.textContent.trim() : '';
 
   if (button.classList.contains('tidal-track')) {
+    if (tidalPendingVoiceLearn) {
+      try {
+        await learnTidalVoiceSelection(
+          'track',
+          button.dataset.cid,
+          name,
+          button.dataset.mid
+        );
+      } catch (error) {
+        tidalStatus.textContent = error.message;
+        return;
+      }
+    }
+
     playTidalTrack(
       button.dataset.cid,
       button.dataset.mid,
@@ -1052,9 +1073,13 @@ tidalResults.addEventListener('click', async event => {
     return;
   }
 
-  if (tidalPendingVoiceLearn) {
+  if (
+    tidalPendingVoiceLearn &&
+    tidalPendingVoiceLearn.type !== 'title'
+  ) {
     try {
-      await learnTidalVoiceArtist(
+      await learnTidalVoiceSelection(
+        'artist',
         button.dataset.cid,
         name
       );
