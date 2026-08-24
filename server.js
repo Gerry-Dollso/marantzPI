@@ -860,6 +860,27 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
+      if (
+        req.method === 'POST' &&
+        url.pathname === '/api/tidal/voice-learn'
+      ) {
+        const id = url.searchParams.get('id') || '';
+        const name = url.searchParams.get('name') || '';
+        const cid = url.searchParams.get('cid') || '';
+
+        const result = await mediaBackendRequest(
+          '/api/tidal/voice-learn?id=' +
+          encodeURIComponent(id) +
+          '&name=' +
+          encodeURIComponent(name) +
+          '&cid=' +
+          encodeURIComponent(cid),
+          'POST'
+        );
+
+        return sendJson(res, 200, result);
+      }
+
         if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
       const cid = url.searchParams.get('cid') || '';
       const start = url.searchParams.get('start');

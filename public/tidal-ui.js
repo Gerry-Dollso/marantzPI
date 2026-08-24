@@ -548,6 +548,32 @@ async function searchTidal(query) {
 }
 
 let tidalVoiceSearchLastId = 0;
+let tidalPendingVoiceLearn = null;
+
+async function learnTidalVoiceArtist(cid, name) {
+  const request = tidalPendingVoiceLearn;
+  if (!request || !request.id || !cid || !name) return;
+
+  tidalPendingVoiceLearn = null;
+
+  const response = await fetch(
+    '/api/tidal/voice-learn?id=' +
+    encodeURIComponent(request.id) +
+    '&name=' +
+    encodeURIComponent(name) +
+    '&cid=' +
+    encodeURIComponent(cid),
+    { method: 'POST', cache: 'no-store' }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok || result.ok === false) {
+    throw new Error(
+      result.error || 'Could not learn voice correction'
+    );
+  }
+}
 
 async function pollTidalVoiceSearch() {
   try {
@@ -571,6 +597,11 @@ async function pollTidalVoiceSearch() {
     }
 
     tidalVoiceSearchLastId = Number(request.id);
+
+    tidalPendingVoiceLearn =
+      String(request.requestedTitle || '').trim()
+        ? null
+        : request;
 
     const query = String(request.query || '').trim();
     if (!query) return;
@@ -921,7 +952,7 @@ async function playTidalTrack(cid, mid, trackName, button) {
 
 }
 
-tidalResults.addEventListener('click', event => {
+tidalResults.addEventListener('click', async event => {
     const trackPageButton = event.target.closest('[data-track-page-action]');
     if (trackPageButton) {
       const action = trackPageButton.dataset.trackPageAction;
@@ -1019,6 +1050,18 @@ tidalResults.addEventListener('click', event => {
       browseTidal(button.dataset.cid, name);
     }
     return;
+  }
+
+  if (tidalPendingVoiceLearn) {
+    try {
+      await learnTidalVoiceArtist(
+        button.dataset.cid,
+        name
+      );
+    } catch (error) {
+      tidalStatus.textContent = error.message;
+      return;
+    }
   }
 
   loadTidalArtistAlbums(button.dataset.cid, name);
