@@ -62,16 +62,25 @@ Known source behaviour and labels:
 
 The backend repository currently records the live SR8015 address as `192.168.50.220` and HEOS player ID `48723103`. The Pi's local `config.json` remains the authority for its own direct receiver connection.
 
-## Display power / dimming facts
+## Display power behaviour
 
 Hardware panel control currently uses `ddcutil` in `server.js`:
 
 - DDC bus: **21**
 - Normal brightness: **50**
 - VCP `D6` is used for panel power.
-- VCP `10` is used for brightness.
+- VCP `10` is used for brightness when the panel wakes.
 
-The intended policy is **not** a generic black-screen timeout. The display should remain useful as a control surface, with dimming/panel behaviour tied deliberately to viewing states such as TV/projector use. TV is `TV AUDIO`/TV; projector use is AUX/AUX1. Do not reintroduce old timeout behaviour without checking the current UX requirement.
+The old display used dimming because it could not be powered off under software control. **That dimming policy is obsolete for the current panel.** The current intended behaviour is physical panel power-off while leaving the touchscreen/input layer alive:
+
+- On **TV** input: after **5 minutes** with no touchscreen interaction, power the display panel off.
+- On **AUX1/projector** input: after **5 minutes** with no touchscreen interaction, power the display panel off.
+- With the AVR in **standby/off**: after **1 hour** with no touchscreen interaction, power the display panel off.
+- A touchscreen press must wake the physical display without consuming the original touch action.
+- Once awakened, the applicable 5-minute or 1-hour timeout starts again.
+- On ordinary music/control sources such as PHONO, CD and HEOS/TIDAL, there is no automatic panel-off timeout unless the UX is deliberately changed later.
+
+Do **not** reintroduce dimming for TV/projector use unless the hardware or UX changes again.
 
 ## Zone 2 / patio behaviour
 
@@ -144,7 +153,9 @@ After changes touching `server.js`, `public/app.js` or `public/index.html`, test
 - touch seek;
 - TIDAL browse/play path through the HP backend;
 - Zone 2 patio source popup and control;
-- panel dim/power behaviour in TV and projector/AUX states;
+- panel power-off after 5 minutes on TV and AUX1/projector;
+- panel power-off after 1 hour in AVR standby;
+- touchscreen wake of an off panel and timeout restart;
 - kiosk navigation/history guard and hidden pointer behaviour.
 
 ## Relationship with `marantz-backend`
