@@ -40,8 +40,7 @@ let heosProgressCurrentMs = 0;
 let heosProgressDurationMs = 0;
 let heosProgressSocket = null;
 let heosProgressReconnectTimer = null;
-
-
+let statusRequestInFlight = null;
 
 const execFileAsync = promisify(execFile);
 
@@ -50,7 +49,6 @@ const PANEL_NORMAL_BRIGHTNESS = '50';
 
 let panelPowerState = 'unknown';
 let panelCommandQueue = Promise.resolve();
-
 
 function mediaBackendRequest(pathname, method = 'GET', timeoutMs = 5000) {
   return new Promise((resolve, reject) => {
@@ -107,9 +105,9 @@ function mediaBackendRequest(pathname, method = 'GET', timeoutMs = 5000) {
 }
 
 async function handleAutomaticSmartSelect(receiver) {
-  const inputCode = String(receiver?.inputCode || "").toUpperCase();
+  const inputCode = String(receiver?.inputCode || '').toUpperCase();
 
-  if (!inputCode || inputCode === "UNKNOWN") return;
+  if (!inputCode || inputCode === 'UNKNOWN') return;
 
   if (previousSmartSelectInputCode === null) {
     previousSmartSelectInputCode = inputCode;
@@ -117,7 +115,7 @@ async function handleAutomaticSmartSelect(receiver) {
   }
 
   const enteredTv =
-    previousSmartSelectInputCode !== "TV" && inputCode === "TV";
+    previousSmartSelectInputCode !== 'TV' && inputCode === 'TV';
 
   previousSmartSelectInputCode = inputCode;
 
@@ -126,7 +124,7 @@ async function handleAutomaticSmartSelect(receiver) {
   smartSelectCommandInFlight = true;
 
   try {
-    await avr("MSSMART4");
+    await avr('MSSMART4');
   } catch (error) {
     console.warn(`Automatic Smart Select 4 failed: ${error.message}`);
   } finally {
@@ -149,6 +147,13 @@ function queuePanelCommand(command) {
 
 async function powerPanelOn() {
   return queuePanelCommand(async () => {
+    if (panelPowerState === 'on') {
+      return {
+        power: panelPowerState,
+        brightness: Number(PANEL_NORMAL_BRIGHTNESS)
+      };
+    }
+
     await runDdcutil('setvcp', 'D6', '01');
     await runDdcutil('setvcp', '10', PANEL_NORMAL_BRIGHTNESS);
 
@@ -441,10 +446,28 @@ async function getReceiverStatus() {
   const volumeLine = value(2);
   const muteLine = value(3);
 
+  const power = powerLine === 'ZMON'
+    ? 'on'
+    : powerLine === 'ZMOFF'
+      ? 'standby'
+      : 'unknown';
+
+  const zone2Power = zone2Line === 'Z2ON'
+    ? 'on'
+    : zone2Line === 'Z2OFF'
+      ? 'off'
+      : 'unknown';
+
+  const zone3Power = zone3Line === 'Z3ON'
+    ? 'on'
+    : zone3Line === 'Z3OFF'
+      ? 'off'
+      : 'unknown';
+
   return {
-    power: powerLine === 'ZMON' ? 'on' : 'standby',
-    zone2Power: zone2Line === 'Z2ON' ? 'on' : 'off',
-    zone3Power: zone3Line === 'Z3ON' ? 'on' : 'off',
+    power,
+    zone2Power,
+    zone3Power,
     input: inputLabel(inputLine),
     inputCode: inputLine.slice(2) || 'UNKNOWN',
     volume: parseVolume(volumeLine),
@@ -452,7 +475,7 @@ async function getReceiverStatus() {
   };
 }
 
-async function getStatus() {
+async function buildStatus() {
   const pid = encodeURIComponent(config.playerId);
 
   const [mediaResult, stateResult, receiverResult] =
@@ -478,6 +501,8 @@ async function getStatus() {
       ? receiverResult.value
       : {
           power: 'unknown',
+          zone2Power: 'unknown',
+          zone3Power: 'unknown',
           input: 'UNKNOWN',
           inputCode: 'UNKNOWN',
           volume: null,
@@ -485,7 +510,6 @@ async function getStatus() {
         };
 
   handleAutomaticSmartSelect(receiver);
-
 
   let song = String(media.song || '').trim();
   let artist = String(media.artist || '').trim();
@@ -528,7 +552,7 @@ async function getStatus() {
   return {
     connected:
       mediaResult.status === 'fulfilled' ||
-      receiverResult.status === 'fulfilled',
+      receiver.power !== 'unknown',
     song,
     artist,
     album,
@@ -549,6 +573,16 @@ async function getStatus() {
     },
     updatedAt: Date.now()
   };
+}
+
+function getStatus() {
+  if (!statusRequestInFlight) {
+    statusRequestInFlight = buildStatus().finally(() => {
+      statusRequestInFlight = null;
+    });
+  }
+
+  return statusRequestInFlight;
 }
 
 async function seekHeos(seconds) {
@@ -748,10 +782,10 @@ async function receiverControl(action, requestedVolume = null) {
     cd: 'MSSMART2',
     heos: 'MSSMART3',
     aux: 'SIAUX1',
-    "zone2-source-source": "Z2SOURCE",
-    "zone2-source-phono": "Z28K",
-    "zone2-source-cd": "Z2CD",
-    "zone2-source-heos": "Z2NET"
+    'zone2-source-source': 'Z2SOURCE',
+    'zone2-source-phono': 'Z28K',
+    'zone2-source-cd': 'Z2CD',
+    'zone2-source-heos': 'Z2NET'
   };
 
   if (action === 'mute') {
@@ -829,17 +863,17 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, { instanceId: serverInstanceId });
     }
 
-      if (req.method === 'GET' && url.pathname === '/api/tidal/search') {
-        const query = url.searchParams.get('q') || '';
+    if (req.method === 'GET' && url.pathname === '/api/tidal/search') {
+      const query = url.searchParams.get('q') || '';
 
-        const result = await mediaBackendRequest(
-          '/api/tidal/search?q=' + encodeURIComponent(query)
-        );
+      const result = await mediaBackendRequest(
+        '/api/tidal/search?q=' + encodeURIComponent(query)
+      );
 
-        return sendJson(res, 200, result);
-      }
+      return sendJson(res, 200, result);
+    }
 
-        if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
+    if (req.method === 'GET' && url.pathname === '/api/tidal/browse') {
       const cid = url.searchParams.get('cid') || '';
       const start = url.searchParams.get('start');
       const limit = url.searchParams.get('limit');
@@ -864,77 +898,77 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
-  if (req.method === 'GET' && url.pathname === '/api/tidal/artist/albums') {
-        const cid = url.searchParams.get('cid') || '';
+    if (req.method === 'GET' && url.pathname === '/api/tidal/artist/albums') {
+      const cid = url.searchParams.get('cid') || '';
 
-        const result = await mediaBackendRequest(
-          '/api/tidal/artist/albums?cid=' + encodeURIComponent(cid)
-        );
+      const result = await mediaBackendRequest(
+        '/api/tidal/artist/albums?cid=' + encodeURIComponent(cid)
+      );
 
-        return sendJson(res, 200, result);
+      return sendJson(res, 200, result);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/tidal/album/tracks') {
+      const cid = url.searchParams.get('cid') || '';
+
+      const result = await mediaBackendRequest(
+        '/api/tidal/album/tracks?cid=' + encodeURIComponent(cid)
+      );
+
+      return sendJson(res, 200, result);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/tidal/playlist/play') {
+      const cid = url.searchParams.get('cid') || '';
+      const mid = url.searchParams.get('mid');
+      const shuffle = url.searchParams.get('shuffle') || '0';
+
+      let pathname =
+        '/api/tidal/playlist/play?cid=' + encodeURIComponent(cid);
+
+      if (mid) {
+        pathname += '&mid=' + encodeURIComponent(mid);
       }
 
-      if (req.method === 'GET' && url.pathname === '/api/tidal/album/tracks') {
-        const cid = url.searchParams.get('cid') || '';
+      pathname += '&shuffle=' + encodeURIComponent(shuffle);
 
-        const result = await mediaBackendRequest(
-          '/api/tidal/album/tracks?cid=' + encodeURIComponent(cid)
-        );
+      const result = await mediaBackendRequest(
+        pathname,
+        'GET',
+        20000
+      );
 
-        return sendJson(res, 200, result);
-      }
+      return sendJson(res, 200, result);
+    }
 
-        if (req.method === 'GET' && url.pathname === '/api/tidal/playlist/play') {
-          const cid = url.searchParams.get('cid') || '';
-          const mid = url.searchParams.get('mid');
-          const shuffle = url.searchParams.get('shuffle') || '0';
+    if (req.method === 'GET' && url.pathname === '/api/tidal/play') {
+      const cid = url.searchParams.get('cid') || '';
+      const mid = url.searchParams.get('mid') || '';
 
-          let pathname =
-            '/api/tidal/playlist/play?cid=' + encodeURIComponent(cid);
+      const result = await mediaBackendRequest(
+        '/api/tidal/play?cid=' + encodeURIComponent(cid) +
+        '&mid=' + encodeURIComponent(mid)
+      );
 
-          if (mid) {
-            pathname += '&mid=' + encodeURIComponent(mid);
-          }
-
-          pathname += '&shuffle=' + encodeURIComponent(shuffle);
-
-          const result = await mediaBackendRequest(
-            pathname,
-            'GET',
-            20000
-          );
-
-          return sendJson(res, 200, result);
-        }
-
-      if (req.method === 'GET' && url.pathname === '/api/tidal/play') {
-        const cid = url.searchParams.get('cid') || '';
-        const mid = url.searchParams.get('mid') || '';
-
-        const result = await mediaBackendRequest(
-          '/api/tidal/play?cid=' + encodeURIComponent(cid) +
-          '&mid=' + encodeURIComponent(mid)
-        );
-
-        return sendJson(res, 200, result);
-      }
+      return sendJson(res, 200, result);
+    }
 
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
     }
 
-      if (req.method === 'POST' && url.pathname === '/api/smart-select/4') {
-        await avr('MSSMART4');
-        return sendJson(res, 200, { ok: true });
-      }
+    if (req.method === 'POST' && url.pathname === '/api/smart-select/4') {
+      await avr('MSSMART4');
+      return sendJson(res, 200, { ok: true });
+    }
 
-      if (req.method === 'POST' && url.pathname === '/api/panel/on') {
-        return sendJson(res, 200, await powerPanelOn());
-      }
+    if (req.method === 'POST' && url.pathname === '/api/panel/on') {
+      return sendJson(res, 200, await powerPanelOn());
+    }
 
-      if (req.method === 'POST' && url.pathname === '/api/panel/off') {
-        return sendJson(res, 200, await powerPanelOff());
-      }
+    if (req.method === 'POST' && url.pathname === '/api/panel/off') {
+      return sendJson(res, 200, await powerPanelOff());
+    }
 
     if (req.method === 'GET' && url.pathname === '/api/radio/favourites') {
       return sendJson(res, 200, {
