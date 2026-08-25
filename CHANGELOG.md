@@ -4,6 +4,13 @@ This changelog consolidates the significant marantzPI development milestones kno
 
 ## Unreleased / v3 development
 
+### 2026-08-25 — code-health sweep
+
+- `779a562` — made `update.sh` refuse an unsafe in-place update when its source directory is the live `~/marantz-now-playing` installation. Previously the script could delete its own source tree before copying it back.
+- Added a runtime `config.json` existence check and automatic temporary-file cleanup to the updater.
+- Removed the stale `v2.1.0 installed` success message from the v3 updater.
+- Review also identified performance/robustness items requiring deliberate runtime changes rather than blind cleanup: overlapping 750 ms status polls, redundant panel wake DDC calls, optimistic receiver connectivity reporting, and legacy backend input routes. These were not silently changed during the sweep.
+
 ### 2026-08-25 — project handover documentation
 
 - Replaced the obsolete v2.1 README on `v3-development` with a developer/takeover guide.
