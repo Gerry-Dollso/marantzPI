@@ -4,18 +4,30 @@ This changelog consolidates the significant marantzPI development milestones kno
 
 ## Unreleased / v3 development
 
+### 2026-08-25 — status/panel performance cleanup
+
+- `06884f9` — coalesced overlapping `/api/status` work so concurrent browser polls share one in-flight AVR/HEOS status build rather than opening another full set of receiver connections.
+- Kept the browser's existing 750 ms refresh cadence unchanged; the change removes duplicate receiver work rather than slowing normal updates.
+- Added a no-op fast path to `powerPanelOn()` when the server already knows the panel is on, avoiding two unnecessary `ddcutil` subprocesses on every ordinary touchscreen press.
+- Receiver and Zone power reads now distinguish an unanswered query as `unknown` at the server/API layer rather than manufacturing `standby`/`off` values.
+- Preserved the existing 15-second standby wake grace used to protect slow AVR cold starts.
+- Preserved the deliberately longer TIDAL/backend ceilings: large browse requests still allow up to 40 seconds and playlist playback/setup up to 20 seconds. These are maximum failure ceilings, not forced delays.
+- Created recovery branch `backup-before-performance-cleanup-2026-08-25` from the exact pre-change `v3-development` tip.
+- Follow-up note: current browser standby rendering still treats any receiver power value other than `on` as standby. Do not alter that casually; separate UI handling for `unknown` should be tested specifically against the proven cold-start wake behaviour.
+
 ### 2026-08-25 — code-health sweep
 
 - `779a562` — made `update.sh` refuse an unsafe in-place update when its source directory is the live `~/marantz-now-playing` installation. Previously the script could delete its own source tree before copying it back.
 - Added a runtime `config.json` existence check and automatic temporary-file cleanup to the updater.
 - Removed the stale `v2.1.0 installed` success message from the v3 updater.
-- Review also identified performance/robustness items requiring deliberate runtime changes rather than blind cleanup: overlapping 750 ms status polls, redundant panel wake DDC calls, optimistic receiver connectivity reporting, and legacy backend input routes. These were not silently changed during the sweep.
+- Review also identified performance/robustness items requiring deliberate runtime changes rather than blind cleanup: overlapping status work, redundant panel wake DDC calls, optimistic receiver-state reporting, and legacy backend input routes.
 
 ### 2026-08-25 — project handover documentation
 
 - Replaced the obsolete v2.1 README on `v3-development` with a developer/takeover guide.
 - Recorded the authoritative branch, installation path, service scope, deployment workflow, Termius copy/paste constraint, receiver/source mappings, backend relationship and regression-test rules.
 - Added this consolidated changelog before beginning the backend AI phase.
+- Clarified the current physical-panel policy: no dimmer is used with the new panel. TV and AUX/projector power the display off after 5 minutes idle; AVR standby powers it off after 1 hour; the touch layer remains alive and any touch wakes the display and restarts the relevant timer.
 
 ### 2026-08-20 — playback interaction and TIDAL refinements
 
@@ -45,7 +57,7 @@ This changelog consolidates the significant marantzPI development milestones kno
 
 - `577bb0d` — added hardware panel power management.
 - `ddcutil` control established for panel power/brightness.
-- Later UX direction moved away from a generic black-screen timeout toward intentional TV/projector dimming behaviour.
+- The old-screen dimming approach is obsolete with the current panel; current behaviour uses real panel power-off while leaving touch active.
 
 ### Smart Select control
 
