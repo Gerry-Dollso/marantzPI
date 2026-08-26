@@ -1,11 +1,29 @@
 # marantzPI
 
-Touchscreen controller and now-playing display for a Marantz AVR with HEOS playback.
+Touchscreen controller and now-playing display for the Marantz SR8015 / HEOS system.
 
-## Current v3 feature set
+## Current known-good state
+
+Active deployed/development branch:
+
+```text
+housekeeping-2026-08-21
+```
+
+Known-good functional checkpoint before this documentation update:
+
+```text
+3fc0f52 — Add persistent track voice learning
+```
+
+This checkpoint includes the completed touchscreen side of persistent TIDAL voice correction/learning. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+
+## Current feature set
 
 - Marantz input control using Smart Select mappings for PHONO, CD and TIDAL/HEOS.
 - TIDAL library browsing, search, albums, playlists and track playback through the companion media backend.
+- TIDAL voice-search fallback surfaced on the touchscreen.
+- Touchscreen confirmation/learning for misheard TIDAL artists and tracks; learned mappings are persisted by the HP backend.
 - HEOS favourites / internet-radio browser.
 - Receiver volume buttons plus touch volume slider.
 - HEOS track progress display with tap-to-seek via UPnP AVTransport.
@@ -15,7 +33,9 @@ Touchscreen controller and now-playing display for a Marantz AVR with HEOS playb
 
 ## Architecture
 
-`server.js` runs locally on the Raspberry Pi and serves the touchscreen UI from `public/`. It talks directly to the AVR for receiver/HEOS status and control. TIDAL library operations are proxied to the separate `marantz-backend` service running on the media server.
+`server.js` runs locally on the Raspberry Pi and serves the touchscreen UI from `public/`. It talks directly to the AVR for receiver/HEOS status and control. TIDAL library operations and the semantic/voice orchestration layer are handled by the separate `marantz-backend` service on the HP media server.
+
+The Pi remains the physical touchscreen/display/controller. The HP backend is the central media/orchestration service; future local-AI language understanding belongs on the HP side rather than replacing the Pi UI or the deterministic receiver-control layer.
 
 The application runs as the user service:
 
@@ -23,31 +43,29 @@ The application runs as the user service:
 marantz-display.service
 ```
 
-## Development branch
+## Development workflow
 
-Active development is on:
+Normal development is Git-based. Large multi-line terminal edits should be avoided where practical because the normal SSH workflow uses Termius on Android and large pastes can be corrupted. Prefer small, sequential, verifiable terminal commands or safe GitHub-side edits.
 
-```text
-v3-development
-```
-
-The known-good checkpoint immediately before the 2026-08-21 housekeeping pass is:
-
-```text
-99cdb6e — Add touch seek and kiosk history guard
-```
-
-## Updating an installation
-
-The normal development workflow is Git-based. After updating the checked-out branch, validate the JavaScript before restarting:
+Before changing code, confirm the checked-out branch and working tree. After JavaScript changes, validate before restarting:
 
 ```bash
+cd ~/marantz-now-playing
+git status -sb
 node --check server.js
 node --check public/app.js
 node --check public/tidal-ui.js
+git diff --check
 systemctl --user restart marantz-display
+systemctl --user is-active marantz-display
 ```
 
-`config.json` remains local and is ignored by Git.
+Do not guess paths, ownership, service scope or configuration values when they can be inspected first. `marantz-display.service` is a user service, not a system-wide service.
+
+`config.json` remains local and is ignored by Git. Never commit credentials, private configuration, logs or diagnostic exports.
+
+## Project scope
+
+This repository is only for the marantzPI / HP backend system. Unrelated computers, repairs, emulation/Batocera systems and other projects are not part of this architecture and must not be used as assumptions when making design decisions.
 
 See `DEBUGGING.md` for diagnostic and recovery commands.
