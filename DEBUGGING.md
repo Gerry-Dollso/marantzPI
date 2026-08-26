@@ -59,28 +59,50 @@ sudo systemctl restart systemd-journald
 
 This is a one-time operating-system setting, not a marantzPI code change.
 
-## Recovery
+## Current recovery baseline
 
-The active development branch is:
-
-```text
-v3-development
-```
-
-The known-good checkpoint immediately before the 2026-08-21 housekeeping pass is:
+Active deployed/development branch:
 
 ```text
-99cdb6e — Add touch seek and kiosk history guard
+housekeeping-2026-08-21
 ```
 
-To return the Pi to that exact checkpoint for diagnosis:
+Known-good functional checkpoint immediately before the documentation refresh/local-AI phase:
+
+```text
+3fc0f52 — Add persistent track voice learning
+```
+
+Do not use the old `v3-development` / `99cdb6e` recovery instructions as the normal current recovery target; they predate the completed TIDAL voice-learning work.
+
+To inspect or restore the known-good checkpoint, first confirm that there are no local changes you need to preserve:
 
 ```bash
 cd ~/marantz-now-playing
+git status -sb
 git fetch origin
-git checkout v3-development
-git reset --hard 99cdb6e
+git checkout housekeeping-2026-08-21
+```
+
+Only if an exact rollback is deliberately required:
+
+```bash
+git reset --hard 3fc0f52
 systemctl --user restart marantz-display
 ```
 
-Only use the hard reset after confirming there are no local changes you need to keep.
+A hard reset discards tracked local changes. Never run it as a routine troubleshooting step.
+
+## Normal validation
+
+After JavaScript changes:
+
+```bash
+cd ~/marantz-now-playing
+node --check server.js
+node --check public/app.js
+node --check public/tidal-ui.js
+git diff --check
+systemctl --user restart marantz-display
+systemctl --user is-active marantz-display
+```
