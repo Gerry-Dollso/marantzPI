@@ -2,6 +2,7 @@
 
 const tidalScreen = document.getElementById('tidalScreen');
 const tidalBack = document.getElementById('tidalBack');
+const tidalNowPlaying = document.getElementById('tidalNowPlaying');
 const tidalSearchForm = document.getElementById('tidalSearchForm');
 const tidalSearchInput = document.getElementById('tidalSearchInput');
 const tidalStatus = document.getElementById('tidalStatus');
@@ -12,6 +13,11 @@ function setTidalOpen(open) {
   tidalScreen.setAttribute("aria-hidden", String(!open));
   if (!open) tidalSearchInput.blur();
 }
+
+tidalNowPlaying?.addEventListener('click', () => {
+  closeTidalTrackActionMenu?.();
+  setTidalOpen(false);
+});
 
 function tidalDisplayName(value) {
   const text = String(value || '');
