@@ -13,15 +13,17 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-a865638 — Add TIDAL artist track controls
+f93602b — Make My Music the TIDAL navigation root
 ```
 
-This checkpoint includes the current TIDAL artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current TIDAL My Music root navigation, artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
 
 ## Current feature set
 
 - Marantz input control using Smart Select mappings for PHONO, CD and TIDAL/HEOS.
 - TIDAL/HEOS Smart Select 3 is only reapplied when the AVR is not already on NET/HEOS, so browsing/changing TIDAL content does not reset a manually adjusted listening volume or other Smart Select-stored AVR settings.
+- TIDAL opens directly into the HEOS `My Music` container, which is treated as the touchscreen TIDAL navigation root. The unused higher-level HEOS choices such as What's New and Genres are not exposed in normal navigation.
+- Back from child TIDAL views returns toward My Music; Back from the My Music root closes TIDAL. Back from search returns to My Music rather than exposing the old higher-level shortcut screen.
 - TIDAL library browsing and search through the companion media backend.
 - Artist selection opens the HEOS artist root rather than jumping directly to Albums. Current artist sections exposed by HEOS are Tracks, Albums, EP n Singles, Other Albums and Similar; selecting a Similar artist recursively opens the same artist structure.
 - Playlist controls include PLAY ALL and SHUFFLE ALL. Tapping an individual playlist track opens HEOS-style queue options: PLAY NOW, PLAY NEXT, ADD TO END, PLAY FROM HERE and PLAY ONLY.
@@ -40,6 +42,8 @@ This checkpoint includes the current TIDAL artist navigation, playlist/artist tr
 ## TIDAL architecture notes
 
 `server.js` on the Pi proxies TIDAL library/queue requests to the HP backend while continuing to handle local touchscreen/display and direct AVR responsibilities.
+
+For touchscreen navigation, HEOS `My Music` is intentionally treated as the TIDAL UI root. Do not restore the older higher-level shortcut/root screen unless there is a deliberate requirement for those HEOS sections.
 
 Artist browsing should remain CID-driven. The current HEOS artist root already provides useful native structure and metadata:
 
