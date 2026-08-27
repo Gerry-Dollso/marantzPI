@@ -1110,6 +1110,18 @@ http.createServer(async (req, res) => {
           return sendJson(res, 200, result);
         }
 
+        if (req.method === 'GET' && url.pathname === '/api/tidal/tracks/play-all') {
+          const shuffle = url.searchParams.get('shuffle') || '0';
+
+          const result = await mediaBackendRequest(
+            '/api/tidal/tracks/play-all?shuffle=' + encodeURIComponent(shuffle),
+            'GET',
+            180000
+          );
+
+          return sendJson(res, 200, result);
+        }
+
         if (req.method === 'GET' && url.pathname === '/api/tidal/playlist/play') {
           const cid = url.searchParams.get('cid') || '';
           const mid = url.searchParams.get('mid');

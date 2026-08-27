@@ -97,6 +97,7 @@ function currentTidalContainerIsPlaylist() {
 function currentTidalContainerIsTrackList() {
   const cid = currentTidalContainerCid();
   return (
+    cid === 'My Music-Tracks' ||
     cid.startsWith('LIBPLAYLIST-') ||
     cid.startsWith('LIBARTIST-Tracks-')
   );
@@ -553,7 +554,10 @@ async function browseTidal(cid, title, pushHistory = true) {
     tidalShowAlbumArtists = false;
   }
 
-  if (String(cid).startsWith('LIBPLAYLIST-')) {
+  if (
+    cid === 'My Music-Tracks' ||
+    String(cid).startsWith('LIBPLAYLIST-')
+  ) {
     tidalCurrentPlaylistCid = cid;
   }
 
@@ -569,14 +573,6 @@ async function browseTidal(cid, title, pushHistory = true) {
     setTidalKeyboardOpen(false);
     tidalSearchInput.blur();
     await loadTidalAlbumPage(0);
-    return;
-  }
-
-  if (cid === 'My Music-Tracks') {
-    tidalScreen.classList.add("browsing");
-    setTidalKeyboardOpen(false);
-    tidalSearchInput.blur();
-    await loadTidalTrackPage(0);
     return;
   }
 
@@ -609,6 +605,7 @@ async function browseTidal(cid, title, pushHistory = true) {
       setTidalAlphabetVisible(true);
       renderFilteredArtists();
     } else if (
+      cid === 'My Music-Tracks' ||
       String(cid).startsWith('LIBPLAYLIST-') ||
       String(cid).startsWith('LIBARTIST-Tracks-')
     ) {
@@ -1081,13 +1078,21 @@ async function playTidalPlaylist(cid, mid = '', shuffle = false, button = null) 
   setTidalOpen(false);
 
   try {
-    let url =
-      '/api/tidal/playlist/play?cid=' +
-      encodeURIComponent(cid) +
-      '&shuffle=' + (shuffle ? '1' : '0');
+    let url;
 
-    if (mid) {
-      url += '&mid=' + encodeURIComponent(mid);
+    if (cid === 'My Music-Tracks' && !mid) {
+      url =
+        '/api/tidal/tracks/play-all?shuffle=' +
+        (shuffle ? '1' : '0');
+    } else {
+      url =
+        '/api/tidal/playlist/play?cid=' +
+        encodeURIComponent(cid) +
+        '&shuffle=' + (shuffle ? '1' : '0');
+
+      if (mid) {
+        url += '&mid=' + encodeURIComponent(mid);
+      }
     }
 
     const response = await fetch(url, { cache: 'no-store' });
