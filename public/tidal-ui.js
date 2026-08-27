@@ -1064,7 +1064,7 @@ tidalResults.addEventListener('click', async event => {
 
   if (button.classList.contains('tidal-browse-item')) {
     if (button.dataset.type === 'artist') {
-      loadTidalArtistAlbums(button.dataset.cid, name);
+      browseTidal(button.dataset.cid, name);
     } else if (button.dataset.type === 'album') {
       loadTidalAlbumTracks(button.dataset.cid, name);
     } else {
@@ -1089,5 +1089,5 @@ tidalResults.addEventListener('click', async event => {
     }
   }
 
-  loadTidalArtistAlbums(button.dataset.cid, name);
+  browseTidal(button.dataset.cid, name);
 });
