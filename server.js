@@ -571,6 +571,13 @@ async function getStatus() {
     song,
     artist,
     album,
+    tidalMid: playbackSource === 'tidal'
+      ? String(
+          tidalResumeNeeded && lastTidalResume?.mid
+            ? lastTidalResume.mid
+            : mediaMid || ''
+        )
+      : '',
     playbackSource,
     hasTrackInfo,
     imageUrl,
@@ -1064,6 +1071,19 @@ http.createServer(async (req, res) => {
 
         return sendJson(res, 200, result);
       }
+
+        if (req.method === 'GET' && url.pathname === '/api/tidal/metadata/track-artists') {
+          const mid = String(url.searchParams.get('mid') || '').trim();
+          if (!mid) {
+            return sendJson(res, 400, { error: 'Missing track mid' });
+          }
+
+          const result = await mediaBackendRequest(
+            '/api/tidal/metadata/track-artists?mid=' + encodeURIComponent(mid)
+          );
+
+          return sendJson(res, 200, result);
+        }
 
         if (req.method === 'GET' && url.pathname === '/api/tidal/track/action') {
           const cid = url.searchParams.get('cid') || '';

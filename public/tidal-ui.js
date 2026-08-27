@@ -508,6 +508,21 @@ async function loadTidalTrackPage(page = 0) {
   }
 }
 
+async function openTidalArtistFromNowPlaying(cid, title) {
+  const artistCid = String(cid || '').trim();
+  if (!artistCid.startsWith('LIBARTIST-')) {
+    throw new Error('Invalid TIDAL artist cid');
+  }
+
+  tidalHistory.length = 0;
+  tidalHistory.push({
+    cid: TIDAL_UI_ROOT_CID,
+    title: TIDAL_UI_ROOT_TITLE
+  });
+  setTidalOpen(true);
+  await browseTidal(artistCid, title || 'Artist');
+}
+
 async function browseTidal(cid, title, pushHistory = true) {
   if (cid !== 'My Music-Albums') {
     tidalShowAlbumArtists = false;

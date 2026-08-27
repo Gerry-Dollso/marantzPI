@@ -329,6 +329,21 @@ function render(data) {
       Number(data.duration) > 0
     );
 
+  const artistLinkAvailable =
+    data.playbackSource === 'tidal' &&
+    Boolean(String(data.tidalMid || '').trim()) &&
+    Boolean(String(data.artist || '').trim());
+  artist.classList.toggle('tidal-artist-link', artistLinkAvailable);
+  if (artistLinkAvailable) {
+    artist.setAttribute('role', 'button');
+    artist.setAttribute('tabindex', '0');
+    artist.setAttribute('aria-label', 'Browse this artist in TIDAL');
+  } else {
+    artist.removeAttribute('role');
+    artist.removeAttribute('tabindex');
+    artist.removeAttribute('aria-label');
+  }
+
   if (data.playbackSource === 'internet-radio') {
     const stationName =
       String(data.album || '').trim() ||
@@ -482,6 +497,55 @@ zone2SourceMenu?.addEventListener("click", async event => {
 });
 
 
+
+async function openCurrentTidalArtist() {
+  const mid = String(latest?.tidalMid || '').trim();
+  const displayedArtist = String(latest?.artist || '').trim();
+  if (latest?.playbackSource !== 'tidal' || !mid || !displayedArtist) return;
+
+  artist.classList.add('loading');
+  try {
+    const response = await fetch(
+      '/api/tidal/metadata/track-artists?mid=' + encodeURIComponent(mid),
+      { cache: 'no-store' }
+    );
+    const result = await response.json();
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not resolve TIDAL artist');
+    }
+
+    const artists = Array.isArray(result.artists) ? result.artists : [];
+    const wanted = displayedArtist.toLowerCase();
+    const selected =
+      artists.find(item => String(item?.name || '').trim().toLowerCase() === wanted) ||
+      artists[0];
+
+    if (!selected?.cid) {
+      throw new Error('No canonical TIDAL artist found');
+    }
+
+    if (typeof openTidalArtistFromNowPlaying !== 'function') {
+      throw new Error('TIDAL artist browser unavailable');
+    }
+
+    await openTidalArtistFromNowPlaying(
+      selected.cid,
+      selected.name || displayedArtist
+    );
+  } catch (error) {
+    console.warn('Could not open current TIDAL artist:', error);
+  } finally {
+    artist.classList.remove('loading');
+  }
+}
+
+artist?.addEventListener('click', openCurrentTidalArtist);
+artist?.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  if (!artist.classList.contains('tidal-artist-link')) return;
+  event.preventDefault();
+  openCurrentTidalArtist();
+});
 
 receiverSettings?.addEventListener("click", () => {
   const host = latest?.settings?.marantzHost;
