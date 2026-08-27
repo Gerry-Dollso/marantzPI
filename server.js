@@ -950,6 +950,22 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
+        if (req.method === 'GET' && url.pathname === '/api/tidal/track/action') {
+          const cid = url.searchParams.get('cid') || '';
+          const mid = url.searchParams.get('mid') || '';
+          const action = url.searchParams.get('action') || '';
+
+          const result = await mediaBackendRequest(
+            '/api/tidal/track/action?cid=' + encodeURIComponent(cid) +
+            '&mid=' + encodeURIComponent(mid) +
+            '&action=' + encodeURIComponent(action),
+            'GET',
+            60000
+          );
+
+          return sendJson(res, 200, result);
+        }
+
         if (req.method === 'GET' && url.pathname === '/api/tidal/playlist/play') {
           const cid = url.searchParams.get('cid') || '';
           const mid = url.searchParams.get('mid');

@@ -36,6 +36,132 @@ let tidalTrackTotal = 0;
 let tidalShowAlbumArtists = false;
 let tidalCurrentPlaylistCid = '';
 
+let tidalTrackActionSelection = null;
+
+const tidalTrackActionOverlay = document.createElement('div');
+tidalTrackActionOverlay.className = 'tidal-track-action-overlay';
+tidalTrackActionOverlay.setAttribute('aria-hidden', 'true');
+
+const tidalTrackActionPanel = document.createElement('div');
+tidalTrackActionPanel.className = 'tidal-track-action-panel';
+
+const tidalTrackActionTitle = document.createElement('div');
+tidalTrackActionTitle.className = 'tidal-track-action-title';
+tidalTrackActionTitle.textContent = 'TRACK OPTIONS';
+
+const tidalTrackActionName = document.createElement('div');
+tidalTrackActionName.className = 'tidal-track-action-name';
+
+const tidalTrackActionButtons = document.createElement('div');
+tidalTrackActionButtons.className = 'tidal-track-action-buttons';
+
+[
+  ['play-now', 'PLAY NOW'],
+  ['play-next', 'PLAY NEXT'],
+  ['add-end', 'ADD TO END'],
+  ['play-from-here', 'PLAY FROM HERE'],
+  ['play-only', 'PLAY ONLY'],
+  ['cancel', 'CANCEL']
+].forEach(([action, label]) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.trackAction = action;
+  button.textContent = label;
+  if (action === 'cancel') button.className = 'tidal-track-action-cancel';
+  tidalTrackActionButtons.appendChild(button);
+});
+
+tidalTrackActionPanel.append(
+  tidalTrackActionTitle,
+  tidalTrackActionName,
+  tidalTrackActionButtons
+);
+tidalTrackActionOverlay.appendChild(tidalTrackActionPanel);
+tidalScreen.appendChild(tidalTrackActionOverlay);
+
+function currentTidalContainerCid() {
+  const current = tidalHistory[tidalHistory.length - 1];
+  return String(current?.cid || '');
+}
+
+function currentTidalContainerIsPlaylist() {
+  return currentTidalContainerCid().startsWith('LIBPLAYLIST-');
+}
+
+function closeTidalTrackActionMenu() {
+  tidalTrackActionSelection = null;
+  tidalTrackActionOverlay.classList.remove('open');
+  tidalTrackActionOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function openTidalTrackActionMenu(button, name) {
+  const cid = currentTidalContainerCid();
+  const mid = String(button?.dataset?.mid || '');
+
+  if (!cid || !mid) {
+    tidalStatus.textContent = 'Track options unavailable';
+    return;
+  }
+
+  tidalTrackActionSelection = { cid, mid, name: name || 'Track' };
+  tidalTrackActionName.textContent = name || 'Track';
+  tidalTrackActionOverlay.classList.add('open');
+  tidalTrackActionOverlay.setAttribute('aria-hidden', 'false');
+}
+
+async function runTidalTrackAction(action, actionButton) {
+  const selection = tidalTrackActionSelection;
+  if (!selection) return;
+
+  if (action === 'cancel') {
+    closeTidalTrackActionMenu();
+    return;
+  }
+
+  actionButton.disabled = true;
+  actionButton.classList.add('loading');
+
+  try {
+    const response = await fetch(
+      '/api/tidal/track/action?cid=' + encodeURIComponent(selection.cid) +
+      '&mid=' + encodeURIComponent(selection.mid) +
+      '&action=' + encodeURIComponent(action),
+      { cache: 'no-store' }
+    );
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Track action failed');
+    }
+
+    const statusByAction = {
+      'play-now': 'Playing',
+      'play-next': 'Queued next',
+      'add-end': 'Added to end',
+      'play-from-here': 'Playing from',
+      'play-only': 'Playing only'
+    };
+
+    closeTidalTrackActionMenu();
+    tidalStatus.textContent =
+      (statusByAction[action] || 'Updated') + ' — ' + selection.name;
+
+    if (['play-now', 'play-from-here', 'play-only'].includes(action)) {
+      setTidalOpen(false);
+    }
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+    actionButton.disabled = false;
+    actionButton.classList.remove('loading');
+  }
+}
+
+tidalTrackActionOverlay.addEventListener('click', event => {
+  const button = event.target.closest('[data-track-action]');
+  if (!button) return;
+  runTidalTrackAction(button.dataset.trackAction, button);
+});
+
 
 function buildTidalAlphabet() {
   tidalAlphabet.replaceChildren();
@@ -1044,6 +1170,11 @@ tidalResults.addEventListener('click', async event => {
     button.classList.contains('tidal-browse-item') &&
     button.dataset.type === 'song'
   ) {
+    if (currentTidalContainerIsPlaylist()) {
+      openTidalTrackActionMenu(button, name);
+      return;
+    }
+
     if (button.dataset.albumId) {
       playTidalPlaylist(
         'LIBALBUM-' + button.dataset.albumId,

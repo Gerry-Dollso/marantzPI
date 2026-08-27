@@ -378,3 +378,72 @@ body.show-tidal .display {
   font-weight: 700;
   letter-spacing: 0.1em;
 }
+
+
+.tidal-track-action-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.78);
+}
+
+.tidal-track-action-overlay.open {
+  display: flex;
+}
+
+.tidal-track-action-panel {
+  width: min(680px, 100%);
+  padding: 20px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 18px;
+  background: #161616;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+}
+
+.tidal-track-action-title {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  opacity: 0.65;
+}
+
+.tidal-track-action-name {
+  margin: 7px 0 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tidal-track-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.tidal-track-action-buttons button {
+  height: 54px;
+  border: 1px solid rgba(255,255,255,0.24);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  color: #f4f4f4;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tidal-track-action-buttons .tidal-track-action-cancel {
+  grid-column: 1 / -1;
+  height: 46px;
+  opacity: 0.75;
+}
