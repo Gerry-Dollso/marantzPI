@@ -88,6 +88,14 @@ function currentTidalContainerIsPlaylist() {
   return currentTidalContainerCid().startsWith('LIBPLAYLIST-');
 }
 
+function currentTidalContainerIsTrackList() {
+  const cid = currentTidalContainerCid();
+  return (
+    cid.startsWith('LIBPLAYLIST-') ||
+    cid.startsWith('LIBARTIST-Tracks-')
+  );
+}
+
 function closeTidalTrackActionMenu() {
   tidalTrackActionSelection = null;
   tidalTrackActionOverlay.classList.remove('open');
@@ -557,7 +565,10 @@ async function browseTidal(cid, title, pushHistory = true) {
       tidalArtistLetter = 'ALL';
       setTidalAlphabetVisible(true);
       renderFilteredArtists();
-    } else if (String(cid).startsWith('LIBPLAYLIST-')) {
+    } else if (
+      String(cid).startsWith('LIBPLAYLIST-') ||
+      String(cid).startsWith('LIBARTIST-Tracks-')
+    ) {
       setTidalAlphabetVisible(false);
       renderPlaylistItems(items, title);
     } else {
@@ -1122,7 +1133,7 @@ tidalResults.addEventListener('click', async event => {
     const action = playlistAction.dataset.playlistAction;
 
     playTidalPlaylist(
-      tidalCurrentPlaylistCid,
+      currentTidalContainerCid(),
       '',
       action === 'shuffle-all',
       playlistAction
@@ -1175,7 +1186,7 @@ tidalResults.addEventListener('click', async event => {
     button.classList.contains('tidal-browse-item') &&
     button.dataset.type === 'song'
   ) {
-    if (currentTidalContainerIsPlaylist()) {
+    if (currentTidalContainerIsTrackList()) {
       openTidalTrackActionMenu(button, name);
       return;
     }
