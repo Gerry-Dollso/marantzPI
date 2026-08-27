@@ -10,18 +10,24 @@ Active deployed/development branch:
 housekeeping-2026-08-21
 ```
 
-Known-good functional checkpoint before this documentation update:
+Current tested functional checkpoint:
 
 ```text
-3fc0f52 — Add persistent track voice learning
+a865638 — Add TIDAL artist track controls
 ```
 
-This checkpoint includes the completed touchscreen side of persistent TIDAL voice correction/learning. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current TIDAL artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
 
 ## Current feature set
 
 - Marantz input control using Smart Select mappings for PHONO, CD and TIDAL/HEOS.
-- TIDAL library browsing, search, albums, playlists and track playback through the companion media backend.
+- TIDAL/HEOS Smart Select 3 is only reapplied when the AVR is not already on NET/HEOS, so browsing/changing TIDAL content does not reset a manually adjusted listening volume or other Smart Select-stored AVR settings.
+- TIDAL library browsing and search through the companion media backend.
+- Artist selection opens the HEOS artist root rather than jumping directly to Albums. Current artist sections exposed by HEOS are Tracks, Albums, EP n Singles, Other Albums and Similar; selecting a Similar artist recursively opens the same artist structure.
+- Playlist controls include PLAY ALL and SHUFFLE ALL. Tapping an individual playlist track opens HEOS-style queue options: PLAY NOW, PLAY NEXT, ADD TO END, PLAY FROM HERE and PLAY ONLY.
+- Artist -> Tracks has PLAY ALL and SHUFFLE ALL plus the same individual-track queue options as playlists.
+- PLAY NEXT and ADD TO END retain the current browser view. PLAY NOW, PLAY FROM HERE and PLAY ONLY return to Now Playing; Play From Here returns immediately while the HP backend finishes rebuilding the remaining queue.
+- Albums and EPs/Singles deliberately retain their existing simpler album playback behaviour; this track-option UI is not applied to them.
 - TIDAL voice-search fallback surfaced on the touchscreen.
 - Touchscreen confirmation/learning for misheard TIDAL artists and tracks; learned mappings are persisted by the HP backend.
 - HEOS favourites / internet-radio browser.
@@ -31,11 +37,32 @@ This checkpoint includes the completed touchscreen side of persistent TIDAL voic
 - Standby, TV and projector display modes with physical panel power management.
 - Direct link to the AVR settings webpage with kiosk-history protection on the local UI.
 
+## TIDAL architecture notes
+
+`server.js` on the Pi proxies TIDAL library/queue requests to the HP backend while continuing to handle local touchscreen/display and direct AVR responsibilities.
+
+Artist browsing should remain CID-driven. The current HEOS artist root already provides useful native structure and metadata:
+
+```text
+LIBARTIST-<id>
+  -> Tracks
+  -> Albums
+  -> EP n Singles
+  -> Other Albums
+  -> Similar
+```
+
+Do not collapse artist navigation back to an Albums-only shortcut.
+
+The shared track-action UI is intentionally limited to list-style containers where queue semantics are appropriate: playlists and `LIBARTIST-Tracks-*`. Album/EP playback remains separate.
+
+Longer-term rich/Roon-like artist UI work should build on these proven containers and on metadata confirmed by the HP backend rather than designing around assumed TIDAL fields.
+
 ## Architecture
 
 `server.js` runs locally on the Raspberry Pi and serves the touchscreen UI from `public/`. It talks directly to the AVR for receiver/HEOS status and control. TIDAL library operations and the semantic/voice orchestration layer are handled by the separate `marantz-backend` service on the HP media server.
 
-The Pi remains the physical touchscreen/display/controller. The HP backend is the central media/orchestration service; future local-AI language understanding belongs on the HP side rather than replacing the Pi UI or the deterministic receiver-control layer.
+The Pi remains the physical touchscreen/display/controller. The HP backend is the central media/orchestration service; local-AI language understanding belongs on the HP side rather than replacing the Pi UI or the deterministic receiver-control layer.
 
 The application runs as the user service:
 
@@ -45,7 +72,7 @@ marantz-display.service
 
 ## Development workflow
 
-Normal development is Git-based. Large multi-line terminal edits should be avoided where practical because the normal SSH workflow uses Termius on Android and large pastes can be corrupted. Prefer small, sequential, verifiable terminal commands or safe GitHub-side edits.
+Normal development is Git-based. Large multi-line terminal edits should be avoided where practical because the normal SSH workflow uses Termius on Android and large pastes can be corrupted. Prefer small, sequential, verifiable terminal commands, safe GitHub-side edits, or guarded one-shot migration helpers where a multi-file change must be applied to a live checkout.
 
 Before changing code, confirm the checked-out branch and working tree. After JavaScript changes, validate before restarting:
 
