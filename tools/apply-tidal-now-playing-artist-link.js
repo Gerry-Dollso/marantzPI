@@ -12,7 +12,7 @@ let server = fs.readFileSync(serverPath, 'utf8');
 let app = fs.readFileSync(appPath, 'utf8');
 let tidal = fs.readFileSync(tidalPath, 'utf8');
 
-if (server.includes("/api/tidal/metadata/track-artists?")) {
+if (server.includes("url.pathname === '/api/tidal/metadata/track-artists'")) {
   throw new Error('Pi TIDAL metadata proxy already appears to be applied');
 }
 if (app.includes('openCurrentTidalArtist')) {
@@ -30,30 +30,29 @@ server = server.replace(
   statusAnchor,
   `    album,\n` +
   `    tidalMid: playbackSource === 'tidal'\n` +
-  `      ? String(mediaMid || lastTidalResume?.mid || '')\n` +
+  `      ? String(\n` +
+  `          tidalResumeNeeded && lastTidalResume?.mid\n` +
+  `            ? lastTidalResume.mid\n` +
+  `            : mediaMid || ''\n` +
+  `        )\n` +
   `      : '',\n` +
   `    playbackSource,\n`
 );
 
-const proxyAnchor = `  if (req.method === 'GET' && req.url.startsWith('/api/tidal/track/action?')) {\n`;
+const proxyAnchor = `        if (req.method === 'GET' && url.pathname === '/api/tidal/track/action') {\n`;
 if (!server.includes(proxyAnchor)) {
-  throw new Error('Expected TIDAL track action proxy anchor not found');
+  throw new Error('Expected current TIDAL track action proxy anchor not found');
 }
-const proxy = `  if (req.method === 'GET' && req.url.startsWith('/api/tidal/metadata/track-artists?')) {\n` +
-`    try {\n` +
-`      const url = new URL(req.url, 'http://localhost');\n` +
-`      const mid = String(url.searchParams.get('mid') || '').trim();\n` +
-`      if (!mid) {\n` +
-`        return sendJson(res, 400, { error: 'Missing track mid' });\n` +
-`      }\n\n` +
-`      const result = await mediaBackendRequest(\n` +
-`        '/api/tidal/metadata/track-artists?mid=' + encodeURIComponent(mid)\n` +
-`      );\n` +
-`      return sendJson(res, 200, result);\n` +
-`    } catch (error) {\n` +
-`      return sendJson(res, 502, { error: error.message });\n` +
-`    }\n` +
-`  }\n\n`;
+const proxy = `        if (req.method === 'GET' && url.pathname === '/api/tidal/metadata/track-artists') {\n` +
+`          const mid = String(url.searchParams.get('mid') || '').trim();\n` +
+`          if (!mid) {\n` +
+`            return sendJson(res, 400, { error: 'Missing track mid' });\n` +
+`          }\n\n` +
+`          const result = await mediaBackendRequest(\n` +
+`            '/api/tidal/metadata/track-artists?mid=' + encodeURIComponent(mid)\n` +
+`          );\n\n` +
+`          return sendJson(res, 200, result);\n` +
+`        }\n\n`;
 server = server.replace(proxyAnchor, proxy + proxyAnchor);
 
 const renderAnchor = `  if (data.playbackSource === 'internet-radio') {\n`;
@@ -67,10 +66,15 @@ app = app.replace(
   `    Boolean(String(data.tidalMid || '').trim()) &&\n` +
   `    Boolean(String(data.artist || '').trim());\n` +
   `  artist.classList.toggle('tidal-artist-link', artistLinkAvailable);\n` +
-  `  artist.setAttribute('role', artistLinkAvailable ? 'button' : '');\n` +
-  `  artist.setAttribute('aria-label',\n` +
-  `    artistLinkAvailable ? 'Browse this artist in TIDAL' : ''\n` +
-  `  );\n\n` +
+  `  if (artistLinkAvailable) {\n` +
+  `    artist.setAttribute('role', 'button');\n` +
+  `    artist.setAttribute('tabindex', '0');\n` +
+  `    artist.setAttribute('aria-label', 'Browse this artist in TIDAL');\n` +
+  `  } else {\n` +
+  `    artist.removeAttribute('role');\n` +
+  `    artist.removeAttribute('tabindex');\n` +
+  `    artist.removeAttribute('aria-label');\n` +
+  `  }\n\n` +
   renderAnchor
 );
 
@@ -113,7 +117,13 @@ const artistHandler = `async function openCurrentTidalArtist() {\n` +
 `    artist.classList.remove('loading');\n` +
 `  }\n` +
 `}\n\n` +
-`artist?.addEventListener('click', openCurrentTidalArtist);\n\n`;
+`artist?.addEventListener('click', openCurrentTidalArtist);\n` +
+`artist?.addEventListener('keydown', event => {\n` +
+`  if (event.key !== 'Enter' && event.key !== ' ') return;\n` +
+`  if (!artist.classList.contains('tidal-artist-link')) return;\n` +
+`  event.preventDefault();\n` +
+`  openCurrentTidalArtist();\n` +
+`});\n\n`;
 app = app.replace(listenerAnchor, artistHandler + listenerAnchor);
 
 const tidalAnchor = `async function browseTidal(cid, title, pushHistory = true) {\n`;
