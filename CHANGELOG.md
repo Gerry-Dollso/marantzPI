@@ -2,6 +2,25 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-08-27 — TIDAL browser Now Playing shortcut
+
+- Added a `NOW PLAYING` button to the top-right of the TIDAL browser header, opposite the existing `BACK` button.
+- The shortcut is deliberately UI-only: it closes the TIDAL overlay and immediately exposes the existing shared HEOS/NET Now Playing screen without sending an AVR source command, reapplying Smart Select, changing the queue or interrupting playback.
+- Unlike `BACK`, the shortcut does not unwind or clear TIDAL browser history. Reopening TIDAL returns to the browser location that was left.
+- Live-tested from nested TIDAL browser views with uninterrupted playback and retained navigation state.
+
+Checkpoint:
+
+```text
+a0747d0 — Add TIDAL Now Playing shortcut
+```
+
+Current tested functional checkpoint:
+
+```text
+a0747d0 — Add TIDAL Now Playing shortcut
+```
+
 ## 2026-08-27 — Now Playing artist and album navigation
 
 - Added canonical TIDAL artist navigation from Now Playing. Tapping the displayed artist name sends the current TIDAL MID through the Pi proxy to the HP metadata endpoint, resolves the canonical TIDAL artist ID, and opens the existing `LIBARTIST-<id>` artist page without affecting playback.
@@ -16,12 +35,6 @@ Tested checkpoints:
 
 ```text
 822dc35 — Browse TIDAL artist from now playing
-4e40553 — Browse TIDAL album from now playing
-```
-
-Current tested functional checkpoint:
-
-```text
 4e40553 — Browse TIDAL album from now playing
 ```
 
