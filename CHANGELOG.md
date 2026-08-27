@@ -2,7 +2,7 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
-## 2026-08-27 — TIDAL artist navigation and queue controls
+## 2026-08-27 — TIDAL artist navigation, queue controls and My Music root
 
 - Changed artist selection so the touchscreen now opens the real HEOS artist root instead of jumping directly to Albums.
 - Confirmed and exposed the HEOS artist sections `Tracks`, `Albums`, `EP n Singles`, `Other Albums` and `Similar`.
@@ -15,6 +15,9 @@ This file records project-level milestones and known-good checkpoints. Git histo
 - Corrected Play From Here so the touchscreen returns to Now Playing immediately while the HP finishes rebuilding the remaining queue.
 - Added `PLAY ALL` and `SHUFFLE ALL` to Artist -> Tracks and reused the same five-option individual-track menu there.
 - Kept Albums and EPs/Singles deliberately unchanged; their existing album playback flow remains separate from list-style queue actions.
+- Changed the touchscreen TIDAL entry point so HEOS `My Music` is now the effective UI root rather than the unused higher-level shortcut screen.
+- Back navigation now closes TIDAL from the My Music root, while child views unwind normally toward My Music.
+- Search history is rooted at My Music, so Back from search returns to My Music and cannot expose the old higher-level screen.
 
 Tested checkpoints during this work:
 
@@ -24,12 +27,13 @@ f6ce7a0 — Browse full TIDAL artist sections
 0597193 — Add TIDAL playlist track action menu
 c656e8d — Return to now playing for TIDAL play from here
 a865638 — Add TIDAL artist track controls
+f93602b — Make My Music the TIDAL navigation root
 ```
 
 Current tested functional checkpoint:
 
 ```text
-a865638 — Add TIDAL artist track controls
+f93602b — Make My Music the TIDAL navigation root
 ```
 
 ## 2026-08-26 — Pre-local-AI documentation baseline
