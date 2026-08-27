@@ -2,11 +2,40 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-08-27 — Full Favourite Tracks browser and playback
+
+- Removed the old 50-track paging restriction from `My Music-Tracks`.
+- The touchscreen now requests and displays the complete favourite-track collection as one continuous playlist-style list. Live HEOS testing reported 576 saved tracks during implementation.
+- Added PLAY ALL and SHUFFLE ALL for the complete favourite-track collection rather than only the current 50-track page.
+- Reused the existing five-option individual track menu for Favourite Tracks: PLAY NOW, PLAY NEXT, ADD TO END, PLAY FROM HERE and PLAY ONLY.
+- `My Music-Tracks` is now classified as a list-style track container alongside `LIBPLAYLIST-*` and `LIBARTIST-Tracks-*`.
+- The Pi routes Favourite Tracks PLAY ALL/SHUFFLE ALL to the dedicated HP endpoint `/api/tidal/tracks/play-all?shuffle=0|1` instead of the normal playlist container-play endpoint, because HEOS refuses direct whole-container playback for `My Music-Tracks`.
+- The Pi proxy allows a 180-second backend timeout for full-library queue construction. Playback itself begins from the first selected track while the HP continues appending the remainder of the queue in the background.
+- Live testing confirmed the queue grows beyond the former 50-track ceiling. Shuffle All produced a random opening order and continued building quietly while playback proceeded.
+- The new full-list browser depends on the HP's bounded in-memory browse cache; this is what makes revisiting hundreds of saved tracks practical without restoring pagination.
+
+### Important implementation lesson
+
+The HP backend proved that HEOS requires literal-space `My Music-Tracks` in its CLI commands. Passing `My%20Music-Tracks` can resolve to the wrong TIDAL container. Pi code should therefore continue treating HEOS CIDs as opaque backend identifiers and leave HEOS command-string formatting to the backend rather than assuming ordinary HTTP encoding can be forwarded unchanged.
+
+Checkpoint sequence:
+
+```text
+e0adc71 — Add guarded full favourite tracks migration
+4d1eeda — Show full TIDAL favourite tracks list
+```
+
+Current tested functional checkpoint:
+
+```text
+4d1eeda — Show full TIDAL favourite tracks list
+```
+
 ## 2026-08-27 — TIDAL browser Now Playing shortcut
 
 - Added a `NOW PLAYING` button to the top-right of the TIDAL browser header, opposite the existing `BACK` button.
-- The shortcut is deliberately UI-only: it closes the TIDAL overlay and immediately exposes the existing shared HEOS/NET Now Playing screen without sending an AVR source command, reapplying Smart Select, changing the queue or interrupting playback.
-- Unlike `BACK`, the shortcut does not unwind or clear TIDAL browser history. Reopening TIDAL returns to the browser location that was left.
+- The shortcut only closes the TIDAL overlay; it does not send an AVR command, reapply Smart Select, alter the queue or interrupt playback.
+- Unlike `BACK`, the shortcut does not unwind TIDAL browser history. Reopening TIDAL returns to the browser location that was left.
 - Live-tested from nested TIDAL browser views with uninterrupted playback and retained navigation state.
 
 Checkpoint:
@@ -15,21 +44,12 @@ Checkpoint:
 a0747d0 — Add TIDAL Now Playing shortcut
 ```
 
-Current tested functional checkpoint:
-
-```text
-a0747d0 — Add TIDAL Now Playing shortcut
-```
-
 ## 2026-08-27 — Now Playing artist and album navigation
 
-- Added canonical TIDAL artist navigation from Now Playing. Tapping the displayed artist name sends the current TIDAL MID through the Pi proxy to the HP metadata endpoint, resolves the canonical TIDAL artist ID, and opens the existing `LIBARTIST-<id>` artist page without affecting playback.
-- Deliberately avoided name-only artist matching after live search showed multiple distinct TIDAL artists can share the same visible name.
-- Added `tidalMid` to the Pi status payload and made the remembered MID take priority while TIDAL resume is armed, preventing stale stopped HEOS metadata from resolving the wrong artist after a source change.
-- Added album navigation from Now Playing using the canonical HEOS/TIDAL `album_id`. Tapping the displayed album opens the existing `LIBALBUM-<id>` track page, including its normal PLAY ALL behaviour, without interrupting playback.
-- Added remembered album ID alongside the TIDAL resume metadata so album navigation remains correct after leaving NET/powering off even when HEOS stopped metadata is stale.
-- Both artist and album links are exposed only for genuine TIDAL playback and use the existing TIDAL browser/navigation stack, with My Music as the navigation root.
-- Live-tested artist navigation, album navigation, Back behaviour, uninterrupted playback, and the stopped/resume source-switch case.
+- Added canonical TIDAL artist navigation from Now Playing. Tapping the artist name resolves the current TIDAL MID through the HP metadata endpoint and opens the canonical `LIBARTIST-<id>` page without affecting playback.
+- Avoided name-only artist matching after live search showed multiple distinct TIDAL artists can share the same visible name.
+- Added album navigation from Now Playing using HEOS/TIDAL `album_id`; tapping the album opens the existing album track page without interrupting playback.
+- Remembered MID/album ID values take priority during the stopped-resume state so stale HEOS metadata does not open the wrong artist or album.
 
 Tested checkpoints:
 
@@ -40,15 +60,11 @@ Tested checkpoints:
 
 ## 2026-08-27 — TIDAL queue resume after leaving NET
 
-- Investigated HEOS behaviour after leaving TIDAL/NET for another AVR source or powering the AVR off.
-- Confirmed HEOS retains the existing queue but can report misleading stopped Now Playing state after returning to NET: live testing showed the previous track metadata paired with an incorrect `qid=1`, while the same MID still existed at its real queue position.
-- Confirmed manually that `player/play_queue` against the real retained QID resumes the intended track rather than queue item 1.
-- Added Pi-side memory of the last genuine TIDAL MID/QID and track metadata while NET/TIDAL is active.
-- When a TIDAL resume is armed, Now Playing displays the remembered track rather than stale stopped metadata returned by HEOS.
-- On the next Play, the Pi resolves the remembered MID against the retained HEOS queue and explicitly selects the matching QID before continuing playback.
-- Queue lookup is paginated with correct HEOS start/end ranges so retained queues longer than 50 items are supported.
-- Deliberately chose restart-from-track-beginning semantics rather than attempting exact elapsed-position restoration. After a source change or power cycle, pressing Play restarts the last TIDAL track from 0:00 and then continues through the retained queue normally.
-- Verified both source-switch and AVR power-off/on scenarios on the live system.
+- Confirmed HEOS retains its queue after leaving TIDAL/NET but can report stale stopped metadata and an incorrect `qid=1`.
+- Added Pi-side memory of the last genuine TIDAL MID/QID and track metadata.
+- On the next Play, the Pi resolves the remembered MID against the retained queue and explicitly selects the matching QID.
+- Deliberately chose restart-from-track-beginning semantics rather than exact elapsed-position restoration.
+- Verified both source-switch and AVR power-off/on scenarios live.
 
 Checkpoint:
 
@@ -58,22 +74,14 @@ Checkpoint:
 
 ## 2026-08-27 — TIDAL artist navigation, queue controls and My Music root
 
-- Changed artist selection so the touchscreen now opens the real HEOS artist root instead of jumping directly to Albums.
-- Confirmed and exposed the HEOS artist sections `Tracks`, `Albums`, `EP n Singles`, `Other Albums` and `Similar`.
-- Confirmed Similar Artists returns real `LIBARTIST-*` containers with artwork and that selecting a similar artist recursively opens the same artist structure.
-- Added a guard around TIDAL/HEOS Smart Select 3: if `SI?` already reports `SINET`, reopening/browsing TIDAL no longer sends `MSSMART3`. This prevents a Smart Select-stored volume/Audyssey/speaker state from being reapplied every time the user changes TIDAL content.
-- Preserved Smart Select 3 behaviour when switching into TIDAL from another AVR source.
-- Added an individual playlist-track action menu with `PLAY NOW`, `PLAY NEXT`, `ADD TO END`, `PLAY FROM HERE` and `PLAY ONLY`.
-- Verified the queue actions live against the SR8015/HEOS backend.
-- `PLAY NEXT` and `ADD TO END` keep the playlist browser open; `PLAY NOW`, `PLAY FROM HERE` and `PLAY ONLY` return to Now Playing.
-- Corrected Play From Here so the touchscreen returns to Now Playing immediately while the HP finishes rebuilding the remaining queue.
-- Added `PLAY ALL` and `SHUFFLE ALL` to Artist -> Tracks and reused the same five-option individual-track menu there.
-- Kept Albums and EPs/Singles deliberately unchanged; their existing album playback flow remains separate from list-style queue actions.
-- Changed the touchscreen TIDAL entry point so HEOS `My Music` is now the effective UI root rather than the unused higher-level shortcut screen.
-- Back navigation now closes TIDAL from the My Music root, while child views unwind normally toward My Music.
-- Search history is rooted at My Music, so Back from search returns to My Music and cannot expose the old higher-level screen.
+- Changed artist selection so the touchscreen opens the real HEOS artist root rather than jumping directly to Albums.
+- Confirmed/exposed Tracks, Albums, EP n Singles, Other Albums and Similar.
+- Guarded Smart Select 3 so reopening/browsing TIDAL while already on NET does not reapply stored AVR state.
+- Added playlist individual-track actions and Artist -> Tracks PLAY ALL/SHUFFLE ALL plus the same five-option track menu.
+- PLAY NEXT and ADD TO END retain the browser; PLAY NOW, PLAY FROM HERE and PLAY ONLY return to Now Playing.
+- Made HEOS `My Music` the touchscreen TIDAL navigation root.
 
-Tested checkpoints during this work:
+Tested checkpoints:
 
 ```text
 f6ce7a0 — Browse full TIDAL artist sections
@@ -88,9 +96,7 @@ f93602b — Make My Music the TIDAL navigation root
 
 - Confirmed active branch as `housekeeping-2026-08-21`.
 - Recorded `3fc0f52` (`Add persistent track voice learning`) as the known-good functional checkpoint before documentation-only updates.
-- Updated project documentation so older `v3-development` recovery information is no longer presented as current.
-- Clarified architecture: Raspberry Pi remains the touchscreen/display/controller; the HP media server hosts the companion backend and is the intended home for future local-AI language understanding.
-- Clarified that unrelated computer repair, Batocera/emulation and other hardware projects are outside this project's scope.
+- Clarified architecture: Raspberry Pi remains the touchscreen/display/controller; the HP media server hosts the companion backend and future local-AI language understanding.
 
 ## 2026-08-24 — Persistent TIDAL voice learning
 
