@@ -13,10 +13,10 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-4e40553 — Browse TIDAL album from now playing
+a0747d0 — Add TIDAL Now Playing shortcut
 ```
 
-This checkpoint includes the current TIDAL My Music root navigation, artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, retained TIDAL queue resume behaviour, Now Playing artist/album navigation, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current TIDAL My Music root navigation, artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, retained TIDAL queue resume behaviour, Now Playing artist/album navigation, direct TIDAL-browser return-to-Now-Playing shortcut, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
 
 ## Current feature set
 
@@ -24,6 +24,7 @@ This checkpoint includes the current TIDAL My Music root navigation, artist navi
 - TIDAL/HEOS Smart Select 3 is only reapplied when the AVR is not already on NET/HEOS, so browsing/changing TIDAL content does not reset a manually adjusted listening volume or other Smart Select-stored AVR settings.
 - TIDAL opens directly into the HEOS `My Music` container, which is treated as the touchscreen TIDAL navigation root. The unused higher-level HEOS choices such as What's New and Genres are not exposed in normal navigation.
 - Back from child TIDAL views returns toward My Music; Back from the My Music root closes TIDAL. Back from search returns to My Music rather than exposing the old higher-level shortcut screen.
+- Every TIDAL browser screen has a `NOW PLAYING` shortcut in the top-right opposite `BACK`. It closes only the TIDAL overlay, immediately revealing the shared HEOS/NET Now Playing screen without changing AVR source, Smart Select, queue or playback. TIDAL navigation history is retained so reopening TIDAL resumes the previous browser location.
 - TIDAL library browsing and search through the companion media backend.
 - Artist selection opens the HEOS artist root rather than jumping directly to Albums. Current artist sections exposed by HEOS are Tracks, Albums, EP n Singles, Other Albums and Similar; selecting a Similar artist recursively opens the same artist structure.
 - On the TIDAL Now Playing screen, tapping the artist name resolves the playing track MID through the HP backend/TIDAL OpenAPI and opens the canonical `LIBARTIST-<id>` artist page without interrupting playback. This avoids ambiguous name-only matching.
@@ -47,6 +48,8 @@ This checkpoint includes the current TIDAL My Music root navigation, artist navi
 `server.js` on the Pi proxies TIDAL library/queue and metadata requests to the HP backend while continuing to handle local touchscreen/display and direct AVR responsibilities.
 
 For touchscreen navigation, HEOS `My Music` is intentionally treated as the TIDAL UI root. Do not restore the older higher-level shortcut/root screen unless there is a deliberate requirement for those HEOS sections.
+
+TIDAL browser `BACK` and `NOW PLAYING` have deliberately different semantics. `BACK` unwinds the TIDAL navigation stack; `NOW PLAYING` only hides the TIDAL overlay and must not clear browser history or send any AVR/HEOS playback/source command. This allows immediate access to playback controls and then a return to the same TIDAL browsing location.
 
 Artist browsing should remain CID-driven. The current HEOS artist root already provides useful native structure and metadata:
 
