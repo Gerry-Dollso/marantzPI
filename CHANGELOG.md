@@ -2,6 +2,29 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-08-27 — Now Playing artist and album navigation
+
+- Added canonical TIDAL artist navigation from Now Playing. Tapping the displayed artist name sends the current TIDAL MID through the Pi proxy to the HP metadata endpoint, resolves the canonical TIDAL artist ID, and opens the existing `LIBARTIST-<id>` artist page without affecting playback.
+- Deliberately avoided name-only artist matching after live search showed multiple distinct TIDAL artists can share the same visible name.
+- Added `tidalMid` to the Pi status payload and made the remembered MID take priority while TIDAL resume is armed, preventing stale stopped HEOS metadata from resolving the wrong artist after a source change.
+- Added album navigation from Now Playing using the canonical HEOS/TIDAL `album_id`. Tapping the displayed album opens the existing `LIBALBUM-<id>` track page, including its normal PLAY ALL behaviour, without interrupting playback.
+- Added remembered album ID alongside the TIDAL resume metadata so album navigation remains correct after leaving NET/powering off even when HEOS stopped metadata is stale.
+- Both artist and album links are exposed only for genuine TIDAL playback and use the existing TIDAL browser/navigation stack, with My Music as the navigation root.
+- Live-tested artist navigation, album navigation, Back behaviour, uninterrupted playback, and the stopped/resume source-switch case.
+
+Tested checkpoints:
+
+```text
+822dc35 — Browse TIDAL artist from now playing
+4e40553 — Browse TIDAL album from now playing
+```
+
+Current tested functional checkpoint:
+
+```text
+4e40553 — Browse TIDAL album from now playing
+```
+
 ## 2026-08-27 — TIDAL queue resume after leaving NET
 
 - Investigated HEOS behaviour after leaving TIDAL/NET for another AVR source or powering the AVR off.
@@ -14,7 +37,7 @@ This file records project-level milestones and known-good checkpoints. Git histo
 - Deliberately chose restart-from-track-beginning semantics rather than attempting exact elapsed-position restoration. After a source change or power cycle, pressing Play restarts the last TIDAL track from 0:00 and then continues through the retained queue normally.
 - Verified both source-switch and AVR power-off/on scenarios on the live system.
 
-Current tested functional checkpoint:
+Checkpoint:
 
 ```text
 922b855 — Resume last TIDAL queue track after leaving NET
