@@ -329,6 +329,21 @@ function render(data) {
       Number(data.duration) > 0
     );
 
+  const albumLinkAvailable =
+    data.playbackSource === 'tidal' &&
+    Boolean(String(data.tidalAlbumId || '').trim()) &&
+    Boolean(String(data.album || '').trim());
+  album.classList.toggle('tidal-album-link', albumLinkAvailable);
+  if (albumLinkAvailable) {
+    album.setAttribute('role', 'button');
+    album.setAttribute('tabindex', '0');
+    album.setAttribute('aria-label', 'Browse this album in TIDAL');
+  } else {
+    album.removeAttribute('role');
+    album.removeAttribute('tabindex');
+    album.removeAttribute('aria-label');
+  }
+
   const artistLinkAvailable =
     data.playbackSource === 'tidal' &&
     Boolean(String(data.tidalMid || '').trim()) &&
@@ -497,6 +512,35 @@ zone2SourceMenu?.addEventListener("click", async event => {
 });
 
 
+
+async function openCurrentTidalAlbum() {
+  const albumId = String(latest?.tidalAlbumId || '').trim();
+  const albumName = String(latest?.album || '').trim();
+  if (latest?.playbackSource !== 'tidal' || !albumId || !albumName) return;
+
+  album.classList.add('loading');
+  try {
+    if (typeof openTidalAlbumFromNowPlaying !== 'function') {
+      throw new Error('TIDAL album browser unavailable');
+    }
+    await openTidalAlbumFromNowPlaying(
+      'LIBALBUM-' + albumId,
+      albumName
+    );
+  } catch (error) {
+    console.warn('Could not open current TIDAL album:', error);
+  } finally {
+    album.classList.remove('loading');
+  }
+}
+
+album?.addEventListener('click', openCurrentTidalAlbum);
+album?.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  if (!album.classList.contains('tidal-album-link')) return;
+  event.preventDefault();
+  openCurrentTidalAlbum();
+});
 
 async function openCurrentTidalArtist() {
   const mid = String(latest?.tidalMid || '').trim();

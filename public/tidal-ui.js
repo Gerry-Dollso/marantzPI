@@ -508,6 +508,25 @@ async function loadTidalTrackPage(page = 0) {
   }
 }
 
+async function openTidalAlbumFromNowPlaying(cid, title) {
+  const albumCid = String(cid || '').trim();
+  if (!/^LIBALBUM-\d+$/.test(albumCid)) {
+    throw new Error('Invalid TIDAL album cid');
+  }
+
+  tidalHistory.length = 0;
+  tidalHistory.push({
+    cid: TIDAL_UI_ROOT_CID,
+    title: TIDAL_UI_ROOT_TITLE
+  });
+  setTidalOpen(true);
+  tidalScreen.classList.add('browsing');
+  setTidalKeyboardOpen(false);
+  tidalSearchInput.blur();
+  setTidalAlphabetVisible(false);
+  await loadTidalAlbumTracks(albumCid, title || 'Album');
+}
+
 async function openTidalArtistFromNowPlaying(cid, title) {
   const artistCid = String(cid || '').trim();
   if (!artistCid.startsWith('LIBARTIST-')) {

@@ -528,6 +528,7 @@ async function getStatus() {
   const hasTrackInfo = isNetPlayback && Boolean(song || artist || album);
 
   const mediaMid = String(media.mid || '').trim();
+  const mediaAlbumId = String(media.album_id || '').trim();
   const mediaQid = Number(media.qid);
   const playbackState = String(state.state || 'unknown');
 
@@ -544,6 +545,7 @@ async function getStatus() {
       song,
       artist,
       album,
+      albumId: mediaAlbumId,
       imageUrl,
       rememberedAt: Date.now()
     };
@@ -576,6 +578,13 @@ async function getStatus() {
           tidalResumeNeeded && lastTidalResume?.mid
             ? lastTidalResume.mid
             : mediaMid || ''
+        )
+      : '',
+    tidalAlbumId: playbackSource === 'tidal'
+      ? String(
+          tidalResumeNeeded && lastTidalResume?.albumId
+            ? lastTidalResume.albumId
+            : mediaAlbumId || ''
         )
       : '',
     playbackSource,
