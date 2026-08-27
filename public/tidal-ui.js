@@ -121,6 +121,11 @@ async function runTidalTrackAction(action, actionButton) {
   actionButton.disabled = true;
   actionButton.classList.add('loading');
 
+  if (action === 'play-from-here') {
+    closeTidalTrackActionMenu();
+    setTidalOpen(false);
+  }
+
   try {
     const response = await fetch(
       '/api/tidal/track/action?cid=' + encodeURIComponent(selection.cid) +
