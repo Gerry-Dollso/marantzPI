@@ -2,6 +2,24 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-08-27 — TIDAL queue resume after leaving NET
+
+- Investigated HEOS behaviour after leaving TIDAL/NET for another AVR source or powering the AVR off.
+- Confirmed HEOS retains the existing queue but can report misleading stopped Now Playing state after returning to NET: live testing showed the previous track metadata paired with an incorrect `qid=1`, while the same MID still existed at its real queue position.
+- Confirmed manually that `player/play_queue` against the real retained QID resumes the intended track rather than queue item 1.
+- Added Pi-side memory of the last genuine TIDAL MID/QID and track metadata while NET/TIDAL is active.
+- When a TIDAL resume is armed, Now Playing displays the remembered track rather than stale stopped metadata returned by HEOS.
+- On the next Play, the Pi resolves the remembered MID against the retained HEOS queue and explicitly selects the matching QID before continuing playback.
+- Queue lookup is paginated with correct HEOS start/end ranges so retained queues longer than 50 items are supported.
+- Deliberately chose restart-from-track-beginning semantics rather than attempting exact elapsed-position restoration. After a source change or power cycle, pressing Play restarts the last TIDAL track from 0:00 and then continues through the retained queue normally.
+- Verified both source-switch and AVR power-off/on scenarios on the live system.
+
+Current tested functional checkpoint:
+
+```text
+922b855 — Resume last TIDAL queue track after leaving NET
+```
+
 ## 2026-08-27 — TIDAL artist navigation, queue controls and My Music root
 
 - Changed artist selection so the touchscreen now opens the real HEOS artist root instead of jumping directly to Albums.
@@ -27,12 +45,6 @@ f6ce7a0 — Browse full TIDAL artist sections
 0597193 — Add TIDAL playlist track action menu
 c656e8d — Return to now playing for TIDAL play from here
 a865638 — Add TIDAL artist track controls
-f93602b — Make My Music the TIDAL navigation root
-```
-
-Current tested functional checkpoint:
-
-```text
 f93602b — Make My Music the TIDAL navigation root
 ```
 
