@@ -202,6 +202,9 @@ function buildTidalAlphabet() {
 
 buildTidalAlphabet();
 
+const TIDAL_UI_ROOT_CID = 'My Music';
+const TIDAL_UI_ROOT_TITLE = 'My Music';
+
 const tidalHistory = [];
 
 
@@ -639,10 +642,10 @@ async function searchTidal(query) {
 
   tidalScreen.classList.add("browsing");
   tidalHistory.length = 0;
-  tidalHistory.push({
-    cid: '__search__',
-    title: query
-  });
+  tidalHistory.push(
+    { cid: TIDAL_UI_ROOT_CID, title: TIDAL_UI_ROOT_TITLE },
+    { cid: '__search__', title: query }
+  );
 
   tidalStatus.textContent = 'Searching TIDAL…';
   tidalResults.replaceChildren();
@@ -785,9 +788,7 @@ document.addEventListener(
 
     setTidalOpen(true);
     tidalHistory.length = 0;
-    tidalScreen.classList.remove("browsing");
-    tidalResults.replaceChildren();
-    tidalStatus.textContent = "Choose a section or search TIDAL";
+    browseTidal(TIDAL_UI_ROOT_CID, TIDAL_UI_ROOT_TITLE);
   },
   true
 );
@@ -802,9 +803,7 @@ tidalBack.addEventListener('click', () => {
 
   if (tidalHistory.length === 1) {
     tidalHistory.length = 0;
-    tidalScreen.classList.remove("browsing");
-    tidalResults.replaceChildren();
-    tidalStatus.textContent = "Choose a section or search TIDAL";
+    setTidalOpen(false);
     return;
   }
 
