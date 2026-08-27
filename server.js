@@ -746,6 +746,25 @@ async function receiverControl(action, requestedVolume = null) {
     );
   }
 
+  if (action === 'heos') {
+    let input = '';
+
+    try {
+      input = await avr('SI?', 'SI', 700);
+    } catch {
+      input = '';
+    }
+
+    if (input !== 'SINET') {
+      await avr('MSSMART3');
+    }
+
+    return {
+      ok: true,
+      smartSelectSent: input !== 'SINET'
+    };
+  }
+
   const commands = {
     'power-on': 'ZMON',
     'power-off': 'ZMOFF',
@@ -753,7 +772,6 @@ async function receiverControl(action, requestedVolume = null) {
     'volume-down': 'MVDOWN',
     phono: 'MSSMART1',
     cd: 'MSSMART2',
-    heos: 'MSSMART3',
     aux: 'SIAUX1',
     "zone2-source-source": "Z2SOURCE",
     "zone2-source-phono": "Z28K",
