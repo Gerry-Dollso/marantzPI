@@ -21,6 +21,15 @@ source = source.replace(
     `let tidalResumeNeeded = false;\n`
 );
 
+const imageAnchor = `  const imageUrl = String(media.image_url || '').trim();\n`;
+if (!source.includes(imageAnchor)) {
+  throw new Error('Expected HEOS image anchor not found; refusing to edit');
+}
+source = source.replace(
+  imageAnchor,
+  `  let imageUrl = String(media.image_url || '').trim();\n`
+);
+
 const statusAnchor = `  const hasTrackInfo = isNetPlayback && Boolean(song || artist || album);\n\n  return {\n`;
 if (!source.includes(statusAnchor)) {
   throw new Error('Expected status return anchor not found; refusing to edit');
@@ -40,12 +49,27 @@ const statusReplacement = `  const hasTrackInfo = isNetPlayback && Boolean(song 
 `    lastTidalResume = {\n` +
 `      mid: mediaMid,\n` +
 `      qid: mediaQid,\n` +
+`      song,\n` +
+`      artist,\n` +
+`      album,\n` +
+`      imageUrl,\n` +
 `      position: Math.max(0, heosProgressCurrentMs / 1000),\n` +
 `      rememberedAt: Date.now()\n` +
 `    };\n` +
 `    tidalResumeNeeded = false;\n` +
 `  } else if (!isNetPlayback && lastTidalResume) {\n` +
 `    tidalResumeNeeded = true;\n` +
+`  }\n\n` +
+`  if (\n` +
+`    isNetPlayback &&\n` +
+`    tidalResumeNeeded &&\n` +
+`    playbackState === 'stop' &&\n` +
+`    lastTidalResume\n` +
+`  ) {\n` +
+`    song = String(lastTidalResume.song || song);\n` +
+`    artist = String(lastTidalResume.artist || artist);\n` +
+`    album = String(lastTidalResume.album || album);\n` +
+`    imageUrl = String(lastTidalResume.imageUrl || imageUrl);\n` +
 `  }\n\n` +
 `  return {\n`;
 
@@ -82,6 +106,24 @@ const helperAndControl = `async function getHeosQueueItems() {\n` +
 `  }\n\n` +
 `  return items;\n` +
 `}\n\n` +
+`async function waitForHeosMid(expectedMid, timeoutMs = 4000) {\n` +
+`  const pid = encodeURIComponent(config.playerId);\n` +
+`  const deadline = Date.now() + timeoutMs;\n\n` +
+`  while (Date.now() < deadline) {\n` +
+`    try {\n` +
+`      const response = await heos(\n` +
+`        \`player/get_now_playing_media?pid=\${pid}\`,\n` +
+`        1500\n` +
+`      );\n` +
+`      const activeMid = String(response?.payload?.mid || '');\n` +
+`      if (activeMid === String(expectedMid)) return true;\n` +
+`    } catch {\n` +
+`      // Retry briefly while HEOS activates the selected queue item.\n` +
+`    }\n` +
+`    await sleep(120);\n` +
+`  }\n\n` +
+`  return false;\n` +
+`}\n\n` +
 `async function resumeRememberedTidalQueue() {\n` +
 `  if (!tidalResumeNeeded || !lastTidalResume?.mid) return false;\n\n` +
 `  const queue = await getHeosQueueItems();\n` +
@@ -104,9 +146,12 @@ const helperAndControl = `async function getHeosQueueItems() {\n` +
 `  if (response?.heos?.result !== 'success') {\n` +
 `    throw new Error(response?.heos?.message || 'Could not resume HEOS queue');\n` +
 `  }\n\n` +
+`  const active = await waitForHeosMid(rememberedMid);\n` +
+`  if (!active) {\n` +
+`    throw new Error('HEOS did not activate remembered TIDAL track');\n` +
+`  }\n\n` +
 `  const position = Math.max(0, Number(lastTidalResume.position) || 0);\n` +
 `  if (position >= 2) {\n` +
-`    await sleep(350);\n` +
 `    await seekHeos(Math.floor(position));\n` +
 `  }\n\n` +
 `  tidalResumeNeeded = false;\n` +
