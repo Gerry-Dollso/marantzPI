@@ -13,10 +13,10 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-f93602b — Make My Music the TIDAL navigation root
+922b855 — Resume last TIDAL queue track after leaving NET
 ```
 
-This checkpoint includes the current TIDAL My Music root navigation, artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current TIDAL My Music root navigation, artist navigation, playlist/artist track queue controls, guarded HEOS Smart Select behaviour, retained TIDAL queue resume behaviour, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
 
 ## Current feature set
 
@@ -30,6 +30,7 @@ This checkpoint includes the current TIDAL My Music root navigation, artist navi
 - Artist -> Tracks has PLAY ALL and SHUFFLE ALL plus the same individual-track queue options as playlists.
 - PLAY NEXT and ADD TO END retain the current browser view. PLAY NOW, PLAY FROM HERE and PLAY ONLY return to Now Playing; Play From Here returns immediately while the HP backend finishes rebuilding the remaining queue.
 - Albums and EPs/Singles deliberately retain their existing simpler album playback behaviour; this track-option UI is not applied to them.
+- When TIDAL/NET is left for another AVR source or the AVR is powered off, the Pi remembers the last genuine TIDAL track and retained HEOS queue position. While resume is armed, Now Playing uses that remembered metadata rather than unreliable stale stopped HEOS metadata. Pressing Play explicitly finds that MID in the retained queue and restarts the remembered track from the beginning, after which HEOS continues normally through the remaining queue. Restart-from-track-beginning is the deliberate resume policy; exact elapsed-position restoration is not attempted.
 - TIDAL voice-search fallback surfaced on the touchscreen.
 - Touchscreen confirmation/learning for misheard TIDAL artists and tracks; learned mappings are persisted by the HP backend.
 - HEOS favourites / internet-radio browser.
@@ -59,6 +60,8 @@ LIBARTIST-<id>
 Do not collapse artist navigation back to an Albums-only shortcut.
 
 The shared track-action UI is intentionally limited to list-style containers where queue semantics are appropriate: playlists and `LIBARTIST-Tracks-*`. Album/EP playback remains separate.
+
+TIDAL resume must not trust `get_now_playing_media.qid` after leaving NET: live testing showed HEOS can retain the previous track metadata while incorrectly reporting `qid=1`. Resume therefore remembers the last genuine TIDAL MID and resolves that MID against the retained HEOS queue before issuing `play_queue`. The chosen user-facing policy is to restart that last track from 0:00 rather than attempting unreliable cross-source/power elapsed-position restoration.
 
 Longer-term rich/Roon-like artist UI work should build on these proven containers and on metadata confirmed by the HP backend rather than designing around assumed TIDAL fields.
 
