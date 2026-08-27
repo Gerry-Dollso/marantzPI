@@ -63,8 +63,9 @@ const helperAndControl = `async function getHeosQueueItems() {\n` +
 `  let start = 0;\n` +
 `  let total = null;\n\n` +
 `  while (total === null || start < total) {\n` +
+`    const end = start + pageSize - 1;\n` +
 `    const response = await heos(\n` +
-`      \`player/get_queue?pid=\${pid}&range=\${start},\${pageSize}\`,\n` +
+`      \`player/get_queue?pid=\${pid}&range=\${start},\${end}\`,\n` +
 `      5000,\n` +
 `      true\n` +
 `    );\n\n` +
