@@ -40,6 +40,8 @@ let heosProgressCurrentMs = 0;
 let heosProgressDurationMs = 0;
 let heosProgressSocket = null;
 let heosProgressReconnectTimer = null;
+let lastTidalResume = null;
+let tidalResumeNeeded = false;
 
 
 
@@ -490,7 +492,7 @@ async function getStatus() {
   let song = String(media.song || '').trim();
   let artist = String(media.artist || '').trim();
   let album = String(media.album || media.station || '').trim();
-  const imageUrl = String(media.image_url || '').trim();
+  let imageUrl = String(media.image_url || '').trim();
   const isNetPlayback =
     receiver.power === 'on' && receiver.inputCode === 'NET';
   const genericUrlStream = [song, artist, album].some(
@@ -524,6 +526,43 @@ async function getStatus() {
         ? 'tidal'
         : 'other-net';
   const hasTrackInfo = isNetPlayback && Boolean(song || artist || album);
+
+  const mediaMid = String(media.mid || '').trim();
+  const mediaQid = Number(media.qid);
+  const playbackState = String(state.state || 'unknown');
+
+  if (
+    isNetPlayback &&
+    playbackSource === 'tidal' &&
+    mediaMid &&
+    Number.isFinite(mediaQid) &&
+    (playbackState === 'play' || playbackState === 'pause')
+  ) {
+    lastTidalResume = {
+      mid: mediaMid,
+      qid: mediaQid,
+      song,
+      artist,
+      album,
+      imageUrl,
+      rememberedAt: Date.now()
+    };
+    tidalResumeNeeded = false;
+  } else if (!isNetPlayback && lastTidalResume) {
+    tidalResumeNeeded = true;
+  }
+
+  if (
+    isNetPlayback &&
+    tidalResumeNeeded &&
+    playbackState === 'stop' &&
+    lastTidalResume
+  ) {
+    song = String(lastTidalResume.song || song);
+    artist = String(lastTidalResume.artist || artist);
+    album = String(lastTidalResume.album || album);
+    imageUrl = String(lastTidalResume.imageUrl || imageUrl);
+  }
 
   return {
     connected:
@@ -591,8 +630,84 @@ async function seekHeos(seconds) {
   return { ok: true, position: total };
 }
 
+async function getHeosQueueItems() {
+  const pid = encodeURIComponent(config.playerId);
+  const pageSize = 50;
+  const items = [];
+  let start = 0;
+  let total = null;
+
+  while (total === null || start < total) {
+    const end = start + pageSize - 1;
+    const response = await heos(
+      `player/get_queue?pid=${pid}&range=${start},${end}`,
+      5000,
+      true
+    );
+
+    if (response?.heos?.result !== 'success') {
+      throw new Error(response?.heos?.message || 'Could not read HEOS queue');
+    }
+
+    const page = Array.isArray(response.payload) ? response.payload : [];
+    items.push(...page);
+
+    const values = params(response);
+    const parsedCount = Number(values.count);
+    total = Number.isFinite(parsedCount) ? parsedCount : items.length;
+
+    if (!page.length) break;
+    start += page.length;
+  }
+
+  return items;
+}
+
+async function resumeRememberedTidalQueue() {
+  if (!tidalResumeNeeded || !lastTidalResume?.mid) return false;
+
+  const queue = await getHeosQueueItems();
+  const rememberedMid = String(lastTidalResume.mid);
+  const rememberedQid = String(lastTidalResume.qid);
+
+  const exact = queue.find(item =>
+    String(item?.mid || '') === rememberedMid &&
+    String(item?.qid || '') === rememberedQid
+  );
+  const match = exact || queue.find(item =>
+    String(item?.mid || '') === rememberedMid
+  );
+
+  if (!match?.qid) return false;
+
+  const pid = encodeURIComponent(config.playerId);
+  const response = await heos(
+    `player/play_queue?pid=${pid}&qid=${encodeURIComponent(match.qid)}`,
+    5000,
+    true
+  );
+
+  if (response?.heos?.result !== 'success') {
+    throw new Error(response?.heos?.message || 'Could not resume HEOS queue');
+  }
+
+  tidalResumeNeeded = false;
+  lastTidalResume = {
+    ...lastTidalResume,
+    qid: Number(match.qid),
+    rememberedAt: Date.now()
+  };
+
+  return true;
+}
+
 async function heosControl(action) {
   const pid = encodeURIComponent(config.playerId);
+
+  if (action === 'play' && await resumeRememberedTidalQueue()) {
+    return { ok: true, resumedQueue: true };
+  }
+
   const commands = {
     play: `player/set_play_state?pid=${pid}&state=play`,
     pause: `player/set_play_state?pid=${pid}&state=pause`,
