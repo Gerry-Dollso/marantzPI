@@ -2,6 +2,30 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-08-28 — Full My Music Albums browser and Play Random
+
+- Removed the old 50-album paging restriction from `My Music-Albums`.
+- The touchscreen now requests and displays the complete saved-album collection as one continuous collection.
+- Added an `ALL / A-Z` side filter using the same interaction pattern as Artists. Album filtering is deliberately based on **album title**, while the artist remains displayed beneath each album.
+- Added **PLAY RANDOM** to Albums.
+- PLAY RANDOM always selects from the complete saved-album collection, regardless of the currently selected alphabet filter. The letter filter affects browsing only.
+- After choosing an album, the Pi uses the existing album-tracks endpoint, selects track 1 and invokes the established album playback path. The tracks inside the selected album are not shuffled.
+- Live touchscreen testing confirmed a random album starts playing correctly.
+- An earlier PLAY RANDOM attempt returned a HEOS system error while an old HP Favourite Tracks full-library queue builder was still running. This was diagnosed as backend lifecycle/concurrency interference rather than an Albums implementation fault. After the HP cancellation/drain fix and clean restart, the same Albums PLAY RANDOM path worked normally.
+
+Checkpoint sequence:
+
+```text
+6ca4449 — Add My Music Albums UI migration
+fc418d2 — Upgrade TIDAL My Music albums browsing
+```
+
+Current tested functional checkpoint:
+
+```text
+fc418d2 — Upgrade TIDAL My Music albums browsing
+```
+
 ## 2026-08-27 — Full Favourite Tracks browser and playback
 
 - Removed the old 50-track paging restriction from `My Music-Tracks`.
@@ -25,7 +49,7 @@ e0adc71 — Add guarded full favourite tracks migration
 4d1eeda — Show full TIDAL favourite tracks list
 ```
 
-Current tested functional checkpoint:
+Tested functional checkpoint at this stage:
 
 ```text
 4d1eeda — Show full TIDAL favourite tracks list
