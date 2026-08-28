@@ -13,10 +13,10 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-4d1eeda — Show full TIDAL favourite tracks list
+fc418d2 — Upgrade TIDAL My Music albums browsing
 ```
 
-This checkpoint includes the current TIDAL My Music root navigation, full Favourite Tracks browsing, playlist/artist/favourite-track queue controls, guarded HEOS Smart Select behaviour, retained TIDAL queue resume behaviour, Now Playing artist/album navigation, direct TIDAL-browser return-to-Now-Playing shortcut, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current TIDAL My Music root navigation, full Favourite Tracks browsing, upgraded full-library Albums browsing with A-Z filtering and Play Random, playlist/artist/favourite-track queue controls, guarded HEOS Smart Select behaviour, retained TIDAL queue resume behaviour, Now Playing artist/album navigation, direct TIDAL-browser return-to-Now-Playing shortcut, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
 
 ## Current feature set
 
@@ -31,17 +31,36 @@ This checkpoint includes the current TIDAL My Music root navigation, full Favour
 - Tapping the album title opens the canonical album page without interrupting playback.
 - Playlist controls include PLAY ALL and SHUFFLE ALL. Individual playlist tracks expose PLAY NOW, PLAY NEXT, ADD TO END, PLAY FROM HERE and PLAY ONLY.
 - Artist -> Tracks has PLAY ALL and SHUFFLE ALL plus the same individual-track queue menu.
-- **My Music -> Tracks now displays the complete favourite-track collection as one continuous playlist-style list rather than 50-track pages.** Live implementation testing reported 576 favourite tracks.
+- **My Music -> Tracks displays the complete favourite-track collection as one continuous playlist-style list rather than 50-track pages.**
 - Favourite Tracks has **PLAY ALL** and **SHUFFLE ALL** over the complete collection, not merely the first/current 50 tracks.
 - Favourite Tracks individual entries use the same five-option track menu as playlists and Artist -> Tracks.
+- **My Music -> Albums displays the complete saved-album collection as one continuous collection rather than 50-album pages.**
+- Albums has the same side **ALL / A-Z** navigation pattern as Artists. Filtering is by album title; the artist remains displayed beneath each album.
+- Albums has **PLAY RANDOM**, which chooses from the complete saved-album collection regardless of the currently selected letter and starts the selected album from track 1 through the existing album playback path.
+- PLAY RANDOM was live-tested successfully on the touchscreen. The earlier failed attempt was traced to a still-running HP Favourite Tracks queue builder; after the backend lifecycle fix and clean restart, random album playback started correctly.
 - PLAY NEXT and ADD TO END retain the browser view. PLAY NOW, PLAY FROM HERE and PLAY ONLY return to Now Playing.
-- Albums and EPs/Singles deliberately retain their simpler album playback flow.
+- Albums and EPs/Singles otherwise retain their simpler album playback flow.
 - When TIDAL/NET is left for another source or the AVR is powered off, the Pi remembers the last genuine TIDAL track and retained HEOS queue position. Pressing Play restarts that remembered track from the beginning and then continues through the retained queue.
 - TIDAL voice-search fallback and persistent touchscreen confirmation/learning remain available.
 - HEOS favourites / internet-radio browser.
 - Receiver volume controls, touch volume slider and tap-to-seek track progress.
 - Zone 2 / Zone 3 controls, standby/TV/projector display modes and physical panel power management.
 - Direct link to AVR settings with kiosk-history protection.
+
+## My Music Albums architecture
+
+`My Music-Albums` no longer uses the former 50-item page loader. The Pi requests the complete Albums container and keeps that full result in `tidalAlbumItems` while the browser is open.
+
+The side alphabet control is shared conceptually with Artists but maintains independent album state. `ALL` shows the complete collection; A-Z filters the stored full collection by the first character of the **album title**, not the artist name. Album rows continue to show their artist underneath.
+
+`PLAY RANDOM` deliberately selects from `tidalAlbumItems`, not from the currently filtered subset. A selected letter is therefore only a browsing aid and never changes the random-album population. Once an album is chosen, the Pi fetches its existing album-track endpoint, takes the first playable track and invokes the established album playback path using the album CID and first MID. Tracks inside the selected album are not shuffled.
+
+Guarded migration checkpoint:
+
+```text
+6ca4449 — Add My Music Albums UI migration
+fc418d2 — Upgrade TIDAL My Music albums browsing
+```
 
 ## Favourite Tracks architecture
 
@@ -57,7 +76,7 @@ For playback, the Pi proxies full-library requests to the HP endpoint:
 
 The HP begins playback with the first selected MID and appends the rest sequentially in the background. For Shuffle All, the HP randomises the complete favourites list before starting the first track, so the resulting queue order represents the entire collection.
 
-The Pi proxy allows up to 180 seconds for the full-library queue-building request. This long HTTP allowance does not mean the user waits for 180 seconds before hearing music: live testing showed playback begins from the first selected track while the queue continues growing quietly behind it.
+The Pi proxy allows up to 180 seconds for the full-library queue-building request. This long HTTP allowance does not mean the user waits for 180 seconds before hearing music: live testing showed playback begins from the first selected track while the queue continues growing quietly behind it. The HP now also cancels and drains a superseded long Favourite Tracks build before a newer TIDAL playback action takes over, preventing an abandoned builder from interfering with later album/track playback.
 
 Do not restore the old `loadTidalTrackPage()` special case for `My Music-Tracks` unless there is a deliberate reason to reintroduce paging. Favourite Tracks is now intentionally classified as a track-list container alongside playlists and `LIBARTIST-Tracks-*`.
 
