@@ -985,7 +985,35 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, { instanceId: serverInstanceId });
     }
 
-      if (req.method === 'GET' && url.pathname === '/api/tidal/search') {
+      if (req.method === 'GET' && url.pathname === '/api/tidal/personalised') {
+      const result = await mediaBackendRequest(
+        '/api/tidal/personalised',
+        'GET',
+        15000
+      );
+
+      return sendJson(res, 200, result);
+    }
+
+    if (
+      req.method === 'GET' &&
+      url.pathname === '/api/tidal/personalised/playlist'
+    ) {
+      const id = String(url.searchParams.get('id') || '').trim();
+      if (!/^[a-zA-Z0-9]+$/.test(id)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid playlist id' });
+      }
+
+      const result = await mediaBackendRequest(
+        '/api/tidal/personalised/playlist?id=' + encodeURIComponent(id),
+        'GET',
+        40000
+      );
+
+      return sendJson(res, 200, result);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/tidal/search') {
         const query = url.searchParams.get('q') || '';
 
         const result = await mediaBackendRequest(
