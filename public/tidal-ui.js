@@ -117,7 +117,12 @@ function openTidalTrackActionMenu(button, name) {
     return;
   }
 
-  tidalTrackActionSelection = { cid, mid, name: name || 'Track' };
+  tidalTrackActionSelection = {
+    cid,
+    mid,
+    name: name || 'Track',
+    personalised: button?.dataset?.type === 'personalised-song'
+  };
   tidalTrackActionName.textContent = name || 'Track';
   tidalTrackActionOverlay.classList.add('open');
   tidalTrackActionOverlay.setAttribute('aria-hidden', 'false');
@@ -132,6 +137,11 @@ async function runTidalTrackAction(action, actionButton) {
     return;
   }
 
+  if (selection.personalised && action === 'play-from-here') {
+    tidalStatus.textContent = 'Play From Here is not available for My Mixes yet';
+    return;
+  }
+
   actionButton.disabled = true;
   actionButton.classList.add('loading');
 
@@ -141,12 +151,14 @@ async function runTidalTrackAction(action, actionButton) {
   }
 
   try {
-    const response = await fetch(
-      '/api/tidal/track/action?cid=' + encodeURIComponent(selection.cid) +
-      '&mid=' + encodeURIComponent(selection.mid) +
-      '&action=' + encodeURIComponent(action),
-      { cache: 'no-store' }
-    );
+    const actionUrl = selection.personalised
+      ? '/api/tidal/play-resolved?id=' + encodeURIComponent(selection.mid) +
+        '&action=' + encodeURIComponent(action)
+      : '/api/tidal/track/action?cid=' + encodeURIComponent(selection.cid) +
+        '&mid=' + encodeURIComponent(selection.mid) +
+        '&action=' + encodeURIComponent(action);
+
+    const response = await fetch(actionUrl, { cache: 'no-store' });
     const result = await response.json();
 
     if (!response.ok || result.ok === false) {
@@ -1362,7 +1374,9 @@ tidalResults.addEventListener('click', async event => {
   }
 
   if (button.dataset.type === 'personalised-song') {
-    tidalStatus.textContent = 'Personalised track playback is not enabled yet';
+    const label = button.querySelector('.tidal-artist-name');
+    const name = label ? label.textContent.trim() : '';
+    openTidalTrackActionMenu(button, name);
     return;
   }
 
