@@ -210,6 +210,8 @@ buildTidalAlphabet();
 
 const TIDAL_UI_ROOT_CID = 'My Music';
 const TIDAL_UI_ROOT_TITLE = 'My Music';
+const TIDAL_PERSONALISED_CID = '__personalised__';
+const TIDAL_PERSONALISED_PLAYLIST_PREFIX = '__personalised_playlist__:';
 
 const tidalHistory = [];
 
@@ -481,6 +483,7 @@ async function loadTidalTrackPage(page = 0) {
       ? result.items
       : [];
 
+
     tidalTrackTotal = Number(result.count) || items.length;
 
     tidalResults.replaceChildren();
@@ -539,6 +542,108 @@ async function openTidalArtistFromNowPlaying(cid, title) {
   await browseTidal(artistCid, title || 'Artist');
 }
 
+function makeTidalPersonalisedPlaylistButton(playlist) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'tidal-artist tidal-browse-item';
+  button.dataset.personalisedPlaylistId = String(playlist.id || '');
+
+  const artwork = document.createElement('span');
+  artwork.className = 'tidal-artist-artwork';
+
+  const text = document.createElement('span');
+  text.className = 'tidal-browse-text';
+
+  const name = document.createElement('span');
+  name.className = 'tidal-artist-name';
+  name.textContent = playlist.name || 'TIDAL playlist';
+  text.appendChild(name);
+
+  button.append(artwork, text);
+  return button;
+}
+
+async function loadTidalPersonalised(pushHistory = true) {
+  if (pushHistory) {
+    tidalHistory.push({ cid: TIDAL_PERSONALISED_CID, title: 'My Mixes' });
+  }
+
+  tidalScreen.classList.add('browsing');
+  setTidalKeyboardOpen(false);
+  tidalSearchInput.blur();
+  setTidalAlphabetVisible(false);
+  tidalStatus.textContent = 'Loading My Mixes…';
+  tidalResults.replaceChildren();
+
+  try {
+    const response = await fetch('/api/tidal/personalised', { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not load My Mixes');
+    }
+
+    const playlists = Array.isArray(result.playlists) ? result.playlists : [];
+    tidalStatus.textContent = 'My Mixes — ' + playlists.length + ' playlists';
+    playlists.forEach(playlist => {
+      tidalResults.appendChild(makeTidalPersonalisedPlaylistButton(playlist));
+    });
+    tidalResults.scrollTop = 0;
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+  }
+}
+
+async function loadTidalPersonalisedPlaylist(id, title, pushHistory = true) {
+  const playlistId = String(id || '').trim();
+  if (!/^[a-zA-Z0-9]+$/.test(playlistId)) {
+    tidalStatus.textContent = 'Invalid personalised playlist';
+    return;
+  }
+
+  if (pushHistory) {
+    tidalHistory.push({
+      cid: TIDAL_PERSONALISED_PLAYLIST_PREFIX + playlistId,
+      title: title || 'Playlist'
+    });
+  }
+
+  tidalScreen.classList.add('browsing');
+  setTidalKeyboardOpen(false);
+  tidalSearchInput.blur();
+  setTidalAlphabetVisible(false);
+  tidalStatus.textContent = 'Loading ' + (title || 'playlist') + '…';
+  tidalResults.replaceChildren();
+
+  try {
+    const response = await fetch(
+      '/api/tidal/personalised/playlist?id=' + encodeURIComponent(playlistId),
+      { cache: 'no-store' }
+    );
+    const result = await response.json();
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not load personalised playlist');
+    }
+
+    const tracks = Array.isArray(result.tracks) ? result.tracks : [];
+    tidalResults.replaceChildren();
+    tracks.forEach(track => {
+      tidalResults.appendChild(makeBrowseButton({
+        type: 'personalised-song',
+        name: track.title,
+        artist: track.artist,
+        imageUrl: track.artwork,
+        mid: track.id,
+        albumId: track.albumId
+      }));
+    });
+    tidalStatus.textContent = (result.playlist?.name || title || 'Playlist') +
+      ' — ' + tracks.length + ' tracks';
+    tidalResults.scrollTop = 0;
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+  }
+}
+
 async function browseTidal(cid, title, pushHistory = true) {
   if (cid !== 'My Music-Albums') {
     tidalShowAlbumArtists = false;
@@ -589,6 +694,16 @@ async function browseTidal(cid, title, pushHistory = true) {
       ? result.items
       : [];
 
+    if (cid === TIDAL_UI_ROOT_CID) {
+      items.push({
+        type: 'personalised',
+        name: 'My Mixes',
+        cid: TIDAL_PERSONALISED_CID,
+        container: true,
+        playable: false
+      });
+    }
+
     if (cid === 'My Music-Artists') {
       tidalArtistItems = items;
       tidalArtistLetter = 'ALL';
@@ -611,6 +726,12 @@ async function browseTidal(cid, title, pushHistory = true) {
 }
 
 tidalShortcuts.addEventListener('click', event => {
+  const personalised = event.target.closest('[data-tidal-personalised]');
+  if (personalised) {
+    loadTidalPersonalised();
+    return;
+  }
+
   const button = event.target.closest('[data-tidal-cid]');
   if (!button) return;
 
@@ -824,7 +945,17 @@ tidalBack.addEventListener('click', () => {
   if (tidalHistory.length > 1) {
     tidalHistory.pop();
     const previous = tidalHistory[tidalHistory.length - 1];
-    browseTidal(previous.cid, previous.title, false);
+    if (previous.cid === TIDAL_PERSONALISED_CID) {
+      loadTidalPersonalised(false);
+    } else if (previous.cid.startsWith(TIDAL_PERSONALISED_PLAYLIST_PREFIX)) {
+      loadTidalPersonalisedPlaylist(
+        previous.cid.slice(TIDAL_PERSONALISED_PLAYLIST_PREFIX.length),
+        previous.title,
+        false
+      );
+    } else {
+      browseTidal(previous.cid, previous.title, false);
+    }
     return;
   }
 
@@ -1221,6 +1352,20 @@ tidalResults.addEventListener('click', async event => {
   const button = event.target.closest('.tidal-artist');
   if (!button) return;
 
+  if (button.dataset.personalisedPlaylistId) {
+    const label = button.querySelector('.tidal-artist-name');
+    loadTidalPersonalisedPlaylist(
+      button.dataset.personalisedPlaylistId,
+      label ? label.textContent.trim() : 'Playlist'
+    );
+    return;
+  }
+
+  if (button.dataset.type === 'personalised-song') {
+    tidalStatus.textContent = 'Personalised track playback is not enabled yet';
+    return;
+  }
+
   const label = button.querySelector('.tidal-artist-name');
   const name = label ? label.textContent.trim() : '';
 
@@ -1281,7 +1426,9 @@ tidalResults.addEventListener('click', async event => {
   }
 
   if (button.classList.contains('tidal-browse-item')) {
-    if (button.dataset.type === 'artist') {
+    if (button.dataset.type === 'personalised') {
+      loadTidalPersonalised();
+    } else if (button.dataset.type === 'artist') {
       browseTidal(button.dataset.cid, name);
     } else if (button.dataset.type === 'album') {
       loadTidalAlbumTracks(button.dataset.cid, name);
