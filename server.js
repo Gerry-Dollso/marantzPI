@@ -1013,6 +1013,34 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/tidal/play-resolved') {
+      const id = String(url.searchParams.get('id') || '').trim();
+      const action = String(url.searchParams.get('action') || '').trim();
+      const allowedActions = new Set([
+        'play-now',
+        'play-next',
+        'add-end',
+        'play-only'
+      ]);
+
+      if (!/^\d+$/.test(id)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid track id' });
+      }
+
+      if (!allowedActions.has(action)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid track action' });
+      }
+
+      const result = await mediaBackendRequest(
+        '/api/tidal/play-resolved?id=' + encodeURIComponent(id) +
+        '&action=' + encodeURIComponent(action),
+        'GET',
+        60000
+      );
+
+      return sendJson(res, 200, result);
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/tidal/search') {
         const query = url.searchParams.get('q') || '';
 
