@@ -444,7 +444,7 @@ async function getReceiverStatus() {
   const muteLine = value(3);
 
   return {
-    power: powerLine === 'ZMON' ? 'on' : 'standby',
+    power: powerLine === 'ZMON' ? 'on' : powerLine === 'ZMOFF' ? 'standby' : 'unknown',
     zone2Power: zone2Line === 'Z2ON' ? 'on' : 'off',
     zone3Power: zone3Line === 'Z3ON' ? 'on' : 'off',
     input: inputLabel(inputLine),
@@ -550,7 +550,12 @@ async function getStatus() {
       rememberedAt: Date.now()
     };
     tidalResumeNeeded = false;
-  } else if (!isNetPlayback && lastTidalResume) {
+  } else if (
+    lastTidalResume &&
+    receiver.power !== 'unknown' &&
+    receiver.inputCode !== 'UNKNOWN' &&
+    !isNetPlayback
+  ) {
     tidalResumeNeeded = true;
   }
 
