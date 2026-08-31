@@ -11,9 +11,9 @@ function replaceOnce(source, oldText, newText, label) {
 let readme = fs.readFileSync('README.md', 'utf8');
 readme = replaceOnce(
   readme,
-  'fc418d2 — Upgrade TIDAL My Music albums browsing',
-  'a65f1b5 — Add rich personalised TIDAL landing cards',
-  'README checkpoint'
+  'Current tested functional checkpoint:\n\n```text\nfc418d2 — Upgrade TIDAL My Music albums browsing\n```',
+  'Current tested functional checkpoint:\n\n```text\na65f1b5 — Add rich personalised TIDAL landing cards\n```',
+  'README current checkpoint block'
 );
 readme = replaceOnce(
   readme,
