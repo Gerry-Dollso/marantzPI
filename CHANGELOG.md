@@ -2,6 +2,30 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-08-31 — Rich personalised TIDAL UI checkpoint
+
+- Completed the touchscreen My Mixes flow for official TIDAL personalised recommendations: My Mix 1-8, My Daily Discovery and My New Arrivals.
+- Personalised track rows now retain and display official TIDAL album metadata alongside title, artist and artwork.
+- Added PLAY ALL and SHUFFLE ALL controls for personalised playlists through the HP backend's fast resolved/background queue builder. Live My Mix 1 testing began playback in about 2.34 seconds and the background build completed all 39 tracks with zero skips.
+- Added official TIDAL recommendation descriptions to the landing cards.
+- Added progressive 2x2 artwork collages using up to four distinct official TIDAL album covers from each playlist. Cards render before artwork enrichment; enrichment is limited to three concurrent workers and fails softly.
+- Live touchscreen testing confirmed the richer landing-card layout and artwork behaviour.
+- Individual personalised tracks support PLAY NOW, PLAY NEXT, ADD TO END and PLAY ONLY. PLAY FROM HERE remains intentionally unavailable for My Mixes for now.
+
+Checkpoint sequence:
+
+```text
+ce18540 — Show richer personalised TIDAL track metadata
+a7e4970 — Complete personalised TIDAL playback controls
+a65f1b5 — Add rich personalised TIDAL landing cards
+```
+
+Current tested functional checkpoint:
+
+```text
+a65f1b5 — Add rich personalised TIDAL landing cards
+```
+
 ## 2026-08-28 — Full My Music Albums browser and Play Random
 
 - Removed the old 50-album paging restriction from `My Music-Albums`.
