@@ -42,8 +42,19 @@ let heosProgressSocket = null;
 let heosProgressReconnectTimer = null;
 let lastTidalResume = null;
 let tidalResumeNeeded = false;
+let tidalQueueTransition = null;
+const TIDAL_QUEUE_TRANSITION_TIMEOUT_MS = 10000;
+function startTidalQueueTransition(expectedMid = "") {
+  tidalQueueTransition = {
+    expectedMid: String(expectedMid || ""),
+    hold: lastTidalResume ? { ...lastTidalResume } : null,
+    startedAt: Date.now()
+  };
+}
 
-
+function clearTidalQueueTransition() {
+  tidalQueueTransition = null;
+}
 
 const execFileAsync = promisify(execFile);
 
@@ -531,8 +542,32 @@ async function getStatus() {
   const mediaAlbumId = String(media.album_id || '').trim();
   const mediaQid = Number(media.qid);
   const playbackState = String(state.state || 'unknown');
+  let tidalQueueTransitionActive = false;
+  if (tidalQueueTransition) {
+    const expired =
+      Date.now() - tidalQueueTransition.startedAt >
+      TIDAL_QUEUE_TRANSITION_TIMEOUT_MS;
+    const expectedMid = String(tidalQueueTransition.expectedMid || "");
+
+    if (expired) {
+      clearTidalQueueTransition();
+    } else if (expectedMid && mediaMid === expectedMid) {
+      clearTidalQueueTransition();
+    } else {
+      tidalQueueTransitionActive = true;
+      const hold = tidalQueueTransition.hold;
+      if (hold) {
+        song = String(hold.song || song);
+        artist = String(hold.artist || artist);
+        album = String(hold.album || album);
+        imageUrl = String(hold.imageUrl || imageUrl);
+      }
+    }
+  }
+
 
   if (
+    !tidalQueueTransitionActive &&
     isNetPlayback &&
     playbackSource === 'tidal' &&
     mediaMid &&
@@ -565,6 +600,7 @@ async function getStatus() {
   }
 
   if (
+    !tidalQueueTransitionActive &&
     isNetPlayback &&
     tidalResumeNeeded &&
     playbackState === 'stop' &&
@@ -585,16 +621,20 @@ async function getStatus() {
     album,
     tidalMid: playbackSource === 'tidal'
       ? String(
-          tidalResumeNeeded && lastTidalResume?.mid
-            ? lastTidalResume.mid
-            : mediaMid || ''
+          tidalQueueTransitionActive && tidalQueueTransition?.hold?.mid
+            ? tidalQueueTransition.hold.mid
+            : tidalResumeNeeded && lastTidalResume?.mid
+              ? lastTidalResume.mid
+              : mediaMid || ""
         )
       : '',
     tidalAlbumId: playbackSource === 'tidal'
       ? String(
-          tidalResumeNeeded && lastTidalResume?.albumId
-            ? lastTidalResume.albumId
-            : mediaAlbumId || ''
+          tidalQueueTransitionActive && tidalQueueTransition?.hold?.albumId
+            ? tidalQueueTransition.hold.albumId
+            : tidalResumeNeeded && lastTidalResume?.albumId
+              ? lastTidalResume.albumId
+              : mediaAlbumId || ''
         )
       : '',
     playbackSource,
@@ -707,14 +747,28 @@ async function resumeRememberedTidalQueue() {
   if (!match?.qid) return false;
 
   const pid = encodeURIComponent(config.playerId);
-  const response = await heos(
-    `player/play_queue?pid=${pid}&qid=${encodeURIComponent(match.qid)}`,
-    5000,
-    true
-  );
+  startTidalQueueTransition(rememberedMid);
+  const transition = tidalQueueTransition;
+  let response;
 
-  if (response?.heos?.result !== 'success') {
-    throw new Error(response?.heos?.message || 'Could not resume HEOS queue');
+  try {
+    response = await heos(
+      `player/play_queue?pid=${pid}&qid=${encodeURIComponent(match.qid)}`,
+      5000,
+      true
+    );
+  } catch (error) {
+    if (tidalQueueTransition === transition) {
+      clearTidalQueueTransition();
+    }
+    throw error;
+  }
+
+  if (response?.heos?.result !== "success") {
+    if (tidalQueueTransition === transition) {
+      clearTidalQueueTransition();
+    }
+    throw new Error(response?.heos?.message || "Could not resume HEOS queue");
   }
 
   tidalResumeNeeded = false;
@@ -1034,14 +1088,31 @@ http.createServer(async (req, res) => {
         return sendJson(res, 400, { ok: false, error: 'Invalid playlist id' });
       }
 
-      const result = await mediaBackendRequest(
-        '/api/tidal/personalised/playlist/play?id=' + encodeURIComponent(id) +
-        '&shuffle=' + shuffle,
-        'GET',
-        60000
-      );
+      startTidalQueueTransition();
+      const transition = tidalQueueTransition;
 
-      return sendJson(res, 200, result);
+      try {
+        const result = await mediaBackendRequest(
+          '/api/tidal/personalised/playlist/play?id=' + encodeURIComponent(id) +
+          '&shuffle=' + shuffle,
+          'GET',
+          60000
+        );
+
+        if (tidalQueueTransition === transition) {
+          transition.expectedMid = String(result.firstMid || "");
+          if (transition.expectedMid === "") {
+            clearTidalQueueTransition();
+          }
+        }
+
+        return sendJson(res, 200, result);
+      } catch (error) {
+        if (tidalQueueTransition === transition) {
+          clearTidalQueueTransition();
+        }
+        throw error;
+      }
     }
 
     if (req.method === 'GET' && url.pathname === '/api/tidal/play-resolved') {
