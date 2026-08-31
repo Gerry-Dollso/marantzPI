@@ -8,6 +8,43 @@ const tidalSearchInput = document.getElementById('tidalSearchInput');
 const tidalStatus = document.getElementById('tidalStatus');
 const tidalResults = document.getElementById('tidalResults');
 
+const tidalPersonalisedControls = document.createElement('div');
+tidalPersonalisedControls.className = 'tidal-personalised-controls';
+tidalPersonalisedControls.hidden = true;
+
+const tidalPersonalisedPlayAll = document.createElement('button');
+tidalPersonalisedPlayAll.type = 'button';
+tidalPersonalisedPlayAll.dataset.personalisedPlaylistAction = 'play-all';
+tidalPersonalisedPlayAll.textContent = 'PLAY ALL';
+
+const tidalPersonalisedShuffleAll = document.createElement('button');
+tidalPersonalisedShuffleAll.type = 'button';
+tidalPersonalisedShuffleAll.dataset.personalisedPlaylistAction = 'shuffle-all';
+tidalPersonalisedShuffleAll.textContent = 'SHUFFLE ALL';
+
+tidalPersonalisedControls.append(
+  tidalPersonalisedPlayAll,
+  tidalPersonalisedShuffleAll
+);
+tidalSearchForm.insertAdjacentElement('afterend', tidalPersonalisedControls);
+
+function setTidalPersonalisedChrome(mode = 'normal', playlistId = '') {
+  const personalised = mode === 'landing' || mode === 'playlist';
+  const playlist = mode === 'playlist';
+
+  tidalSearchForm.hidden = personalised;
+  tidalPersonalisedControls.hidden = !playlist;
+
+  const id = playlist ? String(playlistId || '') : '';
+  tidalPersonalisedPlayAll.dataset.personalisedPlaylistId = id;
+  tidalPersonalisedShuffleAll.dataset.personalisedPlaylistId = id;
+
+  tidalPersonalisedPlayAll.disabled = false;
+  tidalPersonalisedShuffleAll.disabled = false;
+  tidalPersonalisedPlayAll.classList.remove('loading');
+  tidalPersonalisedShuffleAll.classList.remove('loading');
+}
+
 function setTidalOpen(open) {
   document.body.classList.toggle("show-tidal", open);
   tidalScreen.setAttribute("aria-hidden", String(!open));
@@ -584,6 +621,8 @@ function makeTidalPersonalisedPlaylistButton(playlist) {
 }
 
 async function loadTidalPersonalised(pushHistory = true) {
+  setTidalPersonalisedChrome('landing');
+
   if (pushHistory) {
     tidalHistory.push({ cid: TIDAL_PERSONALISED_CID, title: 'My Mixes' });
   }
@@ -620,6 +659,8 @@ async function loadTidalPersonalisedPlaylist(id, title, pushHistory = true) {
     return;
   }
 
+  setTidalPersonalisedChrome('playlist', playlistId);
+
   if (pushHistory) {
     tidalHistory.push({
       cid: TIDAL_PERSONALISED_PLAYLIST_PREFIX + playlistId,
@@ -646,6 +687,7 @@ async function loadTidalPersonalisedPlaylist(id, title, pushHistory = true) {
 
     const tracks = Array.isArray(result.tracks) ? result.tracks : [];
     tidalResults.replaceChildren();
+
     tracks.forEach(track => {
       tidalResults.appendChild(makeBrowseButton({
         type: 'personalised-song',
@@ -666,6 +708,8 @@ async function loadTidalPersonalisedPlaylist(id, title, pushHistory = true) {
 }
 
 async function browseTidal(cid, title, pushHistory = true) {
+  setTidalPersonalisedChrome('normal');
+
   if (cid !== 'My Music-Albums') {
     tidalShowAlbumArtists = false;
   }
@@ -806,6 +850,7 @@ function renderArtists(artists) {
 }
 
 async function searchTidal(query) {
+  setTidalPersonalisedChrome('normal');
   setTidalKeyboardOpen(false);
   tidalSearchInput.blur();
 
@@ -1286,6 +1331,43 @@ async function playTidalTrack(cid, mid, trackName, button) {
   }
 
 }
+
+tidalPersonalisedControls.addEventListener('click', async event => {
+  const personalisedPlaylistAction = event.target.closest(
+    '[data-personalised-playlist-action]'
+  );
+  if (!personalisedPlaylistAction) return;
+
+  const action = personalisedPlaylistAction.dataset.personalisedPlaylistAction;
+  const id = String(personalisedPlaylistAction.dataset.personalisedPlaylistId || '');
+
+  if (!id) {
+    tidalStatus.textContent = 'My Mix cannot be played';
+    return;
+  }
+
+  personalisedPlaylistAction.classList.add('loading');
+  personalisedPlaylistAction.disabled = true;
+  setTidalOpen(false);
+
+  try {
+    const response = await fetch(
+      '/api/tidal/personalised/playlist/play?id=' + encodeURIComponent(id) +
+      '&shuffle=' + (action === 'shuffle-all' ? '1' : '0'),
+      { cache: 'no-store' }
+    );
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not play My Mix');
+    }
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+    personalisedPlaylistAction.classList.remove('loading');
+    personalisedPlaylistAction.disabled = false;
+    setTidalOpen(true);
+  }
+});
 
 tidalResults.addEventListener('click', async event => {
     const trackPageButton = event.target.closest('[data-track-page-action]');

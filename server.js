@@ -1013,6 +1013,27 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
+    if (
+      req.method === 'GET' &&
+      url.pathname === '/api/tidal/personalised/playlist/play'
+    ) {
+      const id = String(url.searchParams.get('id') || '').trim();
+      const shuffle = url.searchParams.get('shuffle') === '1' ? '1' : '0';
+
+      if (!/^[a-zA-Z0-9]+$/.test(id)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid playlist id' });
+      }
+
+      const result = await mediaBackendRequest(
+        '/api/tidal/personalised/playlist/play?id=' + encodeURIComponent(id) +
+        '&shuffle=' + shuffle,
+        'GET',
+        60000
+      );
+
+      return sendJson(res, 200, result);
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/tidal/play-resolved') {
       const id = String(url.searchParams.get('id') || '').trim();
       const action = String(url.searchParams.get('action') || '').trim();

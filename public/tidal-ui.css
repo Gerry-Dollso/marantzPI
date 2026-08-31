@@ -79,6 +79,30 @@ body.show-tidal .display {
   color: rgba(255,255,255,0.42);
 }
 
+.tidal-search[hidden],
+.tidal-personalised-controls[hidden] {
+  display: none;
+}
+
+.tidal-personalised-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.tidal-personalised-controls button {
+  height: 48px;
+  border: 1px solid rgba(255,255,255,0.24);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
 .tidal-status {
   height: 34px;
   display: flex;
