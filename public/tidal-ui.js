@@ -602,11 +602,11 @@ async function openTidalArtistFromNowPlaying(cid, title) {
 function makeTidalPersonalisedPlaylistButton(playlist) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'tidal-artist tidal-browse-item';
+  button.className = 'tidal-artist tidal-browse-item tidal-personalised-card';
   button.dataset.personalisedPlaylistId = String(playlist.id || '');
 
   const artwork = document.createElement('span');
-  artwork.className = 'tidal-artist-artwork';
+  artwork.className = 'tidal-artist-artwork tidal-personalised-artwork';
 
   const text = document.createElement('span');
   text.className = 'tidal-browse-text';
@@ -616,8 +616,81 @@ function makeTidalPersonalisedPlaylistButton(playlist) {
   name.textContent = playlist.name || 'TIDAL playlist';
   text.appendChild(name);
 
+  const description = String(playlist.description || '').trim();
+  if (description) {
+    const descriptionNode = document.createElement('span');
+    descriptionNode.className = 'tidal-personalised-description';
+    descriptionNode.textContent = description;
+    text.appendChild(descriptionNode);
+  }
+
   button.append(artwork, text);
   return button;
+}
+
+function setTidalPersonalisedArtwork(button, tracks) {
+  const artwork = button?.querySelector('.tidal-personalised-artwork');
+  if (!artwork) return;
+
+  const urls = [];
+  for (const track of tracks || []) {
+    const url = String(track?.artwork || '').trim();
+    if (!url || urls.includes(url)) continue;
+    urls.push(url);
+    if (urls.length === 4) break;
+  }
+
+  if (!urls.length) return;
+
+  artwork.replaceChildren();
+  artwork.classList.toggle('single', urls.length === 1);
+
+  urls.forEach(url => {
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = '';
+    image.loading = 'lazy';
+    artwork.appendChild(image);
+  });
+}
+
+async function loadTidalPersonalisedArtwork(playlist, button) {
+  const playlistId = String(playlist?.id || '').trim();
+  if (!playlistId || !button?.isConnected) return;
+
+  try {
+    const response = await fetch(
+      '/api/tidal/personalised/playlist?id=' + encodeURIComponent(playlistId),
+      { cache: 'no-store' }
+    );
+    const result = await response.json();
+    if (!response.ok || result.ok === false || !button.isConnected) return;
+
+    setTidalPersonalisedArtwork(
+      button,
+      Array.isArray(result.tracks) ? result.tracks : []
+    );
+  } catch {
+    // Artwork enrichment is optional; keep the card usable without it.
+  }
+}
+
+async function enrichTidalPersonalisedArtwork(entries, concurrency = 3) {
+  let next = 0;
+
+  async function worker() {
+    while (next < entries.length) {
+      const index = next++;
+      const entry = entries[index];
+      await loadTidalPersonalisedArtwork(entry.playlist, entry.button);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, entries.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
 }
 
 async function loadTidalPersonalised(pushHistory = true) {
@@ -643,10 +716,16 @@ async function loadTidalPersonalised(pushHistory = true) {
 
     const playlists = Array.isArray(result.playlists) ? result.playlists : [];
     tidalStatus.textContent = 'My Mixes — ' + playlists.length + ' playlists';
+
+    const artworkEntries = [];
     playlists.forEach(playlist => {
-      tidalResults.appendChild(makeTidalPersonalisedPlaylistButton(playlist));
+      const button = makeTidalPersonalisedPlaylistButton(playlist);
+      tidalResults.appendChild(button);
+      artworkEntries.push({ playlist, button });
     });
+
     tidalResults.scrollTop = 0;
+    void enrichTidalPersonalisedArtwork(artworkEntries);
   } catch (error) {
     tidalStatus.textContent = error.message;
   }

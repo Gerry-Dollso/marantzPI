@@ -166,6 +166,33 @@ body.show-tidal .display {
   object-fit: cover;
 }
 
+.tidal-personalised-artwork {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1px;
+}
+
+.tidal-personalised-artwork.single {
+  display: block;
+}
+
+.tidal-personalised-artwork img {
+  min-width: 0;
+  min-height: 0;
+}
+
+.tidal-personalised-description {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 11px;
+  line-height: 1.18;
+  opacity: 0.62;
+}
+
 .tidal-artist-name {
   min-width: 0;
   overflow: hidden;
