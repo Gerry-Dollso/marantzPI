@@ -552,9 +552,14 @@ async function getStatus() {
     tidalResumeNeeded = false;
   } else if (
     lastTidalResume &&
-    receiver.power !== 'unknown' &&
-    receiver.inputCode !== 'UNKNOWN' &&
-    !isNetPlayback
+    (
+      receiver.power === 'standby' ||
+      (
+        receiver.power === 'on' &&
+        receiver.inputCode !== 'NET' &&
+        receiver.inputCode !== 'UNKNOWN'
+      )
+    )
   ) {
     tidalResumeNeeded = true;
   }
