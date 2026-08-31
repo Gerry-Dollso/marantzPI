@@ -357,7 +357,16 @@ body.show-tidal .display {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
-  opacity: 0.62;
+  opacity: 0.72;
+}
+
+.tidal-browse-album {
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  opacity: 0.48;
 }
 
 .tidal-playlist-controls {

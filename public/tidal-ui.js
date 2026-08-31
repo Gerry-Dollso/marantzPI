@@ -263,13 +263,21 @@ function makeBrowseButton(item) {
   if (
     (tidalShowAlbumArtists ||
      item.type === 'song' ||
-     item.type === 'album') &&
+     item.type === 'album' ||
+     item.type === 'personalised-song') &&
     item.artist
   ) {
     const artist = document.createElement('span');
     artist.className = 'tidal-browse-artist';
     artist.textContent = tidalDisplayName(item.artist);
     text.appendChild(artist);
+  }
+
+  if (item.type === 'personalised-song' && item.album) {
+    const album = document.createElement('span');
+    album.className = 'tidal-browse-album';
+    album.textContent = tidalDisplayName(item.album);
+    text.appendChild(album);
   }
 
   button.append(artwork, text);
@@ -643,6 +651,7 @@ async function loadTidalPersonalisedPlaylist(id, title, pushHistory = true) {
         type: 'personalised-song',
         name: track.title,
         artist: track.artist,
+        album: track.album,
         imageUrl: track.artwork,
         mid: track.id,
         albumId: track.albumId
