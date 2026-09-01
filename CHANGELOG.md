@@ -2,6 +2,33 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-01 — AVR status, TIDAL resume and HEOS transition resilience
+
+- Reproduced a post-standby SR8015 failure in which AVR TCP port 23 still accepted connections but stopped returning status/control responses, while HEOS port 1255 remained responsive and playback could continue.
+- Corrected receiver power semantics so an unanswered/invalid `ZM?` response is reported as `unknown`, not incorrectly collapsed into standby.
+- Protected remembered TIDAL resume state from ambiguous AVR communication failures. Resume state is now changed only by positive evidence: confirmed standby, or confirmed AVR-on with a known non-NET input.
+- Physical-panel state management now ignores receiver `power === 'unknown'`, preserving the last confirmed panel state rather than treating communication failure as standby.
+- Diagnosed the wrong-track Now Playing flash during personalised queue replacement as real transient HEOS queue metadata. The Pi now uses the backend personalised playback response's deterministic `firstMid` to hold the last confirmed TIDAL metadata until the intended first MID appears, with a 10-second safety timeout. This also prevents transient metadata from overwriting `lastTidalResume`.
+- Inspected AVR polling architecture and found `/api/status` is requested every 750 ms while the old `getReceiverStatus()` opened six separate parallel TCP port-23 connections per poll (`ZM?`, `SI?`, `MV?`, `MU?`, `Z2?`, `Z3?`), roughly eight new AVR TCP connections per second.
+- Reworked `getReceiverStatus()` to use one short-lived AVR connection per poll, send all six read-only queries on that socket, collect only the required response families, and close when complete or at the bounded timeout. Missing data continues to degrade safely to existing unknown/null semantics.
+- The excessive connection churn is recorded as a strong plausible contributor to the AVR port-23 standby/wake wedge, not as independently proven root cause.
+- Live testing after the polling change completed three ordinary standby -> wake cycles without reproducing the wedge. Each wake returned complete receiver state (`power: on`, NET/TIDAL, volume and zone state) and the touchscreen left standby normally.
+
+Checkpoint sequence:
+
+```text
+9ba1038 — Fix AVR unknown state and protect TIDAL resume
+9975380 — Preserve TIDAL resume across confirmed standby
+3fa8988 — Suppress transient HEOS queue metadata
+ed38288 — Reduce AVR status polling connection churn
+```
+
+Current tested functional checkpoint:
+
+```text
+ed38288 — Reduce AVR status polling connection churn
+```
+
 ## 2026-08-31 — Rich personalised TIDAL UI checkpoint
 
 - Completed the touchscreen My Mixes flow for official TIDAL personalised recommendations: My Mix 1-8, My Daily Discovery and My New Arrivals.
@@ -20,7 +47,7 @@ a7e4970 — Complete personalised TIDAL playback controls
 a65f1b5 — Add rich personalised TIDAL landing cards
 ```
 
-Current tested functional checkpoint:
+Tested functional checkpoint at this stage:
 
 ```text
 a65f1b5 — Add rich personalised TIDAL landing cards
@@ -44,7 +71,7 @@ Checkpoint sequence:
 fc418d2 — Upgrade TIDAL My Music albums browsing
 ```
 
-Current tested functional checkpoint:
+Tested functional checkpoint at this stage:
 
 ```text
 fc418d2 — Upgrade TIDAL My Music albums browsing
