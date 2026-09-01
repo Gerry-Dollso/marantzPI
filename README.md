@@ -13,24 +13,39 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-a65f1b5 — Add rich personalised TIDAL landing cards
+ed38288 — Reduce AVR status polling connection churn
 ```
 
-This checkpoint includes the current TIDAL My Music root navigation, full Favourite Tracks browsing, upgraded full-library Albums browsing with A-Z filtering and Play Random, playlist/artist/favourite-track queue controls, guarded HEOS Smart Select behaviour, retained TIDAL queue resume behaviour, Now Playing artist/album navigation, direct TIDAL-browser return-to-Now-Playing shortcut, and the existing persistent TIDAL voice correction/learning touchscreen flow. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, and reduced AVR port-23 connection churn. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+
+## AVR status/resume resilience checkpoint — 1 Sep 2026
+
+A post-standby failure was reproduced where the SR8015 remained physically on and HEOS port 1255 stayed responsive, but AVR control/status on TCP port 23 accepted connections without returning responses. The Pi correctly exposed this as receiver power `unknown`; because the last confirmed display state was standby, the touchscreen could remain on its standby/Powering on screen until the AVR was power-cycled.
+
+The Pi no longer interprets an unanswered `ZM?` query as standby. Receiver power is `on` only for `ZMON`, `standby` only for `ZMOFF`, and otherwise `unknown`. TIDAL resume state is changed only from positive evidence: confirmed standby, or confirmed AVR-on with a known non-NET input. An `unknown` power/input state must not erase or incorrectly arm remembered TIDAL resume state. Physical-panel state management likewise ignores `power === 'unknown'` and preserves the last confirmed state.
+
+The queue-replacement transition guard now uses the personalised playback response's deterministic `firstMid`. During a My Mix/queue replacement, the Pi holds the last confirmed TIDAL metadata until that expected MID appears, with a 10-second safety timeout. This prevents real but temporary HEOS intermediate queue entries from flashing on Now Playing or overwriting `lastTidalResume`.
+
+Inspection also found that the touchscreen polls `/api/status` every 750 ms and the former `getReceiverStatus()` implementation opened six separate, parallel AVR port-23 connections on every poll (`ZM?`, `SI?`, `MV?`, `MU?`, `Z2?`, `Z3?`). That was roughly eight new AVR TCP connections per second during normal operation and is a strong plausible contributor to the port-23 interface wedging around standby/wake, although it is not claimed as independently proven root cause.
+
+At checkpoint `ed38288`, `getReceiverStatus()` uses one short-lived port-23 connection per status poll, sends all six read-only queries over that socket, collects only the required response families, and closes when all six are received or after the existing bounded timeout. Missing responses continue to degrade safely to `unknown`/null semantics rather than being treated as confirmed standby. Live testing completed three ordinary standby -> wake cycles without reproducing the previous port-23 wedge; receiver status returned normally to `power: "on"`, NET/TIDAL and the correct volume/zone state after each wake.
+
+Checkpoint sequence:
+
+```text
+9ba1038 — Fix AVR unknown state and protect TIDAL resume
+9975380 — Preserve TIDAL resume across confirmed standby
+3fa8988 — Suppress transient HEOS queue metadata
+ed38288 — Reduce AVR status polling connection churn
+```
 
 ## Personalised TIDAL / My Mixes checkpoint — 31 Aug 2026
 
-The touchscreen now has an official-API-backed **My Mixes** experience covering My Mix 1-8, My Daily Discovery and My New Arrivals. The landing page renders immediately from the personalised recommendation listing, including TIDAL-provided names and descriptions, then progressively enriches each card with a 2x2 collage built from up to four distinct official TIDAL album covers. Artwork enrichment uses limited concurrency and is optional/fail-soft, so a slow or failed cover request never blocks the card or its navigation.
+The touchscreen has an official-API-backed **My Mixes** experience covering My Mix 1-8, My Daily Discovery and My New Arrivals. The landing page renders immediately from the personalised recommendation listing, including TIDAL-provided names and descriptions, then progressively enriches each card with a 2x2 collage built from up to four distinct official TIDAL album covers. Artwork enrichment uses limited concurrency and is optional/fail-soft, so a slow or failed cover request never blocks the card or its navigation.
 
 Inside a personalised playlist, rows show official TIDAL artwork plus track title, artist and album. PLAY ALL and SHUFFLE ALL use the HP backend's resolved personalised queue path. Live My Mix 1 testing starts playback in about 2.34 seconds and builds the remainder in the background; the tested 39-track mix completed 39/39 with zero skips. Individual personalised tracks support PLAY NOW, PLAY NEXT, ADD TO END and PLAY ONLY. PLAY FROM HERE remains deliberately unavailable for My Mixes until its generic queue-tail semantics are implemented.
 
-Current tested Pi checkpoint:
-
-```text
-a65f1b5 — Add rich personalised TIDAL landing cards
-```
-
-Related source checkpoints include `ce18540` (richer personalised track metadata) and `a7e4970` (personalised Play All/Shuffle All controls).
+Related source checkpoints include `ce18540` (richer personalised track metadata), `a7e4970` (personalised playback controls) and `a65f1b5` (rich personalised landing cards).
 
 ## Current feature set
 
@@ -123,7 +138,7 @@ Now Playing navigation must use canonical identifiers rather than visible labels
 
 The shared track-action UI applies to list-style containers: `My Music-Tracks`, playlists and `LIBARTIST-Tracks-*`. Album/EP playback remains separate.
 
-TIDAL resume must not trust `get_now_playing_media.qid` after leaving NET. The Pi remembers the last genuine MID, resolves it against the retained queue, and restarts that track from 0:00 when Play is pressed.
+TIDAL resume must not trust `get_now_playing_media.qid` after leaving NET. The Pi remembers the last genuine MID, resolves it against the retained queue, and restarts that track from 0:00 when Play is pressed. Receiver communication failure must remain distinct from confirmed standby/source changes: `unknown` AVR state is not positive evidence that TIDAL was left.
 
 ## Architecture
 
