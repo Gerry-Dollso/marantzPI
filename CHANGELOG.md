@@ -2,6 +2,34 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-01 — Personalised TIDAL artwork hardening
+
+- Replaced landing-card artwork enrichment through the full personalised playlist endpoint with the dedicated lightweight `/api/tidal/personalised/artwork?id=...` proxy.
+- Landing artwork now consumes up to four distinct official TIDAL artwork URLs returned by the backend rather than loading every playlist page merely to build a collage.
+- Reduced artwork enrichment concurrency from three workers to one, avoiding request bursts during a cold My Mixes landing load.
+- Added exactly one delayed retry after 2 seconds for a failed artwork request. Successful cards do not make an additional request.
+- Removed the temporary visible artwork diagnostics and both one-shot artwork migration helpers before the final checkpoint.
+- Live-tested all ten cards successfully with warm caches, then restarted `marantz-backend.service` to clear in-memory caches and repeated the test: all ten cards populated automatically from a genuine cold backend cache.
+- PLAY FROM HERE for personalised playlists remains intentionally unimplemented and is the next planned queue feature.
+
+Checkpoint:
+
+```text
+300be7a — Fix personalised TIDAL artwork loading
+```
+
+Companion backend checkpoint:
+
+```text
+2c8ac84 — Add lightweight personalised TIDAL artwork
+```
+
+Current tested functional checkpoint:
+
+```text
+300be7a — Fix personalised TIDAL artwork loading
+```
+
 ## 2026-09-01 — AVR status, TIDAL resume and HEOS transition resilience
 
 - Reproduced a post-standby SR8015 failure in which AVR TCP port 23 still accepted connections but stopped returning status/control responses, while HEOS port 1255 remained responsive and playback could continue.

@@ -13,10 +13,30 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-ed38288 — Reduce AVR status polling connection churn
+300be7a — Fix personalised TIDAL artwork loading
 ```
 
-This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, and reduced AVR port-23 connection churn. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+
+## Personalised TIDAL artwork checkpoint — 1 Sep 2026
+
+Landing-card artwork no longer loads each complete personalised playlist. The Pi now calls the dedicated backend `/api/tidal/personalised/artwork?id=...` endpoint, which returns up to four distinct official TIDAL artwork URLs from the first playlist page only. Artwork enrichment is deliberately sequential (`concurrency = 1`) to avoid bursts. A failed card gets one retry after a 2-second delay; successful cards make no extra request.
+
+The backend artwork cache is independent of the full-playlist cache and lives for 30 minutes. A warm full personalised-playlist cache can also satisfy artwork without another TIDAL API call. The final production path was tested 10/10 with warm caches and again 10/10 after restarting the HP backend to force a genuinely cold in-memory cache. The temporary artwork diagnostics and migration helpers were removed before checkpointing.
+
+Pi checkpoint:
+
+```text
+300be7a — Fix personalised TIDAL artwork loading
+```
+
+Companion backend checkpoint:
+
+```text
+2c8ac84 — Add lightweight personalised TIDAL artwork
+```
+
+PLAY FROM HERE remains the next planned personalised-playlist feature; it has not been implemented yet.
 
 ## AVR status/resume resilience checkpoint — 1 Sep 2026
 
@@ -41,7 +61,7 @@ ed38288 — Reduce AVR status polling connection churn
 
 ## Personalised TIDAL / My Mixes checkpoint — 31 Aug 2026
 
-The touchscreen has an official-API-backed **My Mixes** experience covering My Mix 1-8, My Daily Discovery and My New Arrivals. The landing page renders immediately from the personalised recommendation listing, including TIDAL-provided names and descriptions, then progressively enriches each card with a 2x2 collage built from up to four distinct official TIDAL album covers. Artwork enrichment uses limited concurrency and is optional/fail-soft, so a slow or failed cover request never blocks the card or its navigation.
+The touchscreen has an official-API-backed **My Mixes** experience covering My Mix 1-8, My Daily Discovery and My New Arrivals. The landing page renders immediately from the personalised recommendation listing, including TIDAL-provided names and descriptions, then progressively enriches each card with a 2x2 collage built from up to four distinct official TIDAL album covers. Artwork uses the dedicated lightweight first-page backend endpoint, loads sequentially to avoid request bursts, and retries a failed card once after two seconds. Artwork remains optional/fail-soft, so a slow or failed cover request never blocks the card or its navigation.
 
 Inside a personalised playlist, rows show official TIDAL artwork plus track title, artist and album. PLAY ALL and SHUFFLE ALL use the HP backend's resolved personalised queue path. Live My Mix 1 testing starts playback in about 2.34 seconds and builds the remainder in the background; the tested 39-track mix completed 39/39 with zero skips. Individual personalised tracks support PLAY NOW, PLAY NEXT, ADD TO END and PLAY ONLY. PLAY FROM HERE remains deliberately unavailable for My Mixes until its generic queue-tail semantics are implemented.
 
