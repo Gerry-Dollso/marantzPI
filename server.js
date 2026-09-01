@@ -435,24 +435,55 @@ function inputLabel(line) {
 }
 
 async function getReceiverStatus() {
-  const results = await Promise.allSettled([
-    avr('ZM?', 'ZM'),
-    avr('SI?', 'SI'),
-    avr('MV?', 'MV'),
-    avr('MU?', 'MU'),
-    getZonePower('Z2'),
-    getZonePower('Z3')
-  ]);
+  const lines = await new Promise(resolve => {
+    const socket = net.createConnection({
+      host: config.marantzHost,
+      port: 23
+    });
+    const found = {};
+    let buffer = '';
+    let settled = false;
 
-  const value = index =>
-    results[index].status === 'fulfilled' ? results[index].value : '';
+    function finish() {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve(found);
+    }
+    socket.setTimeout(2000);
 
-  const powerLine = value(0);
-  const inputLine = value(1);
-  const zone2Line = value(4);
-  const zone3Line = value(5);
-  const volumeLine = value(2);
-  const muteLine = value(3);
+    socket.on('connect', () => {
+      socket.write('ZM?\rSI?\rMV?\rMU?\rZ2?\rZ3?\r');
+    });
+
+    socket.on('data', chunk => {
+      buffer += chunk.toString('utf8');
+      const parts = buffer.split('\r');
+      buffer = parts.pop() || '';
+
+      for (const rawLine of parts) {
+        const line = rawLine.trim();
+        if (line === 'ZMON' || line === 'ZMOFF') found.power = line;
+        else if (line.startsWith('SI')) found.input = line;
+        else if (/^MV\d{2,3}$/.test(line)) found.volume = line;
+        else if (line === 'MUON' || line === 'MUOFF') found.mute = line;
+        else if (line === 'Z2ON' || line === 'Z2OFF') found.zone2 = line;
+        else if (line === 'Z3ON' || line === 'Z3OFF') found.zone3 = line;
+      }
+
+      if (Object.keys(found).length === 6) finish();
+    });
+
+    socket.on('timeout', finish);
+    socket.on('error', finish);
+  });
+
+  const powerLine = lines.power || '';
+  const inputLine = lines.input || '';
+  const zone2Line = lines.zone2 || '';
+  const zone3Line = lines.zone3 || '';
+  const volumeLine = lines.volume || '';
+  const muteLine = lines.mute || '';
 
   return {
     power: powerLine === 'ZMON' ? 'on' : powerLine === 'ZMOFF' ? 'standby' : 'unknown',
@@ -464,7 +495,6 @@ async function getReceiverStatus() {
     muted: muteLine === 'MUON'
   };
 }
-
 async function getStatus() {
   const pid = encodeURIComponent(config.playerId);
 

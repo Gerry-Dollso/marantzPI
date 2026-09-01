@@ -1300,6 +1300,7 @@ function updatePhysicalPanelForReceiver(data) {
   const receiver = data?.receiver || {};
   const power = String(receiver.power || '').toLowerCase();
   const inputCode = String(receiver.inputCode || '').toUpperCase();
+  if (power === 'unknown') return;
 
   if (previousPanelReceiverPower === null) {
     previousPanelReceiverPower = power;
