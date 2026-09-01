@@ -628,24 +628,24 @@ function makeTidalPersonalisedPlaylistButton(playlist) {
   return button;
 }
 
-function setTidalPersonalisedArtwork(button, tracks) {
+function setTidalPersonalisedArtwork(button, urls) {
   const artwork = button?.querySelector('.tidal-personalised-artwork');
   if (!artwork) return;
 
-  const urls = [];
-  for (const track of tracks || []) {
-    const url = String(track?.artwork || '').trim();
-    if (!url || urls.includes(url)) continue;
-    urls.push(url);
-    if (urls.length === 4) break;
+  const uniqueUrls = [];
+  for (const value of urls || []) {
+    const url = String(value || '').trim();
+    if (!url || uniqueUrls.includes(url)) continue;
+    uniqueUrls.push(url);
+    if (uniqueUrls.length === 4) break;
   }
 
-  if (!urls.length) return;
+  if (!uniqueUrls.length) return;
 
   artwork.replaceChildren();
-  artwork.classList.toggle('single', urls.length === 1);
+  artwork.classList.toggle('single', uniqueUrls.length === 1);
 
-  urls.forEach(url => {
+  uniqueUrls.forEach(url => {
     const image = document.createElement('img');
     image.src = url;
     image.alt = '';
@@ -658,24 +658,29 @@ async function loadTidalPersonalisedArtwork(playlist, button) {
   const playlistId = String(playlist?.id || '').trim();
   if (!playlistId || !button?.isConnected) return;
 
-  try {
-    const response = await fetch(
-      '/api/tidal/personalised/playlist?id=' + encodeURIComponent(playlistId),
-      { cache: 'no-store' }
-    );
-    const result = await response.json();
-    if (!response.ok || result.ok === false || !button.isConnected) return;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(
+        '/api/tidal/personalised/artwork?id=' + encodeURIComponent(playlistId),
+        { cache: 'no-store' }
+      );
+      const result = await response.json();
+      if (!response.ok || result.ok === false) throw new Error('Artwork request failed');
+      if (!button.isConnected) return;
 
-    setTidalPersonalisedArtwork(
-      button,
-      Array.isArray(result.tracks) ? result.tracks : []
-    );
-  } catch {
-    // Artwork enrichment is optional; keep the card usable without it.
+      setTidalPersonalisedArtwork(
+        button,
+        Array.isArray(result.artwork) ? result.artwork : []
+      );
+      return;
+    } catch {
+      if (attempt === 1 || !button.isConnected) return;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
   }
 }
 
-async function enrichTidalPersonalisedArtwork(entries, concurrency = 3) {
+async function enrichTidalPersonalisedArtwork(entries, concurrency = 1) {
   let next = 0;
 
   async function worker() {
