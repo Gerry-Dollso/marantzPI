@@ -13,7 +13,13 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-300be7a — Fix personalised TIDAL artwork loading
+bcabd8a — Remove TIDAL track action reuse helper
+```
+
+Companion backend checkpoint:
+
+```text
+9ac4924 — Remove strict play from here helper
 ```
 
 This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
@@ -36,7 +42,7 @@ Companion backend checkpoint:
 2c8ac84 — Add lightweight personalised TIDAL artwork
 ```
 
-PLAY FROM HERE remains the next planned personalised-playlist feature; it has not been implemented yet.
+Personalised PLAY FROM HERE is now implemented and live-tested. Selecting a My Mix track replaces the queue with that exact selected track followed by the remaining tracks from the same Mix in original order. The selected track is strict/fail-closed: it must resolve and queue safely rather than silently skipping to the following track. Runtime acceptance confirmed repeated PLAY FROM HERE use, exact selected-track starts, and the last-track boundary: starting from the final track leaves no later queue entry, so NEXT does not start an unrelated track.
 
 ## AVR status/resume resilience checkpoint — 1 Sep 2026
 
@@ -63,9 +69,16 @@ ed38288 — Reduce AVR status polling connection churn
 
 The touchscreen has an official-API-backed **My Mixes** experience covering My Mix 1-8, My Daily Discovery and My New Arrivals. The landing page renders immediately from the personalised recommendation listing, including TIDAL-provided names and descriptions, then progressively enriches each card with a 2x2 collage built from up to four distinct official TIDAL album covers. Artwork uses the dedicated lightweight first-page backend endpoint, loads sequentially to avoid request bursts, and retries a failed card once after two seconds. Artwork remains optional/fail-soft, so a slow or failed cover request never blocks the card or its navigation.
 
-Inside a personalised playlist, rows show official TIDAL artwork plus track title, artist and album. PLAY ALL and SHUFFLE ALL use the HP backend's resolved personalised queue path. Live My Mix 1 testing starts playback in about 2.34 seconds and builds the remainder in the background; the tested 39-track mix completed 39/39 with zero skips. Individual personalised tracks support PLAY NOW, PLAY NEXT, ADD TO END and PLAY ONLY. PLAY FROM HERE remains deliberately unavailable for My Mixes until its generic queue-tail semantics are implemented.
+Inside a personalised playlist, rows show official TIDAL artwork plus track title, artist and album. PLAY ALL and SHUFFLE ALL use the HP backend's resolved personalised queue path. Live My Mix 1 testing starts playback in about 2.34 seconds and builds the remainder in the background; the tested 39-track mix completed 39/39 with zero skips. Individual personalised tracks support PLAY NOW, PLAY NEXT, ADD TO END, PLAY FROM HERE and PLAY ONLY. Personalised PLAY FROM HERE uses the official selected track ID plus its personalised-playlist context, starts that exact selected track, and builds only the remaining tail of the Mix. The shared track-action lifecycle always clears its disabled/loading state after success or failure, so PLAY FROM HERE and the other actions remain reusable without rebuilding the menu DOM.
 
 Related source checkpoints include `ce18540` (richer personalised track metadata), `a7e4970` (personalised playback controls) and `a65f1b5` (rich personalised landing cards).
+
+## Near-term TIDAL roadmap
+
+- Replace the older HEOS-oriented shortcuts with faster, richer official-TIDAL equivalents where the official API can provide the catalogue/UI metadata while HEOS remains playback transport.
+- Add TIDAL favourite/like controls for tracks, albums and artists.
+- Add a touchscreen Current Queue view. The first version should be read-only, show the current track and upcoming queue with available artwork/title/artist/album metadata, and provide direct visibility into PLAY FROM HERE / PLAY NEXT / ADD TO END results. Later queue mutation such as play-this-track, remove, reorder or clear can be considered separately.
+- Longer-term backend opportunities already preserved in the backend handover include listening history/recently played and richer discovery.
 
 ## Current feature set
 

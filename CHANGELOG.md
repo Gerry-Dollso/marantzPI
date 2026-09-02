@@ -2,6 +2,35 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-02 — Personalised TIDAL PLAY FROM HERE
+
+- Added PLAY FROM HERE to official-API-backed My Mix/personalised track actions. The Pi sends the personalised playlist ID plus the exact official selected track ID to the backend rather than falling back to a generic HEOS container action.
+- The backend validates that the selected official track belongs to the fetched personalised playlist, rejects PLAY FROM HERE combined with shuffle, slices the queue from the selected track onward, and preserves the existing deterministic resolver, first-track `aid=4`, background `aid=3` queue builder and generation-cancellation design.
+- Hardened selected-first semantics: when PLAY FROM HERE is requested, the selected first track must resolve and queue safely. Resolution ambiguity/failure returns fail-closed instead of silently starting the following track. Later tracks retain the normal safe-skip behaviour used by the background builder.
+- Fixed the shared track-action button lifecycle so successful actions clear their disabled/loading state in `finally`, making PLAY FROM HERE and other actions using the same handler reusable on subsequent menu openings.
+- Live touchscreen acceptance confirmed the exact selected track starts, PLAY FROM HERE remains available on repeated use, and selecting the final track produces the correct queue boundary: NEXT does not start an unrelated track.
+- A Current Queue touchscreen view is now a planned follow-up so queue contents can be inspected directly; initial scope should be read-only before considering queue editing.
+
+Pi implementation/checkpoint sequence includes:
+
+```text
+beaa458 — Enable My Mix play from here
+041b035 — Make TIDAL track actions reusable
+bcabd8a — Remove TIDAL track action reuse helper
+```
+
+Companion backend final checkpoint:
+
+```text
+9ac4924 — Remove strict play from here helper
+```
+
+Current tested Pi source checkpoint:
+
+```text
+bcabd8a — Remove TIDAL track action reuse helper
+```
+
 ## 2026-09-02 — AVR/HEOS network-path recovery investigation
 
 - During ReSpeaker voice testing, voice-started IDLES playback succeeded but the Pi Now Playing screen fell back to `UNKNOWN`. A live `/api/status` proved HEOS metadata remained healthy (`Heel / Heal`, IDLES, Brutalism, artwork and progress) while the AVR status path had failed completely: receiver power/input were `unknown`, volume was null, and `hasTrackInfo` was false because NET could no longer be confirmed.
