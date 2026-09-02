@@ -231,6 +231,7 @@ async function runTidalTrackAction(action, actionButton) {
     }
   } catch (error) {
     tidalStatus.textContent = error.message;
+  } finally {
     actionButton.disabled = false;
     actionButton.classList.remove('loading');
   }
