@@ -1130,10 +1130,20 @@ http.createServer(async (req, res) => {
       url.pathname === '/api/tidal/personalised/playlist/play'
     ) {
       const id = String(url.searchParams.get('id') || '').trim();
+      const startTrackId = String(url.searchParams.get('start') || '').trim();
       const shuffle = url.searchParams.get('shuffle') === '1' ? '1' : '0';
 
       if (!/^[a-zA-Z0-9]+$/.test(id)) {
         return sendJson(res, 400, { ok: false, error: 'Invalid playlist id' });
+      }
+      if (startTrackId && !/^\d+$/.test(startTrackId)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid start track id' });
+      }
+      if (startTrackId && shuffle === '1') {
+        return sendJson(res, 400, {
+          ok: false,
+          error: 'Play From Here cannot be combined with shuffle'
+        });
       }
 
       startTidalQueueTransition();
@@ -1142,7 +1152,8 @@ http.createServer(async (req, res) => {
       try {
         const result = await mediaBackendRequest(
           '/api/tidal/personalised/playlist/play?id=' + encodeURIComponent(id) +
-          '&shuffle=' + shuffle,
+          '&shuffle=' + shuffle +
+          (startTrackId ? '&start=' + encodeURIComponent(startTrackId) : ''),
           'GET',
           60000
         );

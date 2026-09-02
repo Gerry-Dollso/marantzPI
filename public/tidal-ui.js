@@ -174,11 +174,6 @@ async function runTidalTrackAction(action, actionButton) {
     return;
   }
 
-  if (selection.personalised && action === 'play-from-here') {
-    tidalStatus.textContent = 'Play From Here is not available for My Mixes yet';
-    return;
-  }
-
   actionButton.disabled = true;
   actionButton.classList.add('loading');
 
@@ -188,12 +183,29 @@ async function runTidalTrackAction(action, actionButton) {
   }
 
   try {
-    const actionUrl = selection.personalised
-      ? '/api/tidal/play-resolved?id=' + encodeURIComponent(selection.mid) +
-        '&action=' + encodeURIComponent(action)
-      : '/api/tidal/track/action?cid=' + encodeURIComponent(selection.cid) +
+    let actionUrl;
+    if (selection.personalised && action === 'play-from-here') {
+      if (!selection.cid.startsWith(TIDAL_PERSONALISED_PLAYLIST_PREFIX)) {
+        throw new Error('My Mix playlist context is unavailable');
+      }
+      const playlistId = selection.cid.slice(TIDAL_PERSONALISED_PLAYLIST_PREFIX.length);
+      if (!/^[a-zA-Z0-9]+$/.test(playlistId)) {
+        throw new Error('My Mix playlist context is invalid');
+      }
+      actionUrl =
+        '/api/tidal/personalised/playlist/play?id=' + encodeURIComponent(playlistId) +
+        '&start=' + encodeURIComponent(selection.mid) +
+        '&shuffle=0';
+    } else if (selection.personalised) {
+      actionUrl =
+        '/api/tidal/play-resolved?id=' + encodeURIComponent(selection.mid) +
+        '&action=' + encodeURIComponent(action);
+    } else {
+      actionUrl =
+        '/api/tidal/track/action?cid=' + encodeURIComponent(selection.cid) +
         '&mid=' + encodeURIComponent(selection.mid) +
         '&action=' + encodeURIComponent(action);
+    }
 
     const response = await fetch(actionUrl, { cache: 'no-store' });
     const result = await response.json();
