@@ -2,6 +2,31 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-02 — AVR/HEOS network-path recovery investigation
+
+- During ReSpeaker voice testing, voice-started IDLES playback succeeded but the Pi Now Playing screen fell back to `UNKNOWN`. A live `/api/status` proved HEOS metadata remained healthy (`Heel / Heal`, IDLES, Brutalism, artwork and progress) while the AVR status path had failed completely: receiver power/input were `unknown`, volume was null, and `hasTrackInfo` was false because NET could no longer be confirmed.
+- Direct SR8015 TCP/23 tests from both the Pi and HP established TCP connections but initially returned zero response bytes to `SI?`. HEOS port 1255 remained responsive.
+- The fault was isolated conservatively before changing code: `marantz-display.service` and `marantz-backend.service` were stopped; `marantz-ai.service` was identified as the llama.cpp model server; no HP or Pi TCP connections to the AVR were present in `ss`, and repeated short-lived port-23 activity was not observed. Both HP and Pi were rebooted and direct `SI?` remained silent with the AVR fully on.
+- AVR troubleshooting included ordinary power/reboot, the firmware update that occurred during troubleshooting, toggling Network Control, and a dedicated Network Settings reset. None by itself restored the silent TCP/23 command response.
+- The Network Settings reset temporarily left HEOS external services unavailable: direct `browse/get_music_sources` showed Amazon, Deezer, Qobuz, SoundCloud, TIDAL and TuneIn as `available:false` while local HEOS sources remained available. The HEOS app and AVR web interface still showed the account signed in, so `available:false` must not be treated as proof of account logout.
+- A subsequent cold wall-power cycle included the AVR, Pi and, importantly, the physical network switch serving the AVR. After this, TIDAL and Internet Radio menus returned and TCP/23 began returning data again.
+- Literal byte capture with `od` proved the recovered TCP/23 stream contained clean CR-terminated Marantz protocol responses/status messages including `SINET`, `ZMON`, `MV48`, `MVMAX 80`, `MUOFF`, `Z2OFF` and `Z3OFF`. Termius had made the CR-only stream look visually garbled/overwritten; inspect literal bytes when terminal rendering is ambiguous.
+- The live Pi `/api/status` then returned healthy AVR state again: `power:on`, `input:TIDAL`, `inputCode:NET`, volume `-32`, mute false. Touchscreen TIDAL/Internet Radio and normal operation were subsequently confirmed working.
+- No production code was changed for this incident. The network switch/path is now a serious suspect because recovery occurred only after the cold power cycle that included it, but this is **not a proven root cause** because multiple devices were cold-cycled together. Do not describe the earlier Pi port-23 connection churn, the network switch, firmware, or voice/ReSpeaker as independently proven causes.
+- If this symptom recurs, first preserve the fault and distinguish layers: direct HEOS 1255 metadata, direct AVR TCP/23 byte response, `/api/status`, current sockets from both Pi and HP, and network-switch state. Avoid factory-resetting the AVR or modifying production code before those checks.
+
+Current tested functional source checkpoint remains:
+
+```text
+300be7a — Fix personalised TIDAL artwork loading
+```
+
+Companion backend source checkpoint remains:
+
+```text
+2c8ac84 — Add lightweight personalised TIDAL artwork
+```
+
 ## 2026-09-01 — Personalised TIDAL artwork hardening
 
 - Replaced landing-card artwork enrichment through the full personalised playlist endpoint with the dedicated lightweight `/api/tidal/personalised/artwork?id=...` proxy.
