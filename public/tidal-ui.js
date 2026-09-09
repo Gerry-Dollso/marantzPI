@@ -323,7 +323,7 @@ function makeBrowseButton(item) {
     text.appendChild(artist);
   }
 
-  if (item.type === 'personalised-song' && item.album) {
+  if ((item.type === 'personalised-song' || item.showAlbum) && item.album) {
     const album = document.createElement('span');
     album.className = 'tidal-browse-album';
     album.textContent = tidalDisplayName(item.album);
@@ -526,9 +526,7 @@ function renderTrackPager() {
 
 async function loadTidalTrackPage(page = 0) {
   tidalShowAlbumArtists = true;
-  tidalTrackPage = Math.max(0, page);
-
-  const start = tidalTrackPage * tidalTrackPageSize;
+  tidalTrackPage = 0;
 
   tidalStatus.textContent = 'Loading Tracks…';
   tidalResults.replaceChildren();
@@ -536,10 +534,7 @@ async function loadTidalTrackPage(page = 0) {
 
   try {
     const response = await fetch(
-      '/api/tidal/browse?cid=' +
-      encodeURIComponent('My Music-Tracks') +
-      '&start=' + start +
-      '&limit=' + tidalTrackPageSize,
+      '/api/tidal/favourite-tracks',
       { cache: 'no-store' }
     );
 
@@ -549,29 +544,26 @@ async function loadTidalTrackPage(page = 0) {
       throw new Error(result.error || 'Could not load tracks');
     }
 
-    const items = Array.isArray(result.items)
-      ? result.items
+    const tracks = Array.isArray(result.tracks)
+      ? result.tracks
       : [];
 
+    const items = tracks.map(track => ({
+      cid: 'My Music-Tracks',
+      type: 'song',
+      name: track.title,
+      artist: track.artist,
+      album: track.album,
+      imageUrl: track.artwork,
+      mid: String(track.id || ''),
+      albumId: String(track.albumId || ''),
+      container: false,
+      playable: true,
+      showAlbum: true
+    }));
 
-    tidalTrackTotal = Number(result.count) || items.length;
-
-    tidalResults.replaceChildren();
-
-    items.forEach(item => {
-      tidalResults.appendChild(makeBrowseButton(item));
-    });
-
-    renderTrackPager();
-
-    const totalPages = Math.max(
-      1,
-      Math.ceil(tidalTrackTotal / tidalTrackPageSize)
-    );
-
-    tidalStatus.textContent =
-      `Tracks — ${tidalTrackTotal} items — Page ${tidalTrackPage + 1} of ${totalPages}`;
-
+    tidalTrackTotal = items.length;
+    renderPlaylistItems(items, 'Tracks');
     tidalResults.scrollTop = 0;
   } catch (error) {
     tidalStatus.textContent = error.message;
@@ -836,6 +828,11 @@ async function browseTidal(cid, title, pushHistory = true) {
   tidalScreen.classList.add("browsing");
   setTidalKeyboardOpen(false);
   tidalSearchInput.blur();
+
+  if (cid === 'My Music-Tracks') {
+    await loadTidalTrackPage(0);
+    return;
+  }
 
   tidalStatus.textContent = `Loading ${title || 'TIDAL'}…`;
   tidalResults.replaceChildren();
