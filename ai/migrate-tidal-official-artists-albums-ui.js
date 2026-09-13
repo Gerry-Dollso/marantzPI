@@ -9,8 +9,8 @@ const FILES = {
 };
 
 const EXPECTED = {
-  ui: '4a55f5d9d19c1878a65c91b90988f756c74ea231',
-  server: '3ecd849e5fcaf0d74a6f63978de49027594124a6'
+  ui: 'e678c86cf71ff1cd70d792e650accef5408191d4',
+  server: 'c15e1e3a0e3e3dde0198ba1421e8883754f035b8'
 };
 
 function sha1(text) {
