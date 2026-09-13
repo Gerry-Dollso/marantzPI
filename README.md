@@ -13,13 +13,13 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-750de76 — Remove Favourite Tracks UI migration helper
+497e6a5 — Remove Artists and Albums UI migration helper
 ```
 
 Companion backend checkpoint:
 
 ```text
-9ba3b6f — Remove Favourite Tracks action fix helper
+dbe79a6 — Remove Artists and Albums documentation helper
 ```
 
 This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, the official-TIDAL-backed 594-track Favourite Tracks UI, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
@@ -45,7 +45,27 @@ Backend:
 9ba3b6f — Remove Favourite Tracks action fix helper
 ```
 
-Next migration target: My Music Artists, Albums and Playlists. Their browse/display paths still use the older HEOS-oriented library path and should be converted to the same faster, richer official-TIDAL UI pattern while keeping HEOS as playback transport.
+## Official TIDAL Artists and Albums UI checkpoint — 13 Sep 2026
+
+My Music -> Artists and My Music -> Albums now use the HP backend's official-TIDAL-backed catalogue endpoints for their top-level display while retaining the existing HEOS CID-driven drill-ins and playback paths. Artists uses `/api/tidal/favourite-artists`; Albums uses `/api/tidal/favourite-albums`. The Pi preserves/generated `LIBARTIST-<id>` and `LIBALBUM-<id>` CIDs, so selecting an artist or album continues into the already-tested HEOS navigation/playback routes.
+
+Artists has 393 official relationship references, 392 live official artist resources and 392 matching HEOS artist IDs. Official artist ID `32968323` was directly checked and returns 404, so it is omitted from the live UI. Albums has 1,535 official relationship references and the same 1,535-ID set in HEOS; official rich metadata resolves 1,482 albums, leaving 53 unresolved references. Three sampled unresolved album IDs (`1441435`, `69720620`, `308597115`) were directly checked and each returned 404; do not claim that every unresolved album was individually 404-tested.
+
+Touchscreen acceptance passed Artists artwork/A-Z navigation and artist drill-in, Albums artwork/artist/A-Z navigation and album drill-in, PLAY RANDOM through the existing HEOS album route, and ordinary album-track PLAY NOW. The HP prewarms the official catalogues sequentially in the accepted order Artists -> Albums -> Tracks.
+
+Production checkpoints:
+
+```text
+998589b — Use official TIDAL Artists and Albums UI
+497e6a5 — Remove Artists and Albums UI migration helper
+
+Backend:
+2ba75d0 — Add official TIDAL Artists and Albums catalogues
+f4e1476 — Remove Artists and Albums migration helpers
+dbe79a6 — Remove Artists and Albums documentation helper
+```
+
+Next migration target: ordinary My Music Playlists. These playlists are visible directly through HEOS as `LIBPLAYLIST-*`, so first reconcile the official TIDAL user-playlist collection against those HEOS containers. Do not reopen the personalised My Mix/Birthday resolver work unless new evidence specifically requires it.
 
 ## Personalised TIDAL artwork checkpoint — 1 Sep 2026
 

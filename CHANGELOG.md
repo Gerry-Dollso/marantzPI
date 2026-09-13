@@ -2,6 +2,29 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-13 — Official TIDAL Artists and Albums UI migration
+
+- Migrated My Music -> Artists and My Music -> Albums top-level display to the HP backend's official-TIDAL-backed catalogue endpoints while retaining existing HEOS CID-driven drill-ins and playback.
+- Artists now displays 392 live official resources from 393 relationship references. The HEOS artist collection contains the same 392 live IDs; official ID `32968323` was directly verified as 404 and is omitted.
+- Albums now displays 1,482 rich official resources from 1,535 relationship references. HEOS contains the same full 1,535-ID relationship set; 53 official metadata resources remain unresolved. Three sampled unresolved IDs (`1441435`, `69720620`, `308597115`) were directly verified as 404.
+- Preserved/generated `LIBARTIST-<id>` and `LIBALBUM-<id>` CIDs so the existing HEOS artist/album drill-ins and playback routes remain unchanged.
+- Live touchscreen acceptance passed Artists artwork/A-Z/drill-in, Albums artwork/artist/A-Z/drill-in, PLAY RANDOM, and ordinary album-track PLAY NOW.
+- Companion backend prewarm is sequential Artists -> Albums -> Tracks.
+- Removed the temporary Pi migration helper after the production source checkpoint was pushed.
+- Next migration target is ordinary My Music Playlists. Reconcile official user playlists directly against HEOS `LIBPLAYLIST-*`; do not conflate this with personalised My Mix/Birthday resolver work.
+
+Checkpoint sequence:
+
+```text
+998589b — Use official TIDAL Artists and Albums UI
+497e6a5 — Remove Artists and Albums UI migration helper
+
+Companion backend:
+2ba75d0 — Add official TIDAL Artists and Albums catalogues
+f4e1476 — Remove Artists and Albums migration helpers
+dbe79a6 — Remove Artists and Albums documentation helper
+```
+
 ## 2026-09-13 — Official TIDAL Favourite Tracks UI migration
 
 - Migrated My Music -> Tracks display from the older HEOS browse path to the HP backend's official-TIDAL-backed `/api/tidal/favourite-tracks` endpoint through a new Pi proxy.
