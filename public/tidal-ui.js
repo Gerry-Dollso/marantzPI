@@ -466,6 +466,43 @@ function renderBrowseItems(items, title) {
   });
 }
 
+async function loadTidalArtists() {
+  tidalShowAlbumArtists = false;
+  tidalStatus.textContent = 'Loading Artists…';
+  tidalResults.replaceChildren();
+  setTidalAlphabetVisible(false);
+
+  try {
+    const response = await fetch(
+      '/api/tidal/favourite-artists',
+      { cache: 'no-store' }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not load artists');
+    }
+
+    const artists = Array.isArray(result.artists) ? result.artists : [];
+    tidalArtistItems = artists.map(artist => ({
+      name: artist.name,
+      cid: artist.cid,
+      type: 'artist',
+      container: true,
+      playable: false,
+      imageUrl: artist.artwork
+    }));
+
+    tidalArtistLetter = 'ALL';
+    setTidalAlphabetVisible(true);
+    renderFilteredArtists();
+    tidalResults.scrollTop = 0;
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+  }
+}
+
 async function loadTidalAlbums() {
   tidalShowAlbumArtists = true;
   tidalStatus.textContent = 'Loading Albums…';
@@ -474,7 +511,7 @@ async function loadTidalAlbums() {
 
   try {
     const response = await fetch(
-      '/api/tidal/browse?cid=' + encodeURIComponent('My Music-Albums'),
+      '/api/tidal/favourite-albums',
       { cache: 'no-store' }
     );
 
@@ -484,7 +521,18 @@ async function loadTidalAlbums() {
       throw new Error(result.error || 'Could not load albums');
     }
 
-    tidalAlbumItems = Array.isArray(result.items) ? result.items : [];
+    const albums = Array.isArray(result.albums) ? result.albums : [];
+    tidalAlbumItems = albums.map(album => ({
+      name: album.title,
+      cid: album.cid,
+      type: 'album',
+      container: true,
+      playable: false,
+      artist: album.artist,
+      imageUrl: album.artwork,
+      albumId: String(album.id || '')
+    }));
+
     tidalAlbumLetter = 'ALL';
     setTidalAlphabetVisible(true);
     renderFilteredAlbums();
@@ -822,6 +870,14 @@ async function browseTidal(cid, title, pushHistory = true) {
     setTidalKeyboardOpen(false);
     tidalSearchInput.blur();
     await loadTidalAlbums();
+    return;
+  }
+
+  if (cid === 'My Music-Artists') {
+    tidalScreen.classList.add("browsing");
+    setTidalKeyboardOpen(false);
+    tidalSearchInput.blur();
+    await loadTidalArtists();
     return;
   }
 

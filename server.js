@@ -1278,6 +1278,26 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
+      if (req.method === 'GET' && url.pathname === '/api/tidal/favourite-artists') {
+        const result = await mediaBackendRequest(
+          '/api/tidal/favourite-artists',
+          'GET',
+          40000
+        );
+
+        return sendJson(res, 200, result);
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/tidal/favourite-albums') {
+        const result = await mediaBackendRequest(
+          '/api/tidal/favourite-albums',
+          'GET',
+          120000
+        );
+
+        return sendJson(res, 200, result);
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/tidal/favourite-tracks') {
         const result = await mediaBackendRequest(
           '/api/tidal/favourite-tracks',
