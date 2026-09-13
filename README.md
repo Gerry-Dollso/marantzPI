@@ -13,16 +13,39 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-bcabd8a — Remove TIDAL track action reuse helper
+750de76 — Remove Favourite Tracks UI migration helper
 ```
 
 Companion backend checkpoint:
 
 ```text
-9ac4924 — Remove strict play from here helper
+9ba3b6f — Remove Favourite Tracks action fix helper
 ```
 
-This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, the official-TIDAL-backed 594-track Favourite Tracks UI, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+
+## Official TIDAL Favourite Tracks UI checkpoint — 13 Sep 2026
+
+My Music -> Tracks is now fully migrated away from HEOS browsing for display. The Pi calls its local `/api/tidal/favourite-tracks` proxy, which forwards to the HP backend's official-TIDAL-backed canonical Favourite Tracks endpoint. The live canonical collection is 594 tracks after stale official references are omitted and HEOS duplicate rows are reconciled.
+
+The touchscreen renders those 594 tracks as one continuous rich list with official TIDAL artwork, title, artist and album metadata. No 50-item pager or HEOS browse wait remains in the Tracks UI. PLAY ALL and SHUFFLE ALL continue to use the accepted rolling Favourite Tracks backend queue builder; individual tracks retain PLAY NOW, PLAY NEXT, ADD TO END, PLAY FROM HERE and PLAY ONLY.
+
+End-to-end touchscreen acceptance passed all seven actions: PLAY ALL, SHUFFLE ALL, PLAY FROM HERE, PLAY NOW, PLAY NEXT, ADD TO END and PLAY ONLY. ADD TO END was additionally verified by confirming the selected track was present at the queue tail.
+
+A critical HEOS transport detail was reconfirmed during this migration: ordinary Favourite Tracks queue actions must send the literal-space HEOS CID `My Music-Tracks`. URL-encoded `My%20Music-Tracks` is rejected by HEOS with `cannot play`. Official TIDAL track IDs already match the de-duplicated HEOS MIDs, so no track-ID translation is required for this collection.
+
+Production checkpoints:
+
+```text
+27be5d1 — Use official TIDAL Favourite Tracks UI
+750de76 — Remove Favourite Tracks UI migration helper
+
+Backend:
+08a86ce — Fix Favourite Tracks ordinary actions
+9ba3b6f — Remove Favourite Tracks action fix helper
+```
+
+Next migration target: My Music Artists, Albums and Playlists. Their browse/display paths still use the older HEOS-oriented library path and should be converted to the same faster, richer official-TIDAL UI pattern while keeping HEOS as playback transport.
 
 ## Personalised TIDAL artwork checkpoint — 1 Sep 2026
 
@@ -128,7 +151,7 @@ fc418d2 — Upgrade TIDAL My Music albums browsing
 
 The old `My Music-Tracks` paging workaround existed because a full HEOS browse of hundreds of favourites was too slow. That workaround split Tracks into 50-item pages, which made browsing tolerable but meant a simple PLAY ALL/SHUFFLE ALL operation could only act on the current page.
 
-The HP backend's bounded in-memory browse cache removes the need for that UI restriction. The Pi now requests the full `My Music-Tracks` container and renders it with the existing playlist-style list renderer. On subsequent visits the HP can return the cached full list immediately while refreshing it against HEOS in the background.
+The Tracks display no longer depends on the HEOS browse cache. The Pi now requests `/api/tidal/favourite-tracks`, backed by the HP's canonical official TIDAL Favourite Tracks cache, and renders the complete 594-track collection with official artwork, title, artist and album metadata. HEOS remains the playback transport rather than the display/catalogue authority for this screen.
 
 For playback, the Pi proxies full-library requests to the HP endpoint:
 
@@ -136,9 +159,9 @@ For playback, the Pi proxies full-library requests to the HP endpoint:
 /api/tidal/tracks/play-all?shuffle=0|1
 ```
 
-The HP begins playback with the first selected MID and appends the rest sequentially in the background. For Shuffle All, the HP randomises the complete favourites list before starting the first track, so the resulting queue order represents the entire collection.
+The HP uses the accepted rolling Favourite Tracks queue architecture rather than attempting to build all 594 HEOS queue rows at once. It starts playback from an initial 10-track buffer, replenishes 5 tracks whenever fewer than 5 remain ahead, and keeps HEOS shuffle disabled. For SHUFFLE ALL, the backend shuffles the canonical 594-track order once before the rolling session starts, so playback follows one fixed full-library shuffle order.
 
-The Pi proxy allows up to 180 seconds for the full-library queue-building request. This long HTTP allowance does not mean the user waits for 180 seconds before hearing music: live testing showed playback begins from the first selected track while the queue continues growing quietly behind it. The HP now also cancels and drains a superseded long Favourite Tracks build before a newer TIDAL playback action takes over, preventing an abandoned builder from interfering with later album/track playback.
+A persistent HEOS event connection drives debounced queue reconciliation by qid/count, with bounded tail verification before replenishment. External queue divergence fails closed, and a newer playback request supersedes the older rolling generation so stale work cannot continue modifying the queue.
 
 Do not restore the old `loadTidalTrackPage()` special case for `My Music-Tracks` unless there is a deliberate reason to reintroduce paging. Favourite Tracks is now intentionally classified as a track-list container alongside playlists and `LIBARTIST-Tracks-*`.
 

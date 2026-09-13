@@ -2,6 +2,27 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-13 — Official TIDAL Favourite Tracks UI migration
+
+- Migrated My Music -> Tracks display from the older HEOS browse path to the HP backend's official-TIDAL-backed `/api/tidal/favourite-tracks` endpoint through a new Pi proxy.
+- The touchscreen now shows the canonical 594-track Favourite Tracks collection as one continuous rich list with official artwork, title, artist and album metadata and no pager.
+- Preserved the accepted rolling backend architecture for PLAY ALL, SHUFFLE ALL and PLAY FROM HERE and preserved the existing individual-track action menu.
+- End-to-end touchscreen acceptance passed PLAY ALL, SHUFFLE ALL, PLAY FROM HERE, PLAY NOW, PLAY NEXT, ADD TO END and PLAY ONLY. ADD TO END was verified at the actual queue tail.
+- Diagnosed ordinary action failures as HEOS CID formatting rather than ID mismatch. Official TIDAL IDs match the reconciled HEOS MIDs; the required fix was to preserve literal-space `My Music-Tracks` in HEOS `browse/add_to_queue` commands instead of sending `My%20Music-Tracks`.
+- Removed both temporary guarded migration helpers after production commits were pushed and verified clean.
+- Next migration target is My Music Artists, Albums and Playlists: move their display/catalogue paths to the same faster, richer official TIDAL pattern while retaining HEOS playback.
+
+Checkpoint sequence:
+
+```text
+27be5d1 — Use official TIDAL Favourite Tracks UI
+750de76 — Remove Favourite Tracks UI migration helper
+
+Companion backend:
+08a86ce — Fix Favourite Tracks ordinary actions
+9ba3b6f — Remove Favourite Tracks action fix helper
+```
+
 ## 2026-09-02 — Personalised TIDAL PLAY FROM HERE
 
 - Added PLAY FROM HERE to official-API-backed My Mix/personalised track actions. The Pi sends the personalised playlist ID plus the exact official selected track ID to the backend rather than falling back to a generic HEOS container action.
