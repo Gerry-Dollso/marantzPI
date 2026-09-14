@@ -466,6 +466,46 @@ function renderBrowseItems(items, title) {
   });
 }
 
+async function loadTidalOrdinaryPlaylists(cid, title) {
+  tidalShowAlbumArtists = false;
+  tidalStatus.textContent = 'Loading ' + (title || 'Playlists') + '…';
+  tidalResults.replaceChildren();
+  setTidalAlphabetVisible(false);
+
+  try {
+    const response = await fetch('/api/tidal/favourite-playlists', { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || 'Could not load playlists');
+    }
+
+    if (cid === 'My Music-Playlists') {
+      renderBrowseItems([
+        { name: 'Created by me', cid: 'My Music-Playlists-Created by me', type: 'container', container: true, playable: false },
+        { name: 'Favorited', cid: 'My Music-Playlists-Favorited', type: 'container', container: true, playable: false }
+      ], title || 'Playlists');
+      tidalResults.scrollTop = 0;
+      return;
+    }
+
+    const playlists = cid === 'My Music-Playlists-Created by me'
+      ? result.createdByMe
+      : result.favorited;
+    const items = (Array.isArray(playlists) ? playlists : []).map(playlist => ({
+      name: playlist.name,
+      cid: playlist.cid,
+      type: 'playlist',
+      container: true,
+      playable: true,
+      imageUrl: playlist.artwork
+    }));
+    renderBrowseItems(items, title);
+    tidalResults.scrollTop = 0;
+  } catch (error) {
+    tidalStatus.textContent = error.message;
+  }
+}
+
 async function loadTidalArtists() {
   tidalShowAlbumArtists = false;
   tidalStatus.textContent = 'Loading Artists…';
@@ -863,6 +903,18 @@ async function browseTidal(cid, title, pushHistory = true) {
       cid,
       title
     });
+  }
+
+  if (
+    cid === 'My Music-Playlists' ||
+    cid === 'My Music-Playlists-Created by me' ||
+    cid === 'My Music-Playlists-Favorited'
+  ) {
+    tidalScreen.classList.add("browsing");
+    setTidalKeyboardOpen(false);
+    tidalSearchInput.blur();
+    await loadTidalOrdinaryPlaylists(cid, title);
+    return;
   }
 
   if (cid === 'My Music-Albums') {

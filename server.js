@@ -1298,6 +1298,16 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
+      if (req.method === 'GET' && url.pathname === '/api/tidal/favourite-playlists') {
+        const result = await mediaBackendRequest(
+          '/api/tidal/favourite-playlists',
+          'GET',
+          40000
+        );
+
+        return sendJson(res, 200, result);
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/tidal/favourite-tracks') {
         const result = await mediaBackendRequest(
           '/api/tidal/favourite-tracks',
