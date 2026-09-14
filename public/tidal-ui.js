@@ -45,11 +45,25 @@ function setTidalPersonalisedChrome(mode = 'normal', playlistId = '') {
   tidalPersonalisedShuffleAll.classList.remove('loading');
 }
 
+let tidalSwipeReturnArmed = false;
+
 function setTidalOpen(open) {
+  if (open) tidalSwipeReturnArmed = false;
   document.body.classList.toggle("show-tidal", open);
   tidalScreen.setAttribute("aria-hidden", String(!open));
   if (!open) tidalSearchInput.blur();
 }
+
+window.addEventListener('popstate', () => {
+  if (!tidalSwipeReturnArmed) return;
+  if (document.body.classList.contains('show-tidal')) return;
+  if (nowPlayingScreen?.getAttribute('aria-hidden') === 'true') return;
+  if (latest?.playbackSource !== 'tidal') return;
+
+  tidalSwipeReturnArmed = false;
+  closeTidalTrackActionMenu?.();
+  setTidalOpen(true);
+});
 
 tidalNowPlaying?.addEventListener('click', () => {
   closeTidalTrackActionMenu?.();
@@ -179,6 +193,7 @@ async function runTidalTrackAction(action, actionButton) {
 
   if (action === 'play-from-here') {
     closeTidalTrackActionMenu();
+    tidalSwipeReturnArmed = true;
     setTidalOpen(false);
   }
 
@@ -227,6 +242,7 @@ async function runTidalTrackAction(action, actionButton) {
       (statusByAction[action] || 'Updated') + ' — ' + selection.name;
 
     if (['play-now', 'play-from-here', 'play-only'].includes(action)) {
+      tidalSwipeReturnArmed = true;
       setTidalOpen(false);
     }
   } catch (error) {
