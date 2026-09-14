@@ -2,6 +2,23 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-14 — Artist ordering and TIDAL Now Playing swipe return
+
+- Sorted the complete official-TIDAL-backed My Music Artists list alphabetically before applying the existing ALL/A-Z filter. The change is isolated to Artists; Albums, Playlists, Tracks and personalised lists retain their existing ordering. Live touchscreen acceptance passed.
+- Restored a deliberately narrow Chromium swipe-back path from TIDAL-triggered Now Playing. PLAY NOW, PLAY FROM HERE and PLAY ONLY arm a one-shot return to the preserved TIDAL browse screen; the existing global browser-history trap remains unchanged.
+- Manual TIDAL NOW PLAYING does not arm the gesture. Non-TIDAL MarantzPi input screens remain swipe-trapped/no-op, and native back navigation from the external SR8015 setup page remains unchanged.
+- Live acceptance passed return to the exact previous playlist track list and a non-TIDAL input no-op test.
+- Temporary guarded migration helpers were removed after both production changes were accepted and pushed.
+
+Checkpoint sequence:
+
+```text
+84170a5 — Sort TIDAL Artists alphabetically
+7de1701 — Remove TIDAL Artists sort migration helper
+36bd317 — Restore TIDAL browse with Now Playing swipe
+1758311 — Remove TIDAL swipe return migration helper
+```
+
 ## 2026-09-14 — Official TIDAL ordinary Playlists UI migration
 
 - Migrated My Music -> Playlists top-level and branch display to the HP backend's official-TIDAL-backed ordinary-playlist endpoint while retaining existing HEOS `LIBPLAYLIST-*` drill-in and playback.

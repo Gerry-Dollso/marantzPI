@@ -10,19 +10,43 @@ Active deployed/development branch:
 housekeeping-2026-08-21
 ```
 
-Current tested functional checkpoint:
+Current cleaned/pushed Pi checkpoint:
 
 ```text
-1e810ed — Remove ordinary Playlists UI migration helper
+1758311 — Remove TIDAL swipe return migration helper
 ```
 
-Companion backend checkpoint:
+Latest tested production UI checkpoints:
 
 ```text
-0f6bf7b — Remove ordinary Playlists migration helpers
+36bd317 — Restore TIDAL browse with Now Playing swipe
+84170a5 — Sort TIDAL Artists alphabetically
+```
+
+Companion backend current cleaned/pushed checkpoint:
+
+```text
+b83b443 — Remove official TIDAL catalogue README updater
 ```
 
 This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, the official-TIDAL-backed 594-track Favourite Tracks UI, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
+
+## 2026-09-14 — Artist ordering and TIDAL Now Playing swipe return
+
+- My Music -> Artists now sorts the complete official-TIDAL-backed artist list alphabetically, case-insensitively, before the existing ALL/A-Z filtering. No other TIDAL lists were re-ordered. Live touchscreen acceptance confirmed ALL and A-Z behaviour.
+- When TIDAL itself sends the user to Now Playing through PLAY NOW, PLAY FROM HERE or PLAY ONLY, the Chromium swipe-back gesture now restores the exact preserved TIDAL browse screen. The TIDAL DOM/history is only hidden during playback, so the prior playlist/track-list context and scroll position remain available.
+- The swipe return is deliberately armed only by those TIDAL track actions. Swiping on PHONO/CD/other MarantzPi input screens remains trapped/no-op, and the existing native browser-back behaviour from the external SR8015 HTTPS setup page is unchanged because MarantzPi JavaScript is not running there.
+- Manual use of the TIDAL NOW PLAYING button does not arm swipe-return. The global kiosk-history guard in `public/app.js` was not weakened.
+- Live acceptance passed TIDAL playlist -> PLAY NOW -> Now Playing -> swipe-back to the exact previous track list, plus a non-TIDAL input swipe test that correctly did nothing.
+
+Checkpoint sequence:
+
+```text
+84170a5 — Sort TIDAL Artists alphabetically
+7de1701 — Remove TIDAL Artists sort migration helper
+36bd317 — Restore TIDAL browse with Now Playing swipe
+1758311 — Remove TIDAL swipe return migration helper
+```
 
 ## Official TIDAL Favourite Tracks UI checkpoint — 13 Sep 2026
 
@@ -139,10 +163,14 @@ Related source checkpoints include `ce18540` (richer personalised track metadata
 
 ## Near-term TIDAL roadmap
 
-- Replace the older HEOS-oriented shortcuts with faster, richer official-TIDAL equivalents where the official API can provide the catalogue/UI metadata while HEOS remains playback transport.
-- Add TIDAL favourite/like controls for tracks, albums and artists.
-- Add a touchscreen Current Queue view. The first version should be read-only, show the current track and upcoming queue with available artwork/title/artist/album metadata, and provide direct visibility into PLAY FROM HERE / PLAY NEXT / ADD TO END results. Later queue mutation such as play-this-track, remove, reorder or clear can be considered separately.
-- Longer-term backend opportunities already preserved in the backend handover include listening history/recently played and richer discovery.
+The next work is intentionally ordered so each feature can be researched and accepted without destabilising the working playback stack:
+
+1. **Current Queue:** add a Now Playing link to a queue screen showing the live HEOS queue. Start with read-only queue reconciliation, then add explicitly tested selection/editing controls such as play-this-track, remove and reorder/sort only after the live queue model and interactions with rolling/background queue builders are understood.
+2. **Now Playing favourite heart:** show whether the canonical TIDAL track is in the user's collection and allow add/remove only after a read-only membership path and safe official-TIDAL mutation contract are proven. Never infer canonical TIDAL identity from a HEOS MID where personalised/replacement resolution may differ.
+3. **TIDAL landing artwork:** remove the generic empty artwork boxes on category rows or replace them with deliberate appropriate imagery; do not leave blank placeholder boxes.
+4. **Richer artist page:** remove/fill blank category artwork slots and add an official-TIDAL artist hero image plus biography/description where the developer API actually exposes supported metadata. Preserve the existing HEOS-backed category drill-ins/playback.
+
+Longer-term backend opportunities already preserved in the backend handover include listening history/recently played, diagnostics and richer discovery.
 
 ## Current feature set
 
