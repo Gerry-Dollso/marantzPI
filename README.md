@@ -13,13 +13,13 @@ housekeeping-2026-08-21
 Current tested functional checkpoint:
 
 ```text
-497e6a5 — Remove Artists and Albums UI migration helper
+1e810ed — Remove ordinary Playlists UI migration helper
 ```
 
 Companion backend checkpoint:
 
 ```text
-dbe79a6 — Remove Artists and Albums documentation helper
+0f6bf7b — Remove ordinary Playlists migration helpers
 ```
 
 This checkpoint includes the current rich personalised TIDAL/My Mixes UI and playback controls, the official-TIDAL-backed 594-track Favourite Tracks UI, protected TIDAL resume behaviour, deterministic suppression of transient HEOS queue metadata during queue replacement, explicit AVR `unknown` handling, reduced AVR port-23 connection churn, and the production personalised-artwork path tested 10/10 from a cold backend cache. Treat older `v3-development`, `v3`, and stable branches as historical/reference branches unless deliberately restoring or comparing them.
@@ -65,7 +65,28 @@ f4e1476 — Remove Artists and Albums migration helpers
 dbe79a6 — Remove Artists and Albums documentation helper
 ```
 
-Next migration target: ordinary My Music Playlists. These playlists are visible directly through HEOS as `LIBPLAYLIST-*`, so first reconcile the official TIDAL user-playlist collection against those HEOS containers. Do not reopen the personalised My Mix/Birthday resolver work unless new evidence specifically requires it.
+## Official TIDAL ordinary Playlists UI checkpoint — 14 Sep 2026
+
+My Music -> Playlists now uses the HP backend's official-TIDAL-backed ordinary-playlist catalogue for its top-level and branch display while preserving the existing HEOS-backed `LIBPLAYLIST-*` drill-in and playback paths. The top level retains the two familiar branches, Created by me and Favorited.
+
+The catalogue is deliberately dynamic. The backend takes the live exact-ID intersection of the official TIDAL user-playlist collection and the live HEOS Created by me/Favorited playlist rows. It does not hard-code today's playlist IDs and it does not maintain a blacklist of personalised Mix/Radio IDs. If an ordinary playlist is created/favourited and appears on both sides it can appear automatically; if it is removed from either side it drops out of the intersection.
+
+The accepted reconciliation snapshot contained 53 official relationship IDs across 3 pages and 34 ordinary HEOS playlists: 13 Created by me and 21 Favorited. All 34 HEOS ordinary IDs were present officially, giving zero HEOS-only IDs. The 19 official-only entries were personalised Mixes/Radio and were excluded naturally by the intersection. These counts are an acceptance snapshot, not permanent library constants.
+
+Official TIDAL supplies rich playlist metadata and artwork; HEOS supplies grouping/order and the deterministic playable `LIBPLAYLIST-<id>` CID. Both USER and EDITORIAL ordinary playlists are valid, so do not filter by playlist type. The Pi proxies `/api/tidal/favourite-playlists`; opening a `LIBPLAYLIST-*` item continues through the existing HEOS track-list path.
+
+Live touchscreen acceptance passed both branches, rich artwork, opening 1980s Alternative Rock Classics, PLAY NOW, PLAY ALL and SHUFFLE ALL. Personalised My Mix/Radio remains a separate resolver architecture; do not reopen the Sugarcubes/Birthday work for ordinary Playlists without new evidence.
+
+Production checkpoints:
+
+```text
+d2f96e4 — Use official TIDAL ordinary Playlists UI
+1e810ed — Remove ordinary Playlists UI migration helper
+
+Backend:
+43902d1 — Add official TIDAL ordinary Playlists catalogue
+0f6bf7b — Remove ordinary Playlists migration helpers
+```
 
 ## Personalised TIDAL artwork checkpoint — 1 Sep 2026
 

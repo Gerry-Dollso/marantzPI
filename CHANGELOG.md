@@ -2,6 +2,27 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-14 — Official TIDAL ordinary Playlists UI migration
+
+- Migrated My Music -> Playlists top-level and branch display to the HP backend's official-TIDAL-backed ordinary-playlist endpoint while retaining existing HEOS `LIBPLAYLIST-*` drill-in and playback.
+- Preserved the two HEOS categories, Created by me and Favorited. The backend dynamically reconciles the live exact-ID intersection of official TIDAL collection IDs and live HEOS ordinary playlist IDs; no current playlist IDs or personalised Mix/Radio exclusions are hard-coded.
+- Acceptance snapshot: 53 official relationship IDs across 3 pages; HEOS 13 Created by me + 21 Favorited = 34 ordinary playlists; all 34 were official, HEOS-only count zero, and the 19 official-only entries were personalised Mixes/Radio. Counts are snapshots rather than fixed invariants.
+- Official TIDAL supplies rich metadata/artwork while HEOS supplies branch order and playable `LIBPLAYLIST-*` CIDs. Both USER and EDITORIAL ordinary playlists are valid; playlist type is not used as an exclusion rule.
+- Live touchscreen acceptance passed both branches, rich artwork, playlist drill-in, PLAY NOW, PLAY ALL and SHUFFLE ALL.
+- Personalised My Mix/Radio and the Sugarcubes/Birthday resolver remain separate; do not reopen that resolver work for ordinary Playlists without new evidence.
+- Removed the temporary Pi migration helper after the production source checkpoint was pushed.
+
+Checkpoint sequence:
+
+```text
+d2f96e4 — Use official TIDAL ordinary Playlists UI
+1e810ed — Remove ordinary Playlists UI migration helper
+
+Companion backend:
+43902d1 — Add official TIDAL ordinary Playlists catalogue
+0f6bf7b — Remove ordinary Playlists migration helpers
+```
+
 ## 2026-09-13 — Official TIDAL Artists and Albums UI migration
 
 - Migrated My Music -> Artists and My Music -> Albums top-level display to the HP backend's official-TIDAL-backed catalogue endpoints while retaining existing HEOS CID-driven drill-ins and playback.
