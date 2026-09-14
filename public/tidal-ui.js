@@ -525,14 +525,22 @@ async function loadTidalArtists() {
     }
 
     const artists = Array.isArray(result.artists) ? result.artists : [];
-    tidalArtistItems = artists.map(artist => ({
-      name: artist.name,
-      cid: artist.cid,
-      type: 'artist',
-      container: true,
-      playable: false,
-      imageUrl: artist.artwork
-    }));
+    tidalArtistItems = artists
+      .map(artist => ({
+        name: artist.name,
+        cid: artist.cid,
+        type: 'artist',
+        container: true,
+        playable: false,
+        imageUrl: artist.artwork
+      }))
+      .sort((a, b) =>
+        String(a.name || '').localeCompare(
+          String(b.name || ''),
+          undefined,
+          { sensitivity: 'base' }
+        )
+      );
 
     tidalArtistLetter = 'ALL';
     setTidalAlphabetVisible(true);
