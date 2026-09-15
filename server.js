@@ -1414,6 +1414,43 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
+    if (req.method === 'GET' && url.pathname === '/api/queue') {
+      const pid = encodeURIComponent(config.playerId);
+      const [queue, mediaResponse] = await Promise.all([
+        getHeosQueueItems(),
+        heos(`player/get_now_playing_media?pid=${pid}`)
+      ]);
+      const media =
+        mediaResponse?.heos?.result === 'success'
+          ? mediaResponse.payload || {}
+          : {};
+      const currentQid = String(media.qid || '');
+      const currentMid = String(media.mid || '');
+      const items = queue.map(item => {
+        const qid = String(item?.qid || '');
+        const mid = String(item?.mid || '');
+        return {
+          qid,
+          mid,
+          albumId: String(item?.album_id || ''),
+          song: String(item?.song || ''),
+          artist: String(item?.artist || ''),
+          album: String(item?.album || ''),
+          imageUrl: String(item?.image_url || ''),
+          current:
+            Boolean(qid) && qid === currentQid &&
+            (!currentMid || !mid || mid === currentMid)
+        };
+      });
+
+      return sendJson(res, 200, {
+        count: items.length,
+        currentQid,
+        currentMid,
+        items
+      });
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
     }
