@@ -10,11 +10,30 @@
 
   if (!openButton || !screen || !backButton || !count || !status || !list) return;
 
+  const REFRESH_MS = 5000;
   let requestGeneration = 0;
+  let refreshTimer = null;
+  let requestInFlight = false;
+  let scrollToCurrentOnNextRender = false;
+
+  function stopRefresh() {
+    if (!refreshTimer) return;
+    window.clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 
   function setOpen(open) {
     document.body.classList.toggle('show-queue', open);
     screen.setAttribute('aria-hidden', String(!open));
+
+    stopRefresh();
+    if (open) {
+      scrollToCurrentOnNextRender = true;
+      loadQueue();
+      refreshTimer = window.setInterval(loadQueue, REFRESH_MS);
+    } else {
+      requestGeneration += 1;
+    }
   }
 
   function makeText(className, value) {
@@ -60,6 +79,7 @@
 
   function renderQueue(data) {
     const items = Array.isArray(data?.items) ? data.items : [];
+    const previousScrollTop = list.scrollTop;
     count.textContent = `${items.length} ${items.length === 1 ? 'TRACK' : 'TRACKS'}`;
     list.replaceChildren();
 
@@ -72,41 +92,47 @@
     items.forEach(item => list.appendChild(makeRow(item)));
 
     const current = list.querySelector('.queue-row.current');
-    if (current) {
+    if (scrollToCurrentOnNextRender && current) {
+      scrollToCurrentOnNextRender = false;
       requestAnimationFrame(() => {
         current.scrollIntoView({ block: 'center', behavior: 'auto' });
       });
     } else {
-      list.scrollTop = 0;
+      scrollToCurrentOnNextRender = false;
+      list.scrollTop = previousScrollTop;
     }
   }
 
   async function loadQueue() {
-    const generation = ++requestGeneration;
-    count.textContent = '— TRACKS';
-    status.textContent = 'LOADING QUEUE…';
-    list.replaceChildren();
+    if (requestInFlight || !document.body.classList.contains('show-queue')) return;
+
+    const generation = requestGeneration;
+    const initialLoad = scrollToCurrentOnNextRender;
+    requestInFlight = true;
+
+    if (initialLoad) {
+      count.textContent = '— TRACKS';
+      status.textContent = 'LOADING QUEUE…';
+      list.replaceChildren();
+    }
 
     try {
       const response = await fetch('/api/queue', { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'Queue unavailable');
-      if (generation !== requestGeneration) return;
+      if (generation !== requestGeneration || !document.body.classList.contains('show-queue')) return;
       renderQueue(data);
     } catch (error) {
-      if (generation !== requestGeneration) return;
-      count.textContent = '— TRACKS';
-      status.textContent = String(error?.message || 'QUEUE UNAVAILABLE').toUpperCase();
+      if (generation !== requestGeneration || !document.body.classList.contains('show-queue')) return;
+      if (initialLoad) {
+        count.textContent = '— TRACKS';
+        status.textContent = String(error?.message || 'QUEUE UNAVAILABLE').toUpperCase();
+      }
+    } finally {
+      requestInFlight = false;
     }
   }
 
-  openButton.addEventListener('click', () => {
-    setOpen(true);
-    loadQueue();
-  });
-
-  backButton.addEventListener('click', () => {
-    requestGeneration += 1;
-    setOpen(false);
-  });
+  openButton.addEventListener('click', () => setOpen(true));
+  backButton.addEventListener('click', () => setOpen(false));
 })();
