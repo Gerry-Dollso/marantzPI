@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/playback-source-ui.css?v=3">
   <link rel="stylesheet" href="/radio-ui.css?v=2">
   <link rel="stylesheet" href="/tidal-ui.css?v=1">
+  <link rel="stylesheet" href="/queue-ui.css?v=1">
   <link rel="stylesheet" href="/standby-skin.css?v=1">
   <link rel="stylesheet" href="/tv-ui.css?v=3">
   <link rel="stylesheet" href="/waveshare-1280.css?v=1">
@@ -104,6 +105,7 @@
     <section class="information">
       <header>
         <div id="sourceHeading" class="heading">NOW PLAYING</div>
+        <button id="queueOpen" class="queue-open-button" type="button">QUEUE</button>
         <button
           id="connection"
           class="connection power-button"
@@ -196,6 +198,16 @@
     <button type="button" data-zone2-source="cd">CD</button>
     <button type="button" data-zone2-source="heos">HEOS</button>
   </div>
+
+    <section id="queueScreen" class="queue-screen" aria-hidden="true">
+      <header class="queue-header">
+        <button id="queueBack" class="queue-back" type="button">BACK</button>
+        <h1>CURRENT QUEUE</h1>
+        <div id="queueCount" class="queue-count">— TRACKS</div>
+      </header>
+      <div id="queueStatus" class="queue-status"></div>
+      <div id="queueList" class="queue-list" aria-live="polite"></div>
+    </section>
 
     <section id="tidalScreen" class="tidal-screen" aria-hidden="true">
       <header class="tidal-header">
@@ -306,5 +318,6 @@
   <script src="/playback-source-ui.js?v=5"></script>
   <script src="/radio-ui.js?v=2"></script>
   <script src="/tidal-ui.js?v=3"></script>
+  <script src="/queue-ui.js?v=1"></script>
 </body>
 </html>
