@@ -2,6 +2,23 @@
 
 This file records project-level milestones and known-good checkpoints. Git history remains the detailed source for individual code changes.
 
+## 2026-09-15 — Read-only Current Queue
+
+- Added a Pi-local read-only `GET /api/queue` endpoint using the existing HEOS queue reader plus `get_now_playing_media`. The endpoint returns normalized qid, mid, albumId, song, artist, album and imageUrl fields and marks the current row without changing playback.
+- Live reconnaissance established that Current Queue must represent the **physical HEOS queue currently loaded**, not the source/canonical collection length. Favourite Tracks rolling playback was observed at 10 rows then 15 after a five-track low-water append; a 125-track ordinary playlist exposed 50 physical rows; My Mix 2 exposed 24 rows initially and later 40.
+- Added a QUEUE button to Now Playing and a dedicated full-screen CURRENT QUEUE view with artwork, title, artist, album, physical track count and NOW PLAYING highlighting.
+- Added a 5-second `/api/queue` refresh only while Current Queue is open. Live testing caught that the first deployed UI loaded only once; the corrected implementation was then verified to move the NOW PLAYING highlight automatically on a natural track transition. Manual scroll position is preserved during background refreshes and the current row is centred only when the screen first opens.
+- Preserved the intentional TIDAL retained-queue/resume design: an AVR-off state does not by itself invalidate the queue viewer.
+- Kept the feature deliberately read-only. No queue selection, remove, reorder, sort or clear mutation was introduced, and the HP backend remains outside this UI path.
+- Live touchscreen acceptance passed the queue screen, physical queue rendering and automatic current-row refresh. Production working tree was clean after push.
+
+Checkpoint sequence:
+
+```text
+41e8ab0 — Add read-only Current Queue API
+1796f6c — Add read-only Current Queue UI
+```
+
 ## 2026-09-14 — Artist ordering and TIDAL Now Playing swipe return
 
 - Sorted the complete official-TIDAL-backed My Music Artists list alphabetically before applying the existing ALL/A-Z filter. The change is isolated to Artists; Albums, Playlists, Tracks and personalised lists retain their existing ordering. Live touchscreen acceptance passed.

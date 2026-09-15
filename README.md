@@ -13,7 +13,13 @@ housekeeping-2026-08-21
 Current cleaned/pushed Pi checkpoint:
 
 ```text
-1758311 — Remove TIDAL swipe return migration helper
+1796f6c — Add read-only Current Queue UI
+```
+
+Current Queue API checkpoint:
+
+```text
+41e8ab0 — Add read-only Current Queue API
 ```
 
 Latest tested production UI checkpoints:
@@ -161,12 +167,28 @@ Inside a personalised playlist, rows show official TIDAL artwork plus track titl
 
 Related source checkpoints include `ce18540` (richer personalised track metadata), `a7e4970` (personalised playback controls) and `a65f1b5` (rich personalised landing cards).
 
+## 2026-09-15 — Read-only Current Queue
+
+Current Queue is now production-accepted on the Pi. A QUEUE control on Now Playing opens a dedicated full-screen CURRENT QUEUE view backed by the Pi-local read-only `GET /api/queue` endpoint. The endpoint reuses the existing HEOS queue reader and current-media query; it does not mutate playback or involve the HP backend.
+
+The screen displays the **physical queue currently materialised by HEOS**, not an inferred source/canonical total. Live reconnaissance proved that Favourite Tracks rolling playback initially materialises 10 rows and appends 5 at the low-water point, an ordinary 125-track Created-by-me playlist exposed 50 physical rows, and My Mix 2 exposed 24 rows initially and later 40. Therefore a displayed count such as `50 TRACKS` means 50 current physical HEOS queue rows, never `50 of 125` unless HEOS itself provides that source total through a separately proven contract.
+
+Rows expose HEOS artwork, title, artist, album, qid, mid and album_id. The current row is identified by current-media qid/mid and marked NOW PLAYING. The queue refreshes every 5 seconds only while the screen is open, preserves manual scroll position during refreshes, and stops polling when BACK closes the screen. Opening the screen centres the current row. Retained queue state while the AVR is off or after leaving NET is intentional because MarantzPi already preserves TIDAL queue/resume state; do not invalidate Current Queue merely because the receiver is off.
+
+Current Queue is deliberately **read-only**. No play-selected, remove, move, sort, clear or other queue mutation controls were added, and the user does not currently consider queue editing a priority. If mutation is revisited later, investigate it as a separate feature against ordinary HEOS playback, Favourite Tracks rolling playback and personalised/background queue builders rather than complicating this accepted viewer.
+
+Production checkpoints:
+
+```text
+41e8ab0 — Add read-only Current Queue API
+1796f6c — Add read-only Current Queue UI
+```
+
 ## Near-term TIDAL roadmap
 
 The next work is intentionally ordered so each feature can be researched and accepted without destabilising the working playback stack:
 
-1. **Current Queue:** add a Now Playing link to a queue screen showing the live HEOS queue. Start with read-only queue reconciliation, then add explicitly tested selection/editing controls such as play-this-track, remove and reorder/sort only after the live queue model and interactions with rolling/background queue builders are understood.
-2. **Now Playing favourite heart:** show whether the canonical TIDAL track is in the user's collection and allow add/remove only after a read-only membership path and safe official-TIDAL mutation contract are proven. Never infer canonical TIDAL identity from a HEOS MID where personalised/replacement resolution may differ.
+1. **Now Playing favourite heart:** show whether the canonical TIDAL track is in the user's collection and allow add/remove only after a read-only membership path and safe official-TIDAL mutation contract are proven. Never infer canonical TIDAL identity from a HEOS MID where personalised/replacement resolution may differ.
 3. **TIDAL landing artwork:** remove the generic empty artwork boxes on category rows or replace them with deliberate appropriate imagery; do not leave blank placeholder boxes.
 4. **Richer artist page:** remove/fill blank category artwork slots and add an official-TIDAL artist hero image plus biography/description where the developer API actually exposes supported metadata. Preserve the existing HEOS-backed category drill-ins/playback.
 
@@ -179,6 +201,7 @@ Longer-term backend opportunities already preserved in the backend handover incl
 - TIDAL opens directly into the HEOS `My Music` container, which is treated as the touchscreen TIDAL navigation root.
 - Back from child TIDAL views returns toward My Music; Back from My Music closes TIDAL.
 - Every TIDAL browser screen has a `NOW PLAYING` shortcut in the top-right opposite `BACK`. It only hides the TIDAL overlay and preserves browser history, playback, queue and AVR state.
+- Now Playing has a read-only **QUEUE** control that opens the dedicated CURRENT QUEUE screen. It displays the physical HEOS queue with artwork/title/artist/album metadata, marks the current row, refreshes every 5 seconds while open, and never mutates the queue.
 - TIDAL library browsing and search through the companion HP backend.
 - Artist selection opens the native HEOS artist root with Tracks, Albums, EP n Singles, Other Albums and Similar.
 - On TIDAL Now Playing, tapping the artist name opens the canonical TIDAL artist page without interrupting playback.
