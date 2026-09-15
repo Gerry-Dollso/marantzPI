@@ -43,6 +43,13 @@ let heosProgressReconnectTimer = null;
 let lastTidalResume = null;
 let tidalResumeNeeded = false;
 let tidalQueueTransition = null;
+let tidalOfficialTrackHint = null;
+
+function rememberOfficialTidalTrack(officialId, heosMid) {
+  const id = String(officialId || '').trim();
+  const mid = String(heosMid || '').trim();
+  tidalOfficialTrackHint = id && mid ? { officialId: id, heosMid: mid } : null;
+}
 const TIDAL_QUEUE_TRANSITION_TIMEOUT_MS = 10000;
 function startTidalQueueTransition(expectedMid = "") {
   tidalQueueTransition = {
@@ -658,6 +665,11 @@ async function getStatus() {
               : mediaMid || ""
         )
       : '',
+    tidalTrackId: playbackSource === 'tidal' &&
+      tidalOfficialTrackHint &&
+      String(tidalOfficialTrackHint.heosMid) === String(mediaMid)
+        ? String(tidalOfficialTrackHint.officialId)
+        : '',
     tidalAlbumId: playbackSource === 'tidal'
       ? String(
           tidalQueueTransitionActive && tidalQueueTransition?.hold?.albumId
@@ -1158,6 +1170,10 @@ http.createServer(async (req, res) => {
           60000
         );
 
+        if (startTrackId && result.firstMid) {
+          rememberOfficialTidalTrack(startTrackId, result.firstMid);
+        }
+
         if (tidalQueueTransition === transition) {
           transition.expectedMid = String(result.firstMid || "");
           if (transition.expectedMid === "") {
@@ -1198,6 +1214,10 @@ http.createServer(async (req, res) => {
         'GET',
         60000
       );
+
+      if ((action === 'play-now' || action === 'play-only') && result.firstMid) {
+        rememberOfficialTidalTrack(id, result.firstMid);
+      }
 
       return sendJson(res, 200, result);
     }
@@ -1305,6 +1325,32 @@ http.createServer(async (req, res) => {
           40000
         );
 
+        return sendJson(res, 200, result);
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/tidal/favourite-track-status') {
+        const id = String(url.searchParams.get('id') || '').trim();
+        if (!id || id.length > 256) {
+          return sendJson(res, 400, { ok: false, error: 'Track id is required' });
+        }
+        const result = await mediaBackendRequest(
+          '/api/tidal/favourite-track-status?id=' + encodeURIComponent(id),
+          'GET',
+          40000
+        );
+        return sendJson(res, 200, result);
+      }
+
+      if ((req.method === 'POST' || req.method === 'DELETE') && url.pathname === '/api/tidal/favourite-track') {
+        const id = String(url.searchParams.get('id') || '').trim();
+        if (!id || id.length > 256) {
+          return sendJson(res, 400, { ok: false, error: 'Track id is required' });
+        }
+        const result = await mediaBackendRequest(
+          '/api/tidal/favourite-track?id=' + encodeURIComponent(id),
+          req.method,
+          120000
+        );
         return sendJson(res, 200, result);
       }
 

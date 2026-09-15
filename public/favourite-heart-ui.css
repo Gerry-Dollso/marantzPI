@@ -1,0 +1,44 @@
+.progress-section {
+  position: relative;
+}
+
+.tidal-favourite-heart {
+  position: absolute;
+  right: 0;
+  bottom: 48px;
+  z-index: 2;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0 0.35rem;
+  min-width: 2.6rem;
+  cursor: pointer;
+}
+
+.tidal-favourite-heart .favourite-heart-icon {
+  display: block;
+  width: 32px;
+  height: 29px;
+  overflow: visible;
+}
+.tidal-favourite-heart .favourite-heart-icon path {
+  fill: transparent;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.tidal-favourite-heart.favourite .favourite-heart-icon path {
+  fill: #ff3b3b;
+  stroke: #ff3b3b;
+}
+
+.tidal-favourite-heart:disabled {
+  opacity: 0.45;
+}
+
+.tidal-favourite-heart[hidden] {
+  display: none !important;
+}

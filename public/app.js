@@ -11,6 +11,7 @@ const currentTime = document.getElementById('currentTime');
 const duration = document.getElementById('duration');
 const playPause = document.getElementById('playPause');
 const connection = document.getElementById('connection');
+const tidalFavouriteHeart = document.getElementById('tidalFavouriteHeart');
 const muteButton = document.getElementById('muteButton');
 const idleScreen = document.getElementById('idleScreen');
 const nowPlayingScreen = document.getElementById('nowPlayingScreen');
@@ -43,6 +44,9 @@ let lastServerProgressDuration = null;
 let progressSeekPointer = null;
 let progressSeekPreview = null;
 let clock24h = true;
+let tidalFavouriteHeartKey = '';
+let tidalFavouriteHeartState = null;
+let tidalFavouriteHeartRequest = 0;
 
 let previousReceiverVolume = null;
 let previousReceiverMuted = null;
@@ -304,6 +308,7 @@ function render(data) {
   SourceController.syncFromReceiver(data.receiver);
 
   const receiver = data.receiver || {};
+  void syncTidalFavouriteHeart(data);
   updateVolumeOverlay(receiver);
   updateVolumeSlider(receiver.volume);
 
@@ -590,6 +595,74 @@ artist?.addEventListener('keydown', event => {
   event.preventDefault();
   openCurrentTidalArtist();
 });
+
+
+function renderTidalFavouriteHeart() {
+  if (!tidalFavouriteHeart) return;
+  const available = Boolean(tidalFavouriteHeartKey);
+  tidalFavouriteHeart.hidden = !available;
+  tidalFavouriteHeart.disabled = !available || tidalFavouriteHeartState === null;
+  tidalFavouriteHeart.classList.toggle('favourite', tidalFavouriteHeartState === true);
+  tidalFavouriteHeart.innerHTML = '<svg class="favourite-heart-icon" viewBox="0 0 32 29" aria-hidden="true"><path d="M16 27.2 3.5 15.1C-4.2 7.7 6.7-3.7 14.6 3.8L16 5.2l1.4-1.4c7.9-7.5 18.8 3.9 11.1 11.3L16 27.2Z"/></svg>';
+  tidalFavouriteHeart.setAttribute(
+    'aria-label',
+    tidalFavouriteHeartState === true ? 'Remove from TIDAL favourites' : 'Add to TIDAL favourites'
+  );
+}
+
+async function syncTidalFavouriteHeart(data) {
+  const id = data?.playbackSource === 'tidal'
+    ? String(data.tidalTrackId || data.tidalMid || '').trim()
+    : '';
+  if (id === tidalFavouriteHeartKey) return;
+
+  tidalFavouriteHeartKey = id;
+  tidalFavouriteHeartState = null;
+  const request = ++tidalFavouriteHeartRequest;
+  renderTidalFavouriteHeart();
+  if (!id) return;
+
+  try {
+    const response = await fetch(
+      '/api/tidal/favourite-track-status?id=' + encodeURIComponent(id),
+      { cache: 'no-store' }
+    );
+    const result = await response.json();
+    if (!response.ok || result.ok === false) throw new Error(result.error || 'Favourite status unavailable');
+    if (request !== tidalFavouriteHeartRequest || id !== tidalFavouriteHeartKey) return;
+    tidalFavouriteHeartKey = String(result.id || id);
+    tidalFavouriteHeartState = result.favourite === true;
+    renderTidalFavouriteHeart();
+  } catch {
+    if (request !== tidalFavouriteHeartRequest || id !== tidalFavouriteHeartKey) return;
+    tidalFavouriteHeartKey = '';
+    tidalFavouriteHeartState = null;
+    renderTidalFavouriteHeart();
+  }
+}
+
+async function toggleTidalFavouriteHeart() {
+  const id = tidalFavouriteHeartKey;
+  if (!id || tidalFavouriteHeartState === null) return;
+  const wanted = !tidalFavouriteHeartState;
+  tidalFavouriteHeart.disabled = true;
+  try {
+    const response = await fetch(
+      '/api/tidal/favourite-track?id=' + encodeURIComponent(id),
+      { method: wanted ? 'POST' : 'DELETE', cache: 'no-store' }
+    );
+    const result = await response.json();
+    if (!response.ok || result.ok === false) throw new Error(result.error || 'Favourite update failed');
+    if (id !== tidalFavouriteHeartKey) return;
+    tidalFavouriteHeartState = result.favourite === true;
+  } catch (error) {
+    console.warn('TIDAL favourite update failed:', error);
+  } finally {
+    renderTidalFavouriteHeart();
+  }
+}
+
+tidalFavouriteHeart?.addEventListener('click', toggleTidalFavouriteHeart);
 
 receiverSettings?.addEventListener("click", () => {
   const host = latest?.settings?.marantzHost;
