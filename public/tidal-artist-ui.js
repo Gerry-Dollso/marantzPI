@@ -2,6 +2,7 @@
 
 const tidalArtistOriginalBrowse = browseTidal;
 let tidalArtistBiographyOpen = false;
+let tidalArtistCategoryOpen = false;
 let tidalArtistCurrentDetails = null;
 
 function tidalArtistIdFromCid(cid) {
@@ -11,6 +12,7 @@ function tidalArtistIdFromCid(cid) {
 
 function resetTidalArtistPage() {
   tidalArtistBiographyOpen = false;
+  tidalArtistCategoryOpen = false;
   tidalArtistCurrentDetails = null;
   tidalScreen.classList.remove('artist-page');
 }
@@ -30,6 +32,7 @@ function tidalArtistArtwork(url, className = 'tidal-artist-card-art') {
     image.src = url;
     image.alt = '';
     image.loading = 'lazy';
+    image.decoding = 'async';
     image.addEventListener('error', () => image.remove());
     artwork.appendChild(image);
   }
@@ -58,10 +61,7 @@ function tidalArtistReleaseButton(item) {
   button.className = 'tidal-artist-release';
   button.dataset.artistAlbumCid = item.cid || item.heosCid || (item.albumId ? 'LIBALBUM-' + item.albumId : '');
   const name = item.name || item.title || 'Album';
-  button.append(
-    tidalArtistArtwork(item.imageUrl),
-    tidalArtistCardCopy(name, item.artist || item.releaseDate || '')
-  );
+  button.append(tidalArtistArtwork(item.imageUrl), tidalArtistCardCopy(name, item.artist || item.releaseDate || ''));
   return button;
 }
 
@@ -70,10 +70,7 @@ function tidalArtistRelatedButton(item) {
   button.type = 'button';
   button.className = 'tidal-artist-related';
   button.dataset.artistRelatedCid = item.heosCid || (item.id ? 'LIBARTIST-' + item.id : '');
-  button.append(
-    tidalArtistArtwork(item.imageUrl),
-    tidalArtistCardCopy(item.name || 'Artist', item.fans ? tidalArtistCompactNumber(item.fans) + ' fans' : '')
-  );
+  button.append(tidalArtistArtwork(item.imageUrl), tidalArtistCardCopy(item.name || 'Artist', item.fans ? tidalArtistCompactNumber(item.fans) + ' fans' : ''));
   return button;
 }
 
@@ -84,24 +81,34 @@ function tidalArtistTopTrackButton(track, artistId) {
   button.dataset.artistTopTrack = 'yes';
   button.dataset.artistTracksCid = 'LIBARTIST-Tracks-' + artistId;
   button.dataset.mid = String(track.id || '');
-  button.append(
-    tidalArtistArtwork(track.imageUrl),
-    tidalArtistCardCopy(track.title || 'Track', track.album || '')
-  );
+  button.append(tidalArtistArtwork(track.imageUrl), tidalArtistCardCopy(track.title || 'Track', track.album || ''));
   return button;
 }
 
-function tidalArtistSection(title, items, makeButton, className) {
+function tidalArtistHeading(title, category = '') {
+  if (!category) {
+    const heading = document.createElement('h3');
+    heading.className = 'tidal-artist-section-title';
+    heading.textContent = title;
+    return heading;
+  }
+  const heading = document.createElement('button');
+  heading.type = 'button';
+  heading.className = 'tidal-artist-section-title tidal-artist-section-link';
+  heading.dataset.artistCategory = category;
+  heading.append(document.createTextNode(title), Object.assign(document.createElement('span'), { textContent: 'SEE ALL ›' }));
+  return heading;
+}
+
+function tidalArtistSection(title, items, makeButton, className, category = '', previewLimit = 0) {
   if (!Array.isArray(items) || items.length === 0) return null;
   const section = document.createElement('section');
   section.className = 'tidal-artist-section';
-  const heading = document.createElement('h3');
-  heading.className = 'tidal-artist-section-title';
-  heading.textContent = title;
   const row = document.createElement('div');
   row.className = className;
-  items.forEach(item => row.appendChild(makeButton(item)));
-  section.append(heading, row);
+  const visibleItems = previewLimit > 0 ? items.slice(0, previewLimit) : items;
+  visibleItems.forEach(item => row.appendChild(makeButton(item)));
+  section.append(tidalArtistHeading(title, category), row);
   return section;
 }
 
@@ -109,8 +116,8 @@ function renderTidalArtistBiography(details) {
   const biography = details?.biography;
   if (!biography?.text) return;
   tidalArtistBiographyOpen = true;
+  tidalArtistCategoryOpen = false;
   tidalResults.replaceChildren();
-
   const view = document.createElement('article');
   view.className = 'tidal-artist-biography';
   const label = document.createElement('div');
@@ -130,10 +137,41 @@ function renderTidalArtistBiography(details) {
     link.rel = 'noopener noreferrer';
     link.textContent = biography.source || 'Wikipedia';
     source.appendChild(link);
-  } else {
-    source.append(biography.source || 'Wikipedia');
-  }
+  } else source.append(biography.source || 'Wikipedia');
   view.append(label, title, text, source);
+  tidalResults.appendChild(view);
+  tidalResults.scrollTop = 0;
+}
+
+function tidalArtistCategoryConfig(details, category) {
+  const artistId = String(details.artist?.id || '');
+  const configs = {
+    albums: ['ALBUMS', details.albums, tidalArtistReleaseButton],
+    singles: ['EPS & SINGLES', details.singles, tidalArtistReleaseButton],
+    appears: ['APPEARS ON', details.appearsOn, tidalArtistReleaseButton],
+    similar: ['FANS ALSO LIKED', details.similarArtists, tidalArtistRelatedButton],
+    tracks: ['TOP TRACKS', details.topTracks, item => tidalArtistTopTrackButton(item, artistId)]
+  };
+  return configs[category] || null;
+}
+
+function renderTidalArtistCategory(details, category) {
+  const config = tidalArtistCategoryConfig(details, category);
+  if (!config) return;
+  tidalArtistBiographyOpen = false;
+  tidalArtistCategoryOpen = true;
+  tidalResults.replaceChildren();
+  const view = document.createElement('div');
+  view.className = 'tidal-artist-category-page';
+  const label = document.createElement('div');
+  label.className = 'tidal-artist-label';
+  label.textContent = details.artist?.name || 'ARTIST';
+  const title = document.createElement('h2');
+  title.textContent = config[0];
+  const grid = document.createElement('div');
+  grid.className = 'tidal-artist-category-grid';
+  config[1].forEach(item => grid.appendChild(config[2](item)));
+  view.append(label, title, grid);
   tidalResults.appendChild(view);
   tidalResults.scrollTop = 0;
 }
@@ -143,6 +181,7 @@ function renderTidalArtistPage(details) {
   const artistId = String(artist.id || '');
   tidalArtistCurrentDetails = details;
   tidalArtistBiographyOpen = false;
+  tidalArtistCategoryOpen = false;
   tidalScreen.classList.add('artist-page', 'browsing');
   tidalSearchForm.hidden = true;
   tidalPersonalisedControls.hidden = true;
@@ -152,11 +191,9 @@ function renderTidalArtistPage(details) {
 
   const page = document.createElement('div');
   page.className = 'tidal-artist-page';
-
   const hero = document.createElement('section');
   hero.className = 'tidal-artist-hero';
   hero.appendChild(tidalArtistArtwork(artist.imageUrl, 'tidal-artist-hero-art'));
-
   const info = document.createElement('div');
   info.className = 'tidal-artist-hero-info';
   const label = document.createElement('div');
@@ -169,7 +206,6 @@ function renderTidalArtistPage(details) {
   fans.className = 'tidal-artist-fans';
   fans.textContent = artist.fans ? tidalArtistCompactNumber(artist.fans) + ' FANS' : '';
   info.append(label, name, fans);
-
   if (details.biography?.teaser) {
     const teaser = document.createElement('p');
     teaser.className = 'tidal-artist-bio-teaser';
@@ -181,56 +217,38 @@ function renderTidalArtistPage(details) {
     readMore.textContent = 'READ MORE';
     info.append(teaser, readMore);
   }
-
   const actions = document.createElement('div');
   actions.className = 'tidal-artist-actions';
-  const play = document.createElement('button');
-  play.type = 'button';
-  play.dataset.artistPlayback = 'play';
-  play.dataset.artistTracksCid = 'LIBARTIST-Tracks-' + artistId;
-  play.textContent = 'PLAY';
-  const shuffle = document.createElement('button');
-  shuffle.type = 'button';
-  shuffle.dataset.artistPlayback = 'shuffle';
-  shuffle.dataset.artistTracksCid = 'LIBARTIST-Tracks-' + artistId;
-  shuffle.textContent = 'SHUFFLE';
+  [['play', 'PLAY'], ['shuffle', 'SHUFFLE']].forEach(([mode, text]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.artistPlayback = mode;
+    button.dataset.artistTracksCid = 'LIBARTIST-Tracks-' + artistId;
+    button.textContent = text;
+    actions.appendChild(button);
+  });
   const radio = document.createElement('button');
   radio.type = 'button';
   radio.dataset.artistRadio = String(details.radio?.playlistId || '');
   radio.dataset.artistRadioName = details.radio?.name || artist.name || 'Artist Radio';
   radio.textContent = 'RADIO';
   radio.disabled = !details.radio?.playlistId;
-  actions.append(play, shuffle, radio);
+  actions.appendChild(radio);
   info.appendChild(actions);
   hero.appendChild(info);
   page.appendChild(hero);
 
-  const topTracks = tidalArtistSection(
-    'TOP TRACKS',
-    details.topTracks,
-    track => tidalArtistTopTrackButton(track, artistId),
-    'tidal-artist-top-tracks'
-  );
+  const topTracks = tidalArtistSection('TOP TRACKS', details.topTracks, track => tidalArtistTopTrackButton(track, artistId), 'tidal-artist-top-tracks', 'tracks');
   if (topTracks) page.appendChild(topTracks);
-
-  const sections = [
-    ['ALBUMS', details.albums],
-    ['EPS & SINGLES', details.singles],
-    ['APPEARS ON', details.appearsOn]
-  ];
-  sections.forEach(([titleText, items]) => {
-    const section = tidalArtistSection(titleText, items, tidalArtistReleaseButton, 'tidal-artist-release-row');
+  [
+    ['ALBUMS', details.albums, 'albums', tidalArtistReleaseButton],
+    ['EPS & SINGLES', details.singles, 'singles', tidalArtistReleaseButton],
+    ['APPEARS ON', details.appearsOn, 'appears', tidalArtistReleaseButton],
+    ['FANS ALSO LIKED', details.similarArtists, 'similar', tidalArtistRelatedButton]
+  ].forEach(([title, items, category, maker]) => {
+    const section = tidalArtistSection(title, items, maker, category === 'similar' ? 'tidal-artist-related-row' : 'tidal-artist-release-row', category, 4);
     if (section) page.appendChild(section);
   });
-
-  const related = tidalArtistSection(
-    'FANS ALSO LIKED',
-    details.similarArtists,
-    tidalArtistRelatedButton,
-    'tidal-artist-related-row'
-  );
-  if (related) page.appendChild(related);
-
   tidalResults.appendChild(page);
   tidalResults.scrollTop = 0;
 }
@@ -244,13 +262,10 @@ async function loadTidalArtistLanding(artistId, title) {
   setTidalAlphabetVisible(false);
   tidalStatus.textContent = 'Loading ' + (title || 'artist') + '…';
   tidalResults.replaceChildren();
-
   try {
     const response = await fetch('/api/tidal/artist-details?id=' + encodeURIComponent(artistId), { cache: 'no-store' });
     const result = await response.json();
-    if (!response.ok || result.ok === false) {
-      throw new Error(result.error || 'Could not load artist');
-    }
+    if (!response.ok || result.ok === false) throw new Error(result.error || 'Could not load artist');
     renderTidalArtistPage(result);
   } catch (error) {
     tidalStatus.textContent = error.message;
@@ -263,76 +278,57 @@ browseTidal = async function(cid, title, pushHistory = true) {
     resetTidalArtistPage();
     return tidalArtistOriginalBrowse(cid, title, pushHistory);
   }
-
   setTidalPersonalisedChrome('normal');
   if (pushHistory) tidalHistory.push({ cid, title });
   await loadTidalArtistLanding(artistId, title);
 };
 
 tidalResults.addEventListener('click', event => {
+  const category = event.target.closest('[data-artist-category]');
+  if (category) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (tidalArtistCurrentDetails) renderTidalArtistCategory(tidalArtistCurrentDetails, category.dataset.artistCategory);
+    return;
+  }
   const biography = event.target.closest('[data-artist-biography]');
   if (biography) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     if (tidalArtistCurrentDetails) renderTidalArtistBiography(tidalArtistCurrentDetails);
     return;
   }
-
   const playback = event.target.closest('[data-artist-playback]');
   if (playback) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    playTidalPlaylist(
-      playback.dataset.artistTracksCid,
-      '',
-      playback.dataset.artistPlayback === 'shuffle',
-      playback
-    );
+    event.preventDefault(); event.stopImmediatePropagation();
+    playTidalPlaylist(playback.dataset.artistTracksCid, '', playback.dataset.artistPlayback === 'shuffle', playback);
     return;
   }
-
   const radio = event.target.closest('[data-artist-radio]');
   if (radio) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     const id = String(radio.dataset.artistRadio || '');
-    if (id) {
-      tidalScreen.classList.remove('artist-page');
-      loadTidalPersonalisedPlaylist(id, radio.dataset.artistRadioName || 'Artist Radio');
-    }
+    if (id) { tidalScreen.classList.remove('artist-page'); loadTidalPersonalisedPlaylist(id, radio.dataset.artistRadioName || 'Artist Radio'); }
     return;
   }
-
   const album = event.target.closest('[data-artist-album-cid]');
   if (album) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     const copy = album.querySelector('.tidal-artist-card-name');
     tidalScreen.classList.remove('artist-page');
     loadTidalAlbumTracks(album.dataset.artistAlbumCid, copy?.textContent || 'Album');
     return;
   }
-
   const related = event.target.closest('[data-artist-related-cid]');
   if (related) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     const copy = related.querySelector('.tidal-artist-card-name');
     browseTidal(related.dataset.artistRelatedCid, copy?.textContent || 'Artist');
     return;
   }
-
   const track = event.target.closest('[data-artist-top-track]');
   if (track) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     const copy = track.querySelector('.tidal-artist-card-name');
-    tidalTrackActionSelection = {
-      cid: track.dataset.artistTracksCid,
-      mid: String(track.dataset.mid || ''),
-      name: copy?.textContent || 'Track',
-      personalised: false
-    };
+    tidalTrackActionSelection = { cid: track.dataset.artistTracksCid, mid: String(track.dataset.mid || ''), name: copy?.textContent || 'Track', personalised: false };
     tidalTrackActionName.textContent = tidalTrackActionSelection.name;
     tidalTrackActionOverlay.classList.add('open');
     tidalTrackActionOverlay.setAttribute('aria-hidden', 'false');
@@ -340,7 +336,7 @@ tidalResults.addEventListener('click', event => {
 }, true);
 
 tidalBack.addEventListener('click', event => {
-  if (!tidalArtistBiographyOpen || !tidalArtistCurrentDetails) return;
+  if ((!tidalArtistBiographyOpen && !tidalArtistCategoryOpen) || !tidalArtistCurrentDetails) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   renderTidalArtistPage(tidalArtistCurrentDetails);
