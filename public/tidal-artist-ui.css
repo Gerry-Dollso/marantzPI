@@ -1,0 +1,242 @@
+.tidal-screen.artist-page .tidal-search,
+.tidal-screen.artist-page .tidal-personalised-controls,
+.tidal-screen.artist-page .tidal-status,
+.tidal-screen.artist-page .tidal-alphabet {
+  display: none;
+}
+
+.tidal-screen.artist-page .tidal-results {
+  display: block;
+  height: calc(100% - 72px);
+  padding: 6px 2px 24px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tidal-artist-page {
+  display: block;
+  min-width: 0;
+}
+
+.tidal-artist-hero {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  min-height: 300px;
+}
+
+.tidal-artist-hero-art {
+  width: 300px;
+  height: 300px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.08);
+}
+
+.tidal-artist-hero-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.tidal-artist-hero-info {
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.tidal-artist-label,
+.tidal-artist-section-title,
+.tidal-artist-bio-source {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  opacity: 0.58;
+}
+
+.tidal-artist-hero-name {
+  margin: 7px 0 5px;
+  font-size: 32px;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.tidal-artist-fans {
+  margin-bottom: 13px;
+  font-size: 13px;
+  opacity: 0.68;
+}
+
+.tidal-artist-bio-teaser {
+  min-height: 50px;
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 13px;
+  line-height: 1.3;
+  opacity: 0.82;
+}
+
+.tidal-artist-read-more {
+  margin: 8px 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.72;
+}
+
+.tidal-artist-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tidal-artist-actions button,
+.tidal-artist-section-more {
+  height: 44px;
+  border: 1px solid rgba(255,255,255,0.24);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tidal-artist-section {
+  margin-top: 22px;
+}
+
+.tidal-artist-section-title {
+  margin: 0 0 9px 2px;
+  font-size: 13px;
+  opacity: 0.76;
+}
+
+.tidal-artist-top-tracks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 12px;
+}
+
+.tidal-artist-top-track,
+.tidal-artist-release,
+.tidal-artist-related {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  height: 70px;
+  padding: 7px 11px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 13px;
+  background: rgba(255,255,255,0.055);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.tidal-artist-card-art {
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: rgba(255,255,255,0.08);
+}
+
+.tidal-artist-card-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.tidal-artist-card-copy {
+  min-width: 0;
+}
+
+.tidal-artist-card-name,
+.tidal-artist-card-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tidal-artist-card-name {
+  font-size: 14px;
+}
+
+.tidal-artist-card-meta {
+  margin-top: 3px;
+  font-size: 11px;
+  opacity: 0.58;
+}
+
+.tidal-artist-release-row,
+.tidal-artist-related-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tidal-artist-release-row::-webkit-scrollbar,
+.tidal-artist-related-row::-webkit-scrollbar {
+  display: none;
+}
+
+.tidal-artist-section-more {
+  width: 100%;
+  margin-top: 9px;
+}
+
+.tidal-artist-biography {
+  padding: 4px 8px 20px 2px;
+}
+
+.tidal-artist-biography h2 {
+  margin: 8px 0 14px;
+  font-size: 30px;
+}
+
+.tidal-artist-biography p {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.48;
+  white-space: pre-wrap;
+}
+
+.tidal-artist-bio-source a {
+  color: inherit;
+}
+
+@media (max-width: 700px) {
+  .tidal-artist-hero {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .tidal-artist-hero-art {
+    width: 260px;
+    height: 260px;
+  }
+}
