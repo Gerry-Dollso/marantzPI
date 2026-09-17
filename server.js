@@ -126,6 +126,37 @@ function mediaBackendRequest(pathname, method = 'GET', timeoutMs = 5000) {
   });
 }
 
+function proxyMediaBackendBinary(req, res, pathname, timeoutMs = 15000) {
+  const request = http.request(
+    {
+      host: config.mediaBackendHost || '192.168.50.145',
+      port: Number(config.mediaBackendPort) || 3100,
+      path: pathname,
+      method: req.method,
+      timeout: timeoutMs
+    },
+    response => {
+      const headers = {};
+      for (const name of ['content-type', 'content-length', 'cache-control', 'etag', 'last-modified']) {
+        const value = response.headers[name];
+        if (value !== undefined) headers[name] = value;
+      }
+      res.writeHead(response.statusCode || 502, headers);
+      response.pipe(res);
+    }
+  );
+
+  request.on('timeout', () => request.destroy(new Error('Media backend artwork timeout')));
+  request.on('error', error => {
+    if (res.headersSent) {
+      res.destroy(error);
+      return;
+    }
+    sendJson(res, 502, { ok: false, error: error.message });
+  });
+  request.end();
+}
+
 async function handleAutomaticSmartSelect(receiver) {
   const inputCode = String(receiver?.inputCode || "").toUpperCase();
 
@@ -1091,6 +1122,13 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, { instanceId: serverInstanceId });
     }
 
+
+    if (
+      (req.method === 'GET' || req.method === 'HEAD') &&
+      url.pathname.startsWith('/api/tidal/artwork/')
+    ) {
+      return proxyMediaBackendBinary(req, res, url.pathname + url.search);
+    }
       if (req.method === 'GET' && url.pathname === '/api/tidal/artist-details') {
       const id = String(url.searchParams.get('id') || '').trim();
       if (/^\d+$/.test(id) === false) return sendJson(res, 400, { ok: false, error: 'Invalid artist id' });
