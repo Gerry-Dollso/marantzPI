@@ -56,8 +56,8 @@
   color: inherit; text-align: left; font: inherit; font-size: 13px; font-weight: 700;
   letter-spacing: 0.16em; opacity: 0.76;
 }
-.tidal-artist-section-link { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-.tidal-artist-section-link span { margin-right: 10px; font-size: 10px; letter-spacing: 0.1em; opacity: 0.72; }
+.tidal-artist-section-link { display: flex; align-items: center; justify-content: space-between; }
+.tidal-artist-more { width: 42px; height: 30px; margin: -7px 0 -7px 10px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-size: 24px; line-height: 30px; text-align: right; opacity: 0.72; }
 
 .tidal-artist-top-tracks {
   display: grid;
@@ -65,10 +65,7 @@
   grid-auto-rows: 62px;
   gap: 8px 12px;
   height: 132px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+  overflow: hidden;
   padding-right: 3px;
 }
 .tidal-artist-top-track,
@@ -91,9 +88,8 @@
 
 .tidal-artist-release-row,
 .tidal-artist-related-row {
-  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr);
-  gap: 10px; overflow-x: auto; overflow-y: hidden; padding-bottom: 3px;
-  scrollbar-width: none; touch-action: pan-x;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px; overflow: hidden; padding-bottom: 3px;
 }
 .tidal-artist-release-row::-webkit-scrollbar,
 .tidal-artist-related-row::-webkit-scrollbar { display: none; }
