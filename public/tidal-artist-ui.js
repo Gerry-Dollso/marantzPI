@@ -275,6 +275,29 @@ async function loadTidalArtistLanding(artistId, title) {
     if (!response.ok || result.ok === false) throw new Error(result.error || 'Could not load artist');
     if (requestToken !== tidalArtistRequestToken) return;
     renderTidalArtistPage(result);
+    const richRequests = [
+      fetch('/api/tidal/artist-top-tracks?id=' + encodeURIComponent(artistId), { cache: 'no-store' })
+        .then(async response => {
+          const rich = await response.json();
+          if (!response.ok || rich.ok === false) throw new Error(rich.error || 'Could not load Artist Top Tracks');
+          if (requestToken !== tidalArtistRequestToken || String(tidalArtistCurrentDetails?.artist?.id || '') !== String(artistId)) return;
+          tidalArtistCurrentDetails = { ...tidalArtistCurrentDetails, topTracks: Array.isArray(rich.tracks) ? rich.tracks : [] };
+          if (!tidalArtistBiographyOpen && !tidalArtistCategoryOpen) renderTidalArtistPage(tidalArtistCurrentDetails);
+        }),
+      fetch('/api/tidal/artist-biography?id=' + encodeURIComponent(artistId), { cache: 'no-store' })
+        .then(async response => {
+          const rich = await response.json();
+          if (!response.ok || rich.ok === false) throw new Error(rich.error || 'Could not load Artist biography');
+          if (requestToken !== tidalArtistRequestToken || String(tidalArtistCurrentDetails?.artist?.id || '') !== String(artistId)) return;
+          tidalArtistCurrentDetails = { ...tidalArtistCurrentDetails, biography: rich.biography || null };
+          if (!tidalArtistBiographyOpen && !tidalArtistCategoryOpen) renderTidalArtistPage(tidalArtistCurrentDetails);
+        })
+    ];
+    Promise.allSettled(richRequests).then(results => {
+      results.forEach(outcome => {
+        if (outcome.status === 'rejected') console.warn('TIDAL Artist rich data load failed:', outcome.reason?.message || outcome.reason);
+      });
+    });
   } catch (error) {
     if (requestToken !== tidalArtistRequestToken) return;
     tidalStatus.textContent = error.message;

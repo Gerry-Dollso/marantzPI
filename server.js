@@ -1136,6 +1136,20 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/tidal/artist-top-tracks') {
+      const id = String(url.searchParams.get('id') || '').trim();
+      if (/^\d+$/.test(id) === false) return sendJson(res, 400, { ok: false, error: 'Invalid artist id' });
+      const result = await mediaBackendRequest('/api/tidal/artist-top-tracks?id=' + encodeURIComponent(id), 'GET', 40000);
+      return sendJson(res, 200, result);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/tidal/artist-biography') {
+      const id = String(url.searchParams.get('id') || '').trim();
+      if (/^\d+$/.test(id) === false) return sendJson(res, 400, { ok: false, error: 'Invalid artist id' });
+      const result = await mediaBackendRequest('/api/tidal/artist-biography?id=' + encodeURIComponent(id), 'GET', 40000);
+      return sendJson(res, 200, result);
+    }
+
       if (req.method === 'GET' && url.pathname === '/api/tidal/personalised') {
       const result = await mediaBackendRequest(
         '/api/tidal/personalised',
