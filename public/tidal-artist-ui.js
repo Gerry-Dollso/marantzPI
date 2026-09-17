@@ -244,7 +244,7 @@ function renderTidalArtistPage(details) {
   hero.appendChild(info);
   page.appendChild(hero);
 
-  const topTracks = tidalArtistSection('TOP TRACKS', details.topTracks, track => tidalArtistTopTrackButton(track, artistId), 'tidal-artist-top-tracks', 'tracks');
+  const topTracks = tidalArtistSection('TOP TRACKS', details.topTracks, track => tidalArtistTopTrackButton(track, artistId), 'tidal-artist-top-tracks', 'tracks', 4);
   if (topTracks) page.appendChild(topTracks);
   [
     ['ALBUMS', details.albums, 'albums', tidalArtistReleaseButton],
@@ -320,7 +320,40 @@ tidalResults.addEventListener('click', event => {
   const category = event.target.closest('[data-artist-category]');
   if (category) {
     event.preventDefault(); event.stopImmediatePropagation();
-    if (tidalArtistCurrentDetails) renderTidalArtistCategory(tidalArtistCurrentDetails, category.dataset.artistCategory);
+    const categoryName = String(category.dataset.artistCategory || '');
+    const details = tidalArtistCurrentDetails;
+    if (!details) return;
+    if (!['albums', 'singles', 'appears'].includes(categoryName)) {
+      renderTidalArtistCategory(details, categoryName);
+      return;
+    }
+    const artistId = String(details.artist?.id || '');
+    const requestToken = tidalArtistRequestToken;
+    tidalArtistBiographyOpen = false;
+    tidalArtistCategoryOpen = true;
+    tidalResults.replaceChildren();
+    const loading = document.createElement('div');
+    loading.className = 'tidal-loading';
+    loading.textContent = 'Loading…';
+    tidalResults.appendChild(loading);
+    fetch('/api/tidal/artist-releases?id=' + encodeURIComponent(artistId) + '&category=' + encodeURIComponent(categoryName), { cache: 'no-store' })
+      .then(async response => {
+        const rich = await response.json();
+        if (!response.ok || rich.ok === false) throw new Error(rich.error || 'Could not load Artist releases');
+        if (requestToken !== tidalArtistRequestToken || String(tidalArtistCurrentDetails?.artist?.id || '') !== artistId) return;
+        const releases = Array.isArray(rich.releases) ? rich.releases : [];
+        const key = categoryName === 'albums' ? 'albums' : categoryName === 'singles' ? 'singles' : 'appearsOn';
+        tidalArtistCurrentDetails = { ...tidalArtistCurrentDetails, [key]: releases };
+        renderTidalArtistCategory(tidalArtistCurrentDetails, categoryName);
+      })
+      .catch(error => {
+        if (requestToken !== tidalArtistRequestToken || String(tidalArtistCurrentDetails?.artist?.id || '') !== artistId) return;
+        tidalResults.replaceChildren();
+        const failed = document.createElement('div');
+        failed.className = 'tidal-loading';
+        failed.textContent = error.message || 'Could not load Artist releases';
+        tidalResults.appendChild(failed);
+      });
     return;
   }
   const biography = event.target.closest('[data-artist-biography]');

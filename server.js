@@ -1143,6 +1143,15 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/tidal/artist-releases') {
+      const id = String(url.searchParams.get('id') || '').trim();
+      const category = String(url.searchParams.get('category') || '').trim();
+      if (/^\d+$/.test(id) === false) return sendJson(res, 400, { ok: false, error: 'Invalid artist id' });
+      if (!['albums', 'singles', 'appears'].includes(category)) return sendJson(res, 400, { ok: false, error: 'Invalid artist category' });
+      const result = await mediaBackendRequest('/api/tidal/artist-releases?id=' + encodeURIComponent(id) + '&category=' + encodeURIComponent(category), 'GET', 40000);
+      return sendJson(res, 200, result);
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/tidal/artist-biography') {
       const id = String(url.searchParams.get('id') || '').trim();
       if (/^\d+$/.test(id) === false) return sendJson(res, 400, { ok: false, error: 'Invalid artist id' });
