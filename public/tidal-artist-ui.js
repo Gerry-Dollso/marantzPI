@@ -92,11 +92,14 @@ function tidalArtistHeading(title, category = '') {
     heading.textContent = title;
     return heading;
   }
-  const heading = document.createElement('button');
-  heading.type = 'button';
+  const heading = document.createElement('h3');
   heading.className = 'tidal-artist-section-title tidal-artist-section-link';
-  heading.dataset.artistCategory = category;
-  heading.append(document.createTextNode(title), Object.assign(document.createElement('span'), { textContent: 'SEE ALL ›' }));
+  heading.appendChild(document.createTextNode(title));
+  const seeAll = document.createElement('button');
+  seeAll.type = 'button';
+  seeAll.dataset.artistCategory = category;
+  seeAll.textContent = 'SEE ALL ›';
+  heading.appendChild(seeAll);
   return heading;
 }
 

@@ -1091,6 +1091,13 @@ http.createServer(async (req, res) => {
       return sendJson(res, 200, { instanceId: serverInstanceId });
     }
 
+      if (req.method === 'GET' && url.pathname === '/api/tidal/artist-details') {
+      const id = String(url.searchParams.get('id') || '').trim();
+      if (/^\d+$/.test(id) === false) return sendJson(res, 400, { ok: false, error: 'Invalid artist id' });
+      const result = await mediaBackendRequest('/api/tidal/artist-details?id=' + encodeURIComponent(id), 'GET', 40000);
+      return sendJson(res, 200, result);
+    }
+
       if (req.method === 'GET' && url.pathname === '/api/tidal/personalised') {
       const result = await mediaBackendRequest(
         '/api/tidal/personalised',
