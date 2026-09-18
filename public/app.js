@@ -1288,7 +1288,8 @@ setInterval(updateClock, 1000);
 
 // Let the remaining UI modules install their render hooks first.
 setTimeout(refresh, 0);
-setInterval(refresh, 750);
+// Slow reconciliation for external AVR/HEOS changes; controls schedule their own fast refreshes.
+setInterval(refresh, 5000);
 
 // Automatically refresh the kiosk whenever the Node server restarts.
 (() => {
