@@ -1,3 +1,7 @@
+
+## Status reconciliation cadence — 18 Sep 2026
+
+The touchscreen's unconditional `/api/status` reconciliation interval is 5 seconds. This replaces the inherited 750 ms cadence after an architecture/load audit found no current feature requiring sub-second background polling. Touchscreen controls retain their existing explicit fast refreshes, playback progress remains locally interpolated every 500 ms, and the 5-second poll remains the fallback for external AVR/HEOS changes. This reduces continuous AVR port-23 and HEOS connection churn without changing `getStatus()` semantics or the accepted standby/wake, TIDAL-resume, queue-transition, Smart Select, zone, or physical-panel logic.
 # marantzPI
 
 ## 2026-09-18 — Raspberry Pi memory/OOM and replacement-board baseline
