@@ -862,6 +862,33 @@ async function loadTidalPersonalised(pushHistory = true) {
     }
 
     const playlists = Array.isArray(result.playlists) ? result.playlists : [];
+
+    const personalisedSortRank = name => {
+      const title = String(name || '').trim();
+      const lower = title.toLowerCase();
+
+      if (lower === 'my new arrivals' || lower === 'new arrivals') return 0;
+      if (lower === 'my daily discovery' || lower === 'daily discovery') return 1;
+
+      const mix = lower.match(/^my mix ([1-8])$/);
+      if (mix) return 1 + Number(mix[1]);
+
+      if (lower === 'my most listened' || lower === 'most listened') return 10;
+      return 11;
+    };
+
+    playlists.sort((a, b) => {
+      const aRank = personalisedSortRank(a?.name);
+      const bRank = personalisedSortRank(b?.name);
+      if (aRank !== bRank) return aRank - bRank;
+
+      return String(a?.name || '').localeCompare(
+        String(b?.name || ''),
+        undefined,
+        { sensitivity: 'base' }
+      );
+    });
+
     tidalStatus.textContent = 'Mixes & Radio — ' + playlists.length + ' playlists';
 
     playlists.forEach(playlist => {
