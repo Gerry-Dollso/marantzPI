@@ -1,5 +1,13 @@
 # marantzPI
 
+## 2026-09-18 — TIDAL child-screen cleanup and Mixes & Radio ordering
+
+The TIDAL artist search field is intentionally shown only on the TIDAL root/landing browse screen. Child/menu screens hide it and reclaim the unused vertical space. Personalised playlist controls retain the required reserved height. This layout was accepted on the physical MarantzPi touchscreen.
+
+Mixes & Radio uses the backend's favourite/saved TIDAL MIX membership. The touchscreen sorts that membership as: **My New Arrivals**, **My Daily Discovery**, **My Mix 1** through **My Mix 8** numerically, **My Most Listened**, then every remaining mix/radio alphabetically (case-insensitive). My Daily Discovery must therefore be favourited in TIDAL to appear naturally and receive its official TIDAL playlist artwork. Do not restore the temporary missing-artwork enrichment workaround; it produced a four-track collage instead of the official Daily Discovery cover and was removed in `7000dee — Remove personalised artwork workaround`.
+
+Accepted checkpoints: `33a69e9 — Use TIDAL search only on landing screen`, `8808d95 — Expand TIDAL child browse area`, `fe98173 — Sort Mixes and Radio by preferred order`, and cleanup `7000dee`. The 2026-09-18 known-good recovery snapshot is branch `backup-known-good-2026-09-18`, fixed at pre-cleanup SHA `318933ed061c4b757d9b286c6cdeb8f936ef5094`; treat it as read-only.
+
 <!-- ARTIST_PAGE_COMPLETE_2026_09_17 -->
 ## 2026-09-17 — Rich TIDAL Artist page production accepted
 
