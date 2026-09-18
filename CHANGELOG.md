@@ -1,3 +1,11 @@
+
+## 2026-09-18 — Reduce background status polling
+
+- Changed the unconditional touchscreen `/api/status` interval from 750 ms to 5 seconds after a cross-check of the current architecture and project history found no documented sub-second background requirement.
+- Preserved all existing explicit fast refreshes after touchscreen controls and the local 500 ms playback-progress interpolation.
+- Kept `getStatus()` unchanged so AVR/HEOS reconciliation, standby/wake handling, TIDAL resume, queue-transition protection, Smart Select, zones and physical-panel behavior retain their established semantics.
+- This is intentionally a cadence-only first step; HEOS event-driven state expansion is deferred until this simpler reduction is live-tested.
+
 # Changelog
 
 ## 2026-09-18 — Raspberry Pi memory/OOM and replacement-board baseline
