@@ -891,18 +891,14 @@ async function loadTidalPersonalised(pushHistory = true) {
 
     tidalStatus.textContent = 'Mixes & Radio — ' + playlists.length + ' playlists';
 
-    const artworkEntries = [];
     playlists.forEach(playlist => {
       const button = makeTidalPersonalisedPlaylistButton(playlist);
       tidalResults.appendChild(button);
       if (playlist.artwork) {
         setTidalPersonalisedArtwork(button, [playlist.artwork]);
-      } else {
-        artworkEntries.push({ playlist, button });
       }
     });
 
-    void enrichTidalPersonalisedArtwork(artworkEntries);
     tidalResults.scrollTop = 0;
   } catch (error) {
     tidalStatus.textContent = error.message;
