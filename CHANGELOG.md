@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-18 — Raspberry Pi memory/OOM and replacement-board baseline
+
+The original wall-mounted MarantzPi was conclusively identified at runtime as a **1 GB Raspberry Pi 4 Model B Rev 1.5** (revision `a03115`, `MemTotal 927444 kB`). The earlier assumption that this board was 8 GB was wrong. During deep scrolling of the official-TIDAL-backed **594-track Favourite Tracks** screen, system-wide memory exhaustion caused the kernel OOM killer to terminate Chromium renderer/GPU processes. HEOS playback continued because playback is independent of the Chromium renderer. Treat **1 GB as inadequate for the current MarantzPi workload**.
+
+The replacement board is a **2 GB Raspberry Pi 4 Model B Rev 1.5** (revision `b03115`, `MemTotal 1888972 kB`). Repeating the same 594-track Favourite Tracks stress test completed smoothly with no white screen, Chromium crash or kernel OOM event. Immediately afterwards the system reported about **795 MiB used and 1.0 GiB available RAM**, with Chromium total RSS about **630 MiB**. This is the current useful heavy-load baseline. A recovered 4 GB Pi would provide additional headroom, but current evidence does not require replacing the working 2 GB board. If memory later grows continuously across repeated navigation rather than reaching a stable level, investigate a software leak rather than assuming more RAM is the fix.
+
+Fast scrolling can temporarily outrun some track-artwork loading near the end of the 594-track list. Artwork is present again after leaving and reopening Favourite Tracks, so this is currently treated as transient image loading rather than missing catalogue data or memory exhaustion.
+
+The same microSD preserves the application/runtime configuration, but Pi 4 micro-HDMI socket choice matters. The existing labwc configuration rotates/maps the physically upside-down Waveshare display on **`HDMI-A-2`**. During the board swap the other socket enumerated the display as `HDMI-A-1` and made the image appear upside down while touch coordinates remained correct. **Before changing rotation/touch software after a board swap, verify the display cable is in the micro-HDMI socket that enumerates as HDMI-A-2.**
+
+The replacement Pi's Ethernet MAC is **`D8:3A:DD:84:40:68`** and it is currently operating at **`192.168.50.79`** via DHCP. The previous `.84` address was an ASUS-router DHCP reservation, not an OS-static address. Repository and live-tree checks found **no application dependency on `192.168.50.84`** in either marantzPI or marantz-backend. A stale ASUS DHCP lease for MAC `D8:3A:DD:1E:B2:52` had occupied `.84` during the swap and was cleared. AVR communication subsequently returned, but that cleanup is correlation, not a proven cause of the earlier AVR port-23 silence.
+
 ## 2026-09-18 — TIDAL child-screen cleanup and Mixes & Radio ordering
 
 The TIDAL artist search field is intentionally shown only on the TIDAL root/landing browse screen. Child/menu screens hide it and reclaim the unused vertical space. Personalised playlist controls retain the required reserved height. This layout was accepted on the physical MarantzPi touchscreen.
