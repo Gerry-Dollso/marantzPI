@@ -29,11 +29,13 @@ tidalPersonalisedControls.append(
 tidalSearchForm.insertAdjacentElement('afterend', tidalPersonalisedControls);
 
 function setTidalPersonalisedChrome(mode = 'normal', playlistId = '') {
-  const personalised = mode === 'landing' || mode === 'playlist';
+  const root = mode === 'root';
   const playlist = mode === 'playlist';
 
-  tidalSearchForm.hidden = personalised;
+  tidalSearchForm.hidden = !root;
   tidalPersonalisedControls.hidden = !playlist;
+  tidalScreen.classList.toggle('tidal-search-hidden', !root);
+  tidalScreen.classList.toggle('tidal-personalised-playlist', playlist);
 
   const id = playlist ? String(playlistId || '') : '';
   tidalPersonalisedPlayAll.dataset.personalisedPlaylistId = id;
@@ -932,7 +934,9 @@ async function loadTidalPersonalisedPlaylist(id, title, pushHistory = true) {
 }
 
 async function browseTidal(cid, title, pushHistory = true) {
-  setTidalPersonalisedChrome('normal');
+  setTidalPersonalisedChrome(
+    cid === TIDAL_UI_ROOT_CID ? 'root' : 'normal'
+  );
 
   if (cid !== 'My Music-Albums') {
     tidalShowAlbumArtists = false;
