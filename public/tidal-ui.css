@@ -314,10 +314,15 @@ body.show-tidal .display {
 }
 
 .tidal-screen.browsing .tidal-results {
-  height: calc(100% - 162px);
+  height: calc(100% - 106px);
   box-sizing: border-box;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+}
+
+.tidal-screen.browsing:not(.tidal-search-hidden) .tidal-results,
+.tidal-screen.browsing.tidal-personalised-playlist .tidal-results {
+  height: calc(100% - 162px);
 }
 
 .tidal-alphabet {
@@ -336,6 +341,10 @@ body.show-tidal .display {
   gap: 1px 4px;
   align-content: start;
   z-index: 2;
+}
+
+.tidal-screen.tidal-search-hidden .tidal-alphabet.open {
+  top: 130px;
 }
 
 .tidal-alphabet button {
