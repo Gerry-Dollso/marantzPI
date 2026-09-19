@@ -987,9 +987,11 @@ async function browseTidal(cid, title, pushHistory = true) {
   }
 
   if (pushHistory) {
+    saveCurrentTidalScrollPosition();
     tidalHistory.push({
       cid,
-      title
+      title,
+      scrollTop: 0
     });
   }
 
