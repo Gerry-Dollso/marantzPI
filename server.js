@@ -40,6 +40,7 @@ let heosProgressCurrentMs = 0;
 let heosProgressDurationMs = 0;
 let heosProgressSocket = null;
 let heosProgressReconnectTimer = null;
+let heosNowPlayingChangedAt = 0;
 let lastTidalResume = null;
 let tidalResumeNeeded = false;
 let tidalQueueTransition = null;
@@ -237,13 +238,22 @@ function handleHeosProgressEvent(response) {
   if (String(values.pid || '') !== String(config.playerId)) return;
 
   if (command === 'event/player_now_playing_changed') {
+    heosNowPlayingChangedAt = Date.now();
     return;
   }
 
   if (command !== 'event/player_now_playing_progress') return;
 
-  heosProgressCurrentMs = Number(values.cur_pos || 0);
+  const currentMs = Number(values.cur_pos || 0);
+  heosProgressCurrentMs = currentMs;
   heosProgressDurationMs = Number(values.duration || 0);
+
+  // HEOS emits several now-playing-changed events around a track boundary.
+  // Treat the first near-zero progress event after that burst as the point
+  // where new metadata is ready for the browser's next lightweight poll.
+  if (currentMs <= 2000 && Date.now() - heosNowPlayingChangedAt < 5000) {
+    heosNowPlayingChangedAt = 0;
+  }
 }
 
 function startHeosProgressListener() {
