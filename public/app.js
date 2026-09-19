@@ -5,6 +5,7 @@ const artworkFallback = document.getElementById('artworkFallback');
 const song = document.getElementById('song');
 const artist = document.getElementById('artist');
 const album = document.getElementById('album');
+const audioQuality = document.getElementById('audioQuality');
 const progressTrack = document.getElementById('progressTrack');
 const progressBar = document.getElementById('progressBar');
 const currentTime = document.getElementById('currentTime');
@@ -364,6 +365,19 @@ function render(data) {
     artist.removeAttribute('role');
     artist.removeAttribute('tabindex');
     artist.removeAttribute('aria-label');
+  }
+
+  const quality = data.playbackSource === 'tidal' ? data.audioQuality : null;
+  if (audioQuality) {
+    const sampleRate = Number(quality?.sampleRate) || 0;
+    const bitDepth = Number(quality?.bitDepth) || 0;
+    const format = String(quality?.format || '').trim();
+    const sampleRateText = sampleRate > 0
+      ? (sampleRate % 1000 === 0 ? String(sampleRate / 1000) : (sampleRate / 1000).toFixed(1)) + ' kHz'
+      : '';
+    const detail = [sampleRateText, bitDepth > 0 ? bitDepth + ' bit' : ''].filter(Boolean).join(' / ');
+    audioQuality.textContent = [format, detail].filter(Boolean).join(' · ');
+    audioQuality.hidden = !audioQuality.textContent;
   }
 
   if (data.playbackSource === 'internet-radio') {
