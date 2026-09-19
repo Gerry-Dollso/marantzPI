@@ -41,6 +41,7 @@ let heosProgressDurationMs = 0;
 let heosProgressSocket = null;
 let heosProgressReconnectTimer = null;
 let heosNowPlayingChangedAt = 0;
+let heosNowPlayingGeneration = 0;
 let lastTidalResume = null;
 let tidalResumeNeeded = false;
 let tidalQueueTransition = null;
@@ -253,6 +254,7 @@ function handleHeosProgressEvent(response) {
   // where new metadata is ready for the browser's next lightweight poll.
   if (currentMs <= 2000 && Date.now() - heosNowPlayingChangedAt < 5000) {
     heosNowPlayingChangedAt = 0;
+    heosNowPlayingGeneration += 1;
   }
 }
 
@@ -1582,6 +1584,10 @@ http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && url.pathname === '/api/status') {
       return sendJson(res, 200, await getStatus());
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/heos/now-playing-generation') {
+      return sendJson(res, 200, { generation: heosNowPlayingGeneration });
     }
 
       if (req.method === 'POST' && url.pathname === '/api/smart-select/4') {
