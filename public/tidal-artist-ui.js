@@ -375,7 +375,10 @@ browseTidal = async function(cid, title, pushHistory = true) {
     return tidalArtistOriginalBrowse(cid, title, pushHistory);
   }
   setTidalPersonalisedChrome('normal');
-  if (pushHistory) tidalHistory.push({ cid, title });
+  if (pushHistory) {
+    saveCurrentTidalScrollPosition();
+    tidalHistory.push({ cid, title, scrollTop: 0 });
+  }
   await loadTidalArtistLanding(artistId, title);
 };
 
