@@ -1,7 +1,11 @@
 
-## Status reconciliation cadence — 18 Sep 2026
+## Status reconciliation cadence — 19 Sep 2026
 
-The touchscreen's unconditional `/api/status` reconciliation interval is 5 seconds. This replaces the inherited 750 ms cadence after an architecture/load audit found no current feature requiring sub-second background polling. Touchscreen controls retain their existing explicit fast refreshes, playback progress remains locally interpolated every 500 ms, and the 5-second poll remains the fallback for external AVR/HEOS changes. This reduces continuous AVR port-23 and HEOS connection churn without changing `getStatus()` semantics or the accepted standby/wake, TIDAL-resume, queue-transition, Smart Select, zone, or physical-panel logic.
+The touchscreen's unconditional `/api/status` reconciliation interval is 5 seconds. This replaces the inherited 750 ms cadence after an architecture/load audit found no current feature requiring sub-second background polling. Touchscreen controls retain explicit fast refreshes, playback progress remains locally interpolated every 500 ms, and the 5-second poll remains the fallback for external AVR/HEOS changes. This reduces continuous AVR port-23 and HEOS connection churn without changing `getStatus()` semantics or the accepted standby/wake, TIDAL-resume, queue-transition, Smart Select, zone, or physical-panel logic.
+
+Natural track transitions no longer wait for that 5-second fallback. The existing persistent HEOS event socket recognises `event/player_now_playing_changed`; because the SR8015 emits several such events around one boundary, the Pi treats the following near-zero progress event as the settled transition, increments a Pi-local generation counter, and the browser checks only that local counter every 500 ms. A generation change triggers one normal status refresh. This local check creates no additional AVR, HEOS-network or TIDAL polling. Physical touchscreen acceptance showed new-track metadata updating in about 1–2 seconds.
+
+Pi-initiated main-zone source changes retain the existing 350 ms refresh and add one 1000 ms settling refresh. This handles the case where the first refresh sees an AVR/HEOS source transition before NET/TIDAL metadata has settled, without restoring fast continuous polling. External remote/front-panel changes continue to rely on the 5-second reconciliation fallback. Physical touchscreen acceptance found the remaining source-return delay livable; do not add more source-event complexity without new evidence.
 # marantzPI
 
 ## 2026-09-18 — Raspberry Pi memory/OOM and replacement-board baseline
