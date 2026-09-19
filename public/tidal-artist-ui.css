@@ -114,3 +114,12 @@
   .tidal-artist-hero { grid-template-columns: 260px minmax(0, 1fr); gap: 18px; }
   .tidal-artist-hero-art { width: 260px; height: 260px; }
 }
+
+.tidal-artist-category-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 72px;
+  gap: 10px 12px;
+  padding-right: 3px;
+}
+.tidal-artist-category-nav-button { width: 100%; height: 72px; }
