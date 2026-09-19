@@ -782,7 +782,7 @@ async function getHeosAudioQuality() {
   const metadataMatch = xml.match(/<TrackMetaData>([\\s\\S]*?)<\\/TrackMetaData>/i);
   if (!metadataMatch) return null;
 
-  const metadata = metadataMatch[1]
+  const metadata = metadataMatch
     .replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
