@@ -196,6 +196,15 @@ header {
   line-height: 1.15;
 }
 
+.audio-quality {
+  margin-top: 7px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+}
+
 /* ===== Progress ===== */
 
 .progress-section { height: 43px; }
