@@ -295,6 +295,16 @@ const TIDAL_PERSONALISED_PLAYLIST_PREFIX = '__personalised_playlist__:';
 
 const tidalHistory = [];
 
+function saveCurrentTidalScrollPosition() {
+  const current = tidalHistory[tidalHistory.length - 1];
+  if (current) current.scrollTop = tidalResults.scrollTop;
+}
+
+function restoreTidalScrollPosition(entry) {
+  const scrollTop = Number(entry?.scrollTop) || 0;
+  requestAnimationFrame(() => { tidalResults.scrollTop = scrollTop; });
+}
+
 
 const TIDAL_CATEGORY_ICONS = {
   'My Music-Playlists': '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M13 10h22v28H13zM18 17h12M18 23h12M18 29h7"/><path d="M29 27v7.5a3.5 3.5 0 1 1-2-3.1V27h7"/></svg>',
