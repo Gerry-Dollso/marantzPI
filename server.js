@@ -1639,6 +1639,36 @@ http.createServer(async (req, res) => {
         return sendJson(res, 200, result);
       }
 
+    if (req.method === 'POST' && url.pathname === '/api/queue/play') {
+      const qid = String(url.searchParams.get('qid') || '').trim();
+      if (!/^\d+$/.test(qid)) return sendJson(res, 400, { ok: false, error: 'Valid queue position required' });
+
+      const pid = encodeURIComponent(config.playerId);
+      const queue = await getHeosQueueItems();
+      const item = queue.find(entry => String(entry?.qid || '') === qid);
+      if (!item) return sendJson(res, 404, { ok: false, error: 'Queue item not found' });
+
+      const mid = String(item?.mid || '');
+      startTidalQueueTransition(mid);
+      const transition = tidalQueueTransition;
+      let response;
+      try {
+        response = await heos(
+          `player/play_queue?pid=${pid}&qid=${encodeURIComponent(qid)}`,
+          5000,
+          true
+        );
+      } catch (error) {
+        if (tidalQueueTransition === transition) clearTidalQueueTransition();
+        throw error;
+      }
+      if (response?.heos?.result !== 'success') {
+        if (tidalQueueTransition === transition) clearTidalQueueTransition();
+        return sendJson(res, 502, { ok: false, error: response?.heos?.message || 'Could not play queue item' });
+      }
+      return sendJson(res, 200, { ok: true, qid, mid });
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/queue') {
       const pid = encodeURIComponent(config.playerId);
       const [queue, mediaResponse] = await Promise.all([
