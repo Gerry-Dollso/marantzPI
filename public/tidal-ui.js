@@ -1319,7 +1319,7 @@ tidalBack.addEventListener('click', () => {
         false
       );
     } else {
-      browseTidal(previous.cid, previous.title, false);
+      browseTidal(previous.cid, previous.title, false).then(() => restoreTidalScrollPosition(previous));
     }
     return;
   }
