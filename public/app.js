@@ -12,6 +12,7 @@ const duration = document.getElementById('duration');
 const playPause = document.getElementById('playPause');
 const connection = document.getElementById('connection');
 const tidalFavouriteHeart = document.getElementById('tidalFavouriteHeart');
+const queueOpen = document.getElementById('queueOpen');
 const muteButton = document.getElementById('muteButton');
 const idleScreen = document.getElementById('idleScreen');
 const nowPlayingScreen = document.getElementById('nowPlayingScreen');
@@ -309,6 +310,7 @@ function render(data) {
 
   const receiver = data.receiver || {};
   void syncTidalFavouriteHeart(data);
+  if (queueOpen) queueOpen.hidden = data.playbackSource !== 'tidal';
   updateVolumeOverlay(receiver);
   updateVolumeSlider(receiver.volume);
 
