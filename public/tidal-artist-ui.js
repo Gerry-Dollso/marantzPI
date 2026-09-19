@@ -246,15 +246,25 @@ function renderTidalArtistPage(details) {
 
   const topTracks = tidalArtistSection('TOP TRACKS', details.topTracks, track => tidalArtistTopTrackButton(track, artistId), 'tidal-artist-top-tracks', 'tracks', 4);
   if (topTracks) page.appendChild(topTracks);
+  const categories = document.createElement('section');
+  categories.className = 'tidal-artist-section';
+  const categoryRow = document.createElement('div');
+  categoryRow.className = 'tidal-artist-category-nav';
   [
-    ['ALBUMS', details.albums, 'albums', tidalArtistReleaseButton],
-    ['EPS & SINGLES', details.singles, 'singles', tidalArtistReleaseButton],
-    ['APPEARS ON', details.appearsOn, 'appears', tidalArtistReleaseButton],
-    ['FANS ALSO LIKED', details.similarArtists, 'similar', tidalArtistRelatedButton]
-  ].forEach(([title, items, category, maker]) => {
-    const section = tidalArtistSection(title, items, maker, category === 'similar' ? 'tidal-artist-related-row' : 'tidal-artist-release-row', category, 3);
-    if (section) page.appendChild(section);
+    ['ALBUMS', 'albums'],
+    ['EPS & SINGLES', 'singles'],
+    ['APPEARS ON', 'appears'],
+    ['FANS ALSO LIKED', 'similar']
+  ].forEach(([title, category]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tidal-artist-category-nav-button';
+    button.dataset.artistCategory = category;
+    button.append(document.createTextNode(title), document.createTextNode(' ›'));
+    categoryRow.appendChild(button);
   });
+  categories.appendChild(categoryRow);
+  page.appendChild(categories);
   tidalResults.appendChild(page);
   tidalResults.scrollTop = 0;
 }
