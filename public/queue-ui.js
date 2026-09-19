@@ -15,6 +15,8 @@
   let refreshTimer = null;
   let requestInFlight = false;
   let scrollToCurrentOnNextRender = false;
+  let selectedQid = '';
+  let playRequestInFlight = false;
 
   function stopRefresh() {
     if (!refreshTimer) return;
@@ -49,6 +51,7 @@
     if (item.current) row.classList.add('current');
     row.dataset.qid = String(item.qid || '');
     row.dataset.mid = String(item.mid || '');
+    if (row.dataset.qid && row.dataset.qid === selectedQid && !item.current) row.classList.add('selected');
 
     const artwork = document.createElement('div');
     artwork.className = 'queue-artwork';
@@ -68,10 +71,15 @@
       makeText('queue-album', item.album || '')
     );
 
-    const position = makeText(
-      'queue-position',
-      item.current ? 'NOW PLAYING' : (item.qid ? `#${item.qid}` : '')
-    );
+    const position = item.current
+      ? makeText('queue-position', 'NOW PLAYING')
+      : document.createElement('button');
+    if (!item.current) {
+      position.type = 'button';
+      position.className = 'queue-play-now';
+      position.textContent = row.classList.contains('selected') ? 'PLAY NOW' : (item.qid ? `#${item.qid}` : '');
+      position.hidden = !row.classList.contains('selected');
+    }
 
     row.append(artwork, text, position);
     return row;
@@ -132,6 +140,39 @@
       requestInFlight = false;
     }
   }
+
+  list.addEventListener('click', async event => {
+    const row = event.target.closest('.queue-row');
+    if (!row || row.classList.contains('current')) return;
+    const qid = String(row.dataset.qid || '');
+    if (!qid) return;
+
+    if (!event.target.closest('.queue-play-now')) {
+      selectedQid = selectedQid === qid ? '' : qid;
+      loadQueue();
+      return;
+    }
+
+    if (playRequestInFlight) return;
+    playRequestInFlight = true;
+    const button = event.target.closest('.queue-play-now');
+    button.disabled = true;
+    button.textContent = 'PLAYING…';
+    try {
+      const response = await fetch('/api/queue/play?qid=' + encodeURIComponent(qid), { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Could not play queue item');
+      selectedQid = '';
+      scrollToCurrentOnNextRender = true;
+      await loadQueue();
+    } catch (error) {
+      status.textContent = String(error?.message || 'COULD NOT PLAY TRACK').toUpperCase();
+      button.disabled = false;
+      button.textContent = 'PLAY NOW';
+    } finally {
+      playRequestInFlight = false;
+    }
+  });
 
   openButton.addEventListener('click', () => setOpen(true));
   backButton.addEventListener('click', () => setOpen(false));
