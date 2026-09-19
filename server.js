@@ -232,10 +232,15 @@ async function powerPanelOff() {
 }
 
 function handleHeosProgressEvent(response) {
-  if (response?.heos?.command !== 'event/player_now_playing_progress') return;
-
+  const command = response?.heos?.command;
   const values = params(response);
   if (String(values.pid || '') !== String(config.playerId)) return;
+
+  if (command === 'event/player_now_playing_changed') {
+    return;
+  }
+
+  if (command !== 'event/player_now_playing_progress') return;
 
   heosProgressCurrentMs = Number(values.cur_pos || 0);
   heosProgressDurationMs = Number(values.duration || 0);
