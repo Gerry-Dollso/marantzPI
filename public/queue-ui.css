@@ -177,3 +177,22 @@ body.show-queue .radio-screen {
   transform: scale(0.985);
   background: rgba(255,255,255,0.16);
 }
+
+
+.queue-row.selected {
+  border-color: rgba(212,193,142,0.52);
+  background: rgba(188,166,117,0.08);
+}
+
+.queue-play-now {
+  width: 104px;
+  height: 42px;
+  border: 1px solid rgba(212,193,142,0.72);
+  border-radius: 9px;
+  background: rgba(188,166,117,0.14);
+  color: #d4c18e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
