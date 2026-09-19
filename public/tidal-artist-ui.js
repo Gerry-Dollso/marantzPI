@@ -142,6 +142,11 @@ function restoreTidalArtistView(state) {
   if (!state) return;
   tidalHistory.length = Math.min(tidalHistory.length, state.historyLength);
   tidalArtistCurrentDetails = state.details;
+  tidalScreen.classList.add('artist-page', 'browsing');
+  tidalSearchForm.hidden = true;
+  tidalPersonalisedControls.hidden = true;
+  setTidalKeyboardOpen(false);
+  setTidalAlphabetVisible(false);
   if (state.type === 'category') renderTidalArtistCategory(state.details, state.category);
   else if (state.type === 'biography') renderTidalArtistBiography(state.details);
   else renderTidalArtistPage(state.details);
