@@ -1291,6 +1291,33 @@ setTimeout(refresh, 0);
 // Slow reconciliation for external AVR/HEOS changes; controls schedule their own fast refreshes.
 setInterval(refresh, 5000);
 
+// The server's persistent HEOS socket collapses the burst of change events at
+// a track boundary into one settled generation. Polling this Pi-local value is
+// cheap and restores prompt Now Playing metadata without reintroducing AVR/HEOS
+// network polling.
+let knownNowPlayingGeneration = null;
+async function checkNowPlayingGeneration() {
+  try {
+    const response = await fetch('/api/heos/now-playing-generation', {
+      cache: 'no-store'
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    const generation = Number(data.generation);
+    if (!Number.isFinite(generation)) return;
+    if (knownNowPlayingGeneration === null) {
+      knownNowPlayingGeneration = generation;
+      return;
+    }
+    if (generation !== knownNowPlayingGeneration) {
+      knownNowPlayingGeneration = generation;
+      refresh();
+    }
+  } catch {}
+}
+checkNowPlayingGeneration();
+setInterval(checkNowPlayingGeneration, 500);
+
 // Automatically refresh the kiosk whenever the Node server restarts.
 (() => {
   let knownInstanceId = null;
