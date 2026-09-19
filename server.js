@@ -779,19 +779,34 @@ async function getHeosAudioQuality() {
   if (!response.ok) throw new Error('UPnP position info failed');
 
   const xml = await response.text();
-  const metadataMatch = xml.match(/<TrackMetaData>([\\s\\S]*?)<\\/TrackMetaData>/i);
-  if (!metadataMatch) return null;
+  const metadataStart = xml.indexOf('<TrackMetaData>');
+  const metadataEnd = xml.indexOf('</TrackMetaData>');
+  if (metadataStart < 0 || metadataEnd <= metadataStart) return null;
 
-  const metadata = metadataMatch
+  const metadata = xml
+    .slice(metadataStart + '<TrackMetaData>'.length, metadataEnd)
     .replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&');
-  const sampleRate = Number(metadata.match(/sampleFrequency="(\\d+)"/i)?.[1] || 0);
-  const bitDepth = Number(metadata.match(/bitsPerSample="(\\d+)"/i)?.[1] || 0);
-  const format = String(
-    metadata.match(/<desc[^>]*id="audioFormat"[^>]*>([^<]+)<\\/desc>/i)?.[1] || ''
-  ).trim();
+  const sampleMarker = 'sampleFrequency="';
+  const bitMarker = 'bitsPerSample="';
+  const formatMarker = 'id="audioFormat"';
+  const sampleStart = metadata.indexOf(sampleMarker);
+  const bitStart = metadata.indexOf(bitMarker);
+  const formatStart = metadata.indexOf(formatMarker);
+  const sampleRate = sampleStart >= 0
+    ? Number(metadata.slice(sampleStart + sampleMarker.length).split('"')[0])
+    : 0;
+  const bitDepth = bitStart >= 0
+    ? Number(metadata.slice(bitStart + bitMarker.length).split('"')[0])
+    : 0;
+  const formatTail = formatStart >= 0 ? metadata.slice(formatStart + formatMarker.length) : '';
+  const formatOpen = formatTail.indexOf('>');
+  const formatClose = formatOpen >= 0 ? formatTail.indexOf('<', formatOpen + 1) : -1;
+  const format = formatOpen >= 0 && formatClose > formatOpen
+    ? formatTail.slice(formatOpen + 1, formatClose).trim()
+    : '';
 
   if (!format && !sampleRate && !bitDepth) return null;
   return {
