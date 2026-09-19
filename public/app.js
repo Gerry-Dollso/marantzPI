@@ -844,7 +844,7 @@ const SourceController = {
       // Source switching can settle after the first fast refresh, especially
       // when returning to NET/HEOS. Reconcile once more without restoring
       // fast continuous background polling.
-      setTimeout(refresh, 1500);
+      setTimeout(refresh, 1000);
     } catch (error) {
       connection.textContent = 'CONTROL ERROR';
       connection.className = 'connection error';
