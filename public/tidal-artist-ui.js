@@ -250,6 +250,12 @@ function renderTidalArtistPage(details) {
   categories.className = 'tidal-artist-section';
   const categoryRow = document.createElement('div');
   categoryRow.className = 'tidal-artist-category-nav';
+  const categoryIcons = {
+    albums: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="4"/><path d="M24 9v11M39 24H28"/></svg>',
+    singles: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M20 13v22a5 5 0 1 1-3-4.6V17l18-4v18a5 5 0 1 1-3-4.6V9z"/></svg>',
+    appears: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="18" cy="18" r="6"/><circle cx="32" cy="20" r="5"/><path d="M8 38c1.5-7 5-11 10-11s8.5 4 10 11M27 30c1.5-2 3.2-3 5-3 4 0 6.7 3.7 8 10"/></svg>',
+    similar: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="17" cy="18" r="6"/><circle cx="31" cy="18" r="6"/><path d="M7 38c1.5-7 4.8-11 10-11s8.5 4 10 11M21 38c1.5-7 4.8-11 10-11s8.5 4 10 11"/></svg>'
+  };
   [
     ['ALBUMS', 'albums'],
     ['EPS & SINGLES', 'singles'],
@@ -258,9 +264,18 @@ function renderTidalArtistPage(details) {
   ].forEach(([title, category]) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'tidal-artist-category-nav-button';
+    button.className = 'tidal-artist tidal-artist-category-nav-button';
     button.dataset.artistCategory = category;
-    button.append(document.createTextNode(title), document.createTextNode(' ›'));
+    const artwork = document.createElement('span');
+    artwork.className = 'tidal-artist-artwork tidal-category-icon';
+    artwork.innerHTML = categoryIcons[category];
+    const text = document.createElement('span');
+    text.className = 'tidal-browse-text';
+    const name = document.createElement('span');
+    name.className = 'tidal-artist-name';
+    name.textContent = title;
+    text.appendChild(name);
+    button.append(artwork, text);
     categoryRow.appendChild(button);
   });
   categories.appendChild(categoryRow);
