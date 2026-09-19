@@ -1,3 +1,13 @@
+## 2026-09-19 — Artist release navigation and Back-state acceptance
+
+The Artist landing page no longer enumerates release previews during initial load. It keeps the existing four-track Top Tracks preview and presents four browse-card destinations: **Albums**, **EPs & Singles**, **Appears On**, and **Fans Also Liked**. Release categories load only when selected; Fans Also Liked uses the already-loaded similar-artist data. This keeps Artist landing latency independent of release-catalogue size while retaining the established rich hero, biography, Play/Shuffle/Radio and Top Tracks experience.
+
+Artist navigation now has view-level history. Back from an album returns to the release category that launched it; Back from a related artist returns to Fans Also Liked; landing/category/biography views restore their previous scroll position and Artist-page styling. General TIDAL browse history also stores scroll position. Physical touchscreen acceptance confirmed that Back from a favourite Artist returns to the same position in the Artists list, and Back from a favourite Album returns to the same position in Albums rather than incorrectly returning to the TIDAL landing page.
+
+The Queue button is now visible only while TIDAL is the playback source; physical touchscreen testing confirmed TIDAL -> CD/PHONO -> TIDAL visibility changes correctly.
+
+Accepted Pi checkpoints include **9321fde** (category navigation), **e4d635a/e5e737d** (TIDAL browse-card styling/two-column layout), **bb540f3/db6162e** (Artist view history, scroll and styling restoration), **dab6372** (TIDAL-only Queue button), and **de04f4d** (general Artist/Album Back history correction). This phase is closed and physically accepted.
+
 
 ## Status reconciliation cadence — 19 Sep 2026
 
