@@ -1,3 +1,12 @@
+## 2026-09-19 — Reduced status polling with event-aware Now Playing refresh
+
+- Reduced unconditional touchscreen `/api/status` reconciliation from 750 ms to 5 seconds after the architecture/load audit. Existing explicit control refreshes and local 500 ms progress interpolation remain.
+- Added settled HEOS track-transition detection on the existing persistent event socket. The SR8015 emits repeated `event/player_now_playing_changed` events around a boundary, so the Pi waits for the following near-zero progress event, increments a Pi-local generation counter, and the browser's 500 ms local generation check triggers one full refresh.
+- The generation check is Pi-local and does not create continuous AVR, HEOS-network or TIDAL traffic. Physical touchscreen acceptance reduced natural next-track stale metadata from about 5 seconds to about 1–2 seconds.
+- Pi-initiated source changes now retain the 350 ms fast refresh and perform one additional 1000 ms settling refresh. This improves return from CD/other inputs to HEOS/TIDAL while keeping the 5-second background fallback for external remote/front-panel changes.
+- Physical touchscreen acceptance passed. The remaining source-return delay was considered livable; this phase is closed unless new evidence appears.
+- Implementation checkpoints: `f2beed5` (5-second reconciliation), `de7fcc0` (settled HEOS transition refresh path), `6fe4788` (source settling refresh), `31464d3` (1-second source settling delay).
+
 
 ## 2026-09-18 — Reduce background status polling
 
