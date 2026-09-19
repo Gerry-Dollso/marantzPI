@@ -1798,6 +1798,8 @@ tidalResults.addEventListener('click', async event => {
   }
 
   if (button.classList.contains('tidal-album')) {
+    saveCurrentTidalScrollPosition();
+    tidalHistory.push({ cid: button.dataset.cid, title: name, scrollTop: 0 });
     loadTidalAlbumTracks(button.dataset.cid, name);
     return;
   }
@@ -1835,6 +1837,8 @@ tidalResults.addEventListener('click', async event => {
     } else if (button.dataset.type === 'artist') {
       browseTidal(button.dataset.cid, name);
     } else if (button.dataset.type === 'album') {
+      saveCurrentTidalScrollPosition();
+      tidalHistory.push({ cid: button.dataset.cid, title: name, scrollTop: 0 });
       loadTidalAlbumTracks(button.dataset.cid, name);
     } else {
       browseTidal(button.dataset.cid, name);
