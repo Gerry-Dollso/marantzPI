@@ -46,6 +46,9 @@ let lastTidalResume = null;
 let tidalResumeNeeded = false;
 let tidalQueueTransition = null;
 let tidalOfficialTrackHint = null;
+let heosAudioQuality = null;
+let heosAudioQualityMid = '';
+let heosAudioQualityPromise = null;
 
 function rememberOfficialTidalTrack(officialId, heosMid) {
   const id = String(officialId || '').trim();
@@ -626,6 +629,7 @@ async function getStatus() {
   const mediaMid = String(media.mid || '').trim();
   const mediaAlbumId = String(media.album_id || '').trim();
   const mediaQid = Number(media.qid);
+  refreshHeosAudioQuality(mediaMid, playbackSource);
   const playbackState = String(state.state || 'unknown');
   let tidalQueueTransitionActive = false;
   if (tidalQueueTransition) {
@@ -728,6 +732,9 @@ async function getStatus() {
         )
       : '',
     playbackSource,
+    audioQuality: playbackSource === 'tidal' && heosAudioQualityMid === mediaMid
+      ? heosAudioQuality
+      : null,
     hasTrackInfo,
     imageUrl,
     state: state.state || 'unknown',
@@ -744,6 +751,78 @@ async function getStatus() {
     },
     updatedAt: Date.now()
   };
+}
+
+async function getHeosAudioQuality() {
+  const body =
+    '<?xml version="1.0"?>' +
+    '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ' +
+    's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' +
+    '<s:Body><u:GetPositionInfo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">' +
+    '<InstanceID>0</InstanceID>' +
+    '</u:GetPositionInfo></s:Body></s:Envelope>';
+
+  const response = await fetch(
+    'http://' + config.marantzHost +
+    ':60006/upnp/control/renderer_dvc/AVTransport',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset="utf-8"',
+        'SOAPACTION':
+          '"urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"'
+      },
+      body
+    }
+  );
+
+  if (!response.ok) throw new Error('UPnP position info failed');
+
+  const xml = await response.text();
+  const metadataMatch = xml.match(/<TrackMetaData>([\\s\\S]*?)<\\/TrackMetaData>/i);
+  if (!metadataMatch) return null;
+
+  const metadata = metadataMatch[1]
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+  const sampleRate = Number(metadata.match(/sampleFrequency="(\\d+)"/i)?.[1] || 0);
+  const bitDepth = Number(metadata.match(/bitsPerSample="(\\d+)"/i)?.[1] || 0);
+  const format = String(
+    metadata.match(/<desc[^>]*id="audioFormat"[^>]*>([^<]+)<\\/desc>/i)?.[1] || ''
+  ).trim();
+
+  if (!format && !sampleRate && !bitDepth) return null;
+  return {
+    format,
+    sampleRate: sampleRate || null,
+    bitDepth: bitDepth || null
+  };
+}
+
+function refreshHeosAudioQuality(mediaMid, playbackSource) {
+  const mid = String(mediaMid || '').trim();
+  if (playbackSource !== 'tidal' || !mid) {
+    heosAudioQuality = null;
+    heosAudioQualityMid = '';
+    return;
+  }
+  if (heosAudioQualityMid === mid || heosAudioQualityPromise) return;
+
+  heosAudioQualityMid = mid;
+  heosAudioQuality = null;
+  heosAudioQualityPromise = getHeosAudioQuality()
+    .then(quality => {
+      if (heosAudioQualityMid === mid) heosAudioQuality = quality;
+    })
+    .catch(error => {
+      if (heosAudioQualityMid === mid) heosAudioQualityMid = '';
+      console.warn(`HEOS audio quality unavailable: ${error.message}`);
+    })
+    .finally(() => {
+      heosAudioQualityPromise = null;
+    });
 }
 
 async function seekHeos(seconds) {
