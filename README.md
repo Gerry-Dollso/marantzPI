@@ -1,3 +1,14 @@
+## 2026-09-19 — TIDAL completion-candidate checkpoint
+
+The current TIDAL feature set is now in a **completion-candidate / soak-test phase**. No new TIDAL feature work is planned until the MarantzPi and backend have had time for normal-use testing; any bugs found during that period should be fixed first, followed by optional layout polish. Do not call the overall TIDAL project finally closed until that soak testing and any resulting fixes/polish are accepted.
+
+Two final MarantzPi features were physically accepted on the touchscreen:
+
+- **Actual playback audio quality on Now Playing.** The Pi reads the SR8015 HEOS renderer's UPnP AVTransport `GetPositionInfo` metadata from the already-used local renderer endpoint. The embedded DIDL resource exposes the actual playing stream's `audioFormat`, `sampleFrequency` and `bitsPerSample`. Now Playing renders this as, for example, **FLAC · 44.1 kHz / 16 bit**. This is HEOS/renderer playback evidence, not an inferred TIDAL catalogue quality. Live controls matched the HEOS app at both 44.1 kHz / 16 bit and 192 kHz / 24 bit. Accepted implementation series: `6d22ec3` through parser correction `69d1373`, then UI checkpoint `6d5f4de`.
+- **Deliberate Current Queue playback.** Queue rows are safe to scroll: the first tap selects a non-current row and reveals **PLAY NOW**; only a second deliberate tap on PLAY NOW starts that exact HEOS queue `qid`. The Pi backend validates that the requested `qid` still exists before issuing HEOS `player/play_queue`. Physical touchscreen testing accepted the interaction as preferable to immediate single-tap playback. Accepted implementation series: `409de8b`, `46b1d4f`, `801ff2e`, final asset-refresh head `365e76d`.
+
+The existing Favourite Tracks progressive queue builder was **not changed** during the Current Queue work. A reported progression problem cleared itself before investigation and the request to modify that mechanism was withdrawn; preserve the existing 10-track progressive behaviour unless a reproducible fault returns.
+
 ## 2026-09-19 — Artist release navigation and Back-state acceptance
 
 The Artist landing page no longer enumerates release previews during initial load. It keeps the existing four-track Top Tracks preview and presents four browse-card destinations: **Albums**, **EPs & Singles**, **Appears On**, and **Fans Also Liked**. Release categories load only when selected; Fans Also Liked uses the already-loaded similar-artist data. This keeps Artist landing latency independent of release-catalogue size while retaining the established rich hero, biography, Play/Shuffle/Radio and Top Tracks experience.
